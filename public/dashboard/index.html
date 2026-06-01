@@ -43,3 +43,28 @@ loadLeads();
 
 </body>
 </html>
+
+<script>
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user) {
+  window.location.href = "/auth";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const el = document.getElementById("userDisplay");
+  if (el) el.innerText = user.email;
+});
+</script>
+
+
+<script>
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/auth";
+}
+</script>
+
+<button onclick="logout()">Logout</button>
+

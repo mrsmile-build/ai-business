@@ -1,85 +1,174 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>AI Business Login</title>
-<style>
-body{
-  font-family:Arial,sans-serif;
-  max-width:400px;
-  margin:50px auto;
-  padding:20px;
-}
-input,button{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  box-sizing:border-box;
-}
-button{
-  cursor:pointer;
-}
-#msg{
-  margin-top:15px;
-  color:green;
-}
-</style>
-</head>
-<body>
-
-<h2>AI Business Login</h2>
-
-<input id="email" type="email" placeholder="Email">
-
-<input id="password" type="password" placeholder="Password">
-
-<button onclick="login()">Login</button>
-
-<button onclick="signup()">Sign Up</button>
-
-<p id="msg"></p>
+‎<!DOCTYPE html>
+‎<html>
+‎<head>
+‎<meta charset="UTF-8">
+‎<meta name="viewport" content="width=device-width,initial-scale=1">
+‎<title>AI Business Auth</title>
+‎
+‎<style>
+‎body{
+‎  font-family:Arial,sans-serif;
+‎  background:#0f172a;
+‎  color:white;
+‎  max-width:420px;
+‎  margin:40px auto;
+‎  padding:20px;
+‎}
+‎
+‎h2{
+‎  text-align:center;
+‎}
+‎
+‎input,button{
+‎  width:100%;
+‎  padding:12px;
+‎  margin:8px 0;
+‎  box-sizing:border-box;
+‎  border:none;
+‎  border-radius:8px;
+‎}
+‎
+‎input{
+‎  background:white;
+‎}
+‎
+‎button{
+‎  background:#3b82f6;
+‎  color:white;
+‎  font-weight:bold;
+‎}
+‎
+‎#msg{
+‎  margin-top:10px;
+‎}
+‎
+‎.small{
+‎  font-size:14px;
+‎}
+‎</style>
+‎</head>
+‎<body>
+‎
+‎<h2>🚀 AI Business</h2>
+‎
+‎<input id="email" type="email" placeholder="Email">
+‎
+‎<input id="password" type="password" placeholder="Password">
+‎
+‎<input id="confirm" type="password" placeholder="Confirm Password">
+‎
+‎<label class="small">
+‎<input type="checkbox" id="showpass">
+‎ Show Password
+‎</label>
+‎
+‎<button onclick="login()">Login</button>
+‎
+‎<button onclick="signup()">Sign Up</button>
+‎
+‎<p id="msg"></p>
+‎
+‎<script type="module">
+‎
+‎const { createClient } =
+‎ await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+‎
+‎const supabase = createClient(
+‎ "https://qewmhaualndadheoaxkm.supabase.co",
+‎ "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
+‎);
+‎
+‎document.getElementById("showpass")
+‎.addEventListener("change", e => {
+‎
+‎ const type = e.target.checked ? "text" : "password";
+‎
+‎ document.getElementById("confirm").type = type;
+‎});
+‎
+‎const { data:{session} } =
+‎ await supabase.auth.getSession();
+‎
+‎if(session){
+‎ window.location.href="/dashboard.html";
+‎}
+‎
+‎window.signup = async () => {
+‎
+‎ const email =
+‎
+‎ const password =
+‎
+‎ const confirm =
+‎ document.getElementById("confirm").value;
+‎
+‎ if(password !== confirm){
+‎   document.getElementById("msg").innerText =
+‎   "Passwords do not match";
+‎   return;
+‎ }
+‎
+‎ const { error } =
+‎ await supabase.auth.signUp({
+‎   email,
+‎   password
+‎ });
+‎
+‎ document.getElementById("msg").innerText =
+‎ error ? error.message : "Signup successful ✔";
+‎};
+‎
+‎window.login = async () => {
+‎
+‎ const email =
+‎
+‎ const password =
+‎
+‎ const { data,error } =
+‎ await supabase.auth.signInWithPassword({
+‎   email,
+‎   password
+‎ });
+‎
+‎ if(error){
+‎   document.getElementById("msg").innerText =
+‎   error.message;
+‎   return;
+‎ }
+‎
+‎ localStorage.setItem(
+‎   "user_id",
+‎   data.user.id
+‎ );
+‎
+‎ window.location.href="/dashboard.html";
+‎};
+‎
+‎</script>
+‎
+‎</body>
+‎</html>
+‎EOF
 
 <script type="module">
-const { createClient } =
-  await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+import { supabase } from "./supabase.js";
 
-const supabase = createClient(
-  "https://qewmhaualndadheoaxkm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
-);
-
-window.signup = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password
-  });
-
-  document.getElementById("msg").innerText =
-    error ? error.message : "Signup successful";
-};
-
-window.login = async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+window.login = async function () {
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
 
-  if(error){
-    document.getElementById("msg").innerText =
-      error.message;
+  if (error) {
+    alert(error.message);
     return;
   }
 
-  localStorage.setItem("user_id", data.user.id);
-  window.location.href = "/dashboard/";
+  localStorage.setItem("token", data.session.access_token);
+  localStorage.setItem("user", JSON.stringify(data.user));
+
+  window.location.href = "/dashboard";
 };
 </script>
 
-</body>
-</html>

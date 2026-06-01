@@ -25,7 +25,8 @@ app.get("/api/status", (req, res) => {
 });
 
 // CREATE LEAD (STORE IN SUPABASE)
-app.post("/api/lead", async (req, res) => {
+app.post("/api/lead", authMiddleware, async (req, res) => {
+app.post
   try {
     const { name, phone, message, user_id } = req.body;
 
@@ -67,7 +68,7 @@ app.post("/api/lead", async (req, res) => {
 });
 
 // GET ALL LEADS (FROM SUPABASE)
-app.get("/api/leads", async (req, res) => {
+app.get("/api/leads", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("leads")
@@ -91,7 +92,7 @@ app.get("/api/leads", async (req, res) => {
 
 
 // GET LEADS FOR ONE USER
-app.get("/api/leads/:user_id", async (req, res) => {
+app.get("/api/leads/:user_id", authMiddleware, async (req, res) => {
   try {
     const user_id = req.params.user_id;
 
@@ -122,7 +123,7 @@ app.listen(PORT, () => {
   console.log("AI Business Server running on port " + PORT);
 });
 
-app.post("/api/ai-reply", async (req, res) => {
+app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
 
@@ -161,4 +162,27 @@ app.post("/api/ai-reply", async (req, res) => {
     });
   }
 });
+
+
+async function authMiddleware(req, res, next) {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ error: "No token provided" });
+    }
+
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data.user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    req.user = data.user;
+    next();
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
