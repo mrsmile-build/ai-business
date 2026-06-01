@@ -111,3 +111,44 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("AI Business Server running on port " + PORT);
 });
+
+app.post("/api/ai-reply", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.GROQ_API_KEY_1}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.1-8b-instant",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful business assistant that replies to customer messages professionally."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    res.json({
+      success: true,
+      reply: data.choices?.[0]?.message?.content || "No response from AI"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
