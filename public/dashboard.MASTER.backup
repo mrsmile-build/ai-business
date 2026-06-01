@@ -112,6 +112,30 @@ h1{color:#222;}
 
 </div>
 
+<script>
+
+let allLeads = [];
+
+  }
+
+  filtered.forEach(l => {
+    box.innerHTML += `
+      <div class="lead">
+        <b>${l.name}</b><br/>
+        <span class="muted">${l.phone}</span><br/>
+        <p>${l.message}</p>
+      </div>
+    `;
+  });
+}
+
+// AUTO REFRESH EVERY 10s
+setInterval(() => {
+  const user_id = document.getElementById("user_id").value;
+  if (user_id) loadLeads();
+}, 10000);
+
+</script>
 
 </body>
 </html>
@@ -128,7 +152,25 @@ h1{color:#222;}
   `;
 }
 
+<script>
 
+<script>
+
+<h1 style="text-align:center;">📊 AI Business Dashboard</h1>
+
+<div style="max-width:900px;margin:auto;">
+
+  <input id="userId" placeholder="Enter User ID" style="padding:10px;width:60%;">
+  <button onclick="loadLeads()">Load Leads</button>
+
+  <h3 id="total">Total Leads: 0</h3>
+  <h4 id="status">Status: Idle</h4>
+
+  <div id="leads"></div>
+
+</div>
+
+<script>
 
 <script>
 async function loadLeads() {
@@ -146,11 +188,11 @@ async function loadLeads() {
     document.getElementById("status").innerText = "Status: Live ✔";
 
     document.getElementById("leads").innerHTML = leads.map(lead => `
-      <div style="border:1px solid #ddd;padding:12px;margin:10px;border-radius:10px;">
+      <div class="card">
         <h3>${lead.name}</h3>
         <p><b>Phone:</b> ${lead.phone}</p>
         <p><b>Message:</b> ${lead.message}</p>
-        <p style="color:green;"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
+        <p style="color:#22c55e;"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
         <p>${lead.ai_reply ? "AI Responded ✔" : "Pending ⏳"}</p>
       </div>
     `).join("");
