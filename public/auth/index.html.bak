@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI Business Login</title>
+<style>
+body{
+  font-family:Arial,sans-serif;
+  max-width:400px;
+  margin:50px auto;
+  padding:20px;
+}
+input,button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  box-sizing:border-box;
+}
+button{
+  cursor:pointer;
+}
+#msg{
+  margin-top:15px;
+  color:green;
+}
+</style>
+</head>
+<body>
+
+<h2>AI Business Login</h2>
+
+<input id="email" type="email" placeholder="Email">
+
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<button onclick="signup()">Sign Up</button>
+
+<p id="msg"></p>
+
+<script type="module">
+const { createClient } =
+  await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+
+const supabase = createClient(
+  "https://qewmhaualndadheoaxkm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
+);
+
+window.signup = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signUp({
+    email,
+    password
+  });
+
+  document.getElementById("msg").innerText =
+    error ? error.message : "Signup successful";
+};
+
+window.login = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if(error){
+    document.getElementById("msg").innerText =
+      error.message;
+    return;
+  }
+
+  window.location.href = "/dashboard/";
+};
+</script>
+
+</body>
+</html>

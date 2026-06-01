@@ -36,7 +36,6 @@ app.post("/api/lead", async (req, res) => {
           name,
           phone,
           message,
-          user_id,
         }
       ])
       .select();
@@ -62,33 +61,6 @@ app.get("/api/leads", async (req, res) => {
     const { data, error } = await supabase
       .from("leads")
       .select("*")
-      .order("id", { ascending: false });
-
-    if (error) throw error;
-
-    res.json({
-      success: true,
-      leads: data
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-
-// GET LEADS FOR ONE USER
-app.get("/api/leads/:user_id", async (req, res) => {
-  try {
-    const user_id = req.params.user_id;
-
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("user_id", user_id)
       .order("id", { ascending: false });
 
     if (error) throw error;

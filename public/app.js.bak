@@ -1,7 +1,5 @@
 async function submitLead() {
 
-  const user_id = localStorage.getItem("user_id");
-
   const name =
     document.getElementById("name").value;
 
@@ -17,7 +15,6 @@ async function submitLead() {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      user_id,
       name,
       phone,
       message
@@ -25,12 +22,6 @@ async function submitLead() {
   });
 
   const data = await res.json();
-
-  if (!data.success) {
-    document.getElementById("result").innerText =
-      data.error || "Failed";
-    return;
-  }
 
   document.getElementById("result").innerText =
     "Lead Saved!";

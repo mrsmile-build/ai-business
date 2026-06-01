@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SaaS Leads Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    .stat {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3b82f6;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .lead {
+      background: #1e293b;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+    }
+
+    .topbar {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h2>📊 AI Business Dashboard</h2>
+
+  <div class="topbar">
+    <input id="user_id" placeholder="Enter User ID (test123)" />
+    <input id="search" placeholder="Search leads (name/message/phone)" oninput="render()" />
+    <button onclick="loadLeads()">Load Leads</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid">
+    <div class="card">
+      <div>Total Leads</div>
+      <div class="stat" id="total">0</div>
+    </div>
+
+    <div class="card">
+      <div>Status</div>
+      <div class="stat" id="status">Idle</div>
+    </div>
+  </div>
+
+  <!-- LEADS -->
+  <div id="leads"></div>
+
+</div>
+
+<script>
+
+let allLeads = [];
+
+async function loadLeads() {
+  const user_id = document.getElementById("user_id").value.trim();
+
+  if (!user_id) {
+    alert("Enter User ID");
+    return;
+  }
+
+  document.getElementById("status").innerText = "Loading...";
+
+  try {
+    const res = await fetch("/api/leads/" + user_id);
+    const data = await res.json();
+
+    allLeads = data.leads || [];
+
+    document.getElementById("total").innerText = allLeads.length;
+    document.getElementById("status").innerText = "Live ✔";
+
+    render();
+
+  } catch (err) {
+    document.getElementById("status").innerText = "Error";
+  }
+}
+
+function render() {
+  const box = document.getElementById("leads");
+  const search = document.getElementById("search").value.toLowerCase();
+
+  box.innerHTML = "";
+
+  let filtered = allLeads.filter(l =>
+    (l.name || "").toLowerCase().includes(search) ||
+    (l.phone || "").toLowerCase().includes(search) ||
+    (l.message || "").toLowerCase().includes(search)
+  );
+
+  if (filtered.length === 0) {
+    box.innerHTML = "<p class='muted'>No leads found.</p>";
+    return;
+  }
+
+  filtered.forEach(l => {
+    box.innerHTML += `
+      <div class="lead">
+        <b>${l.name}</b><br/>
+        <span class="muted">${l.phone}</span><br/>
+        <p>${l.message}</p>
+      </div>
+    `;
+  });
+}
+
+// AUTO REFRESH EVERY 10s
+setInterval(() => {
+  const user_id = document.getElementById("user_id").value;
+  if (user_id) loadLeads();
+}, 10000);
+
+</script>
+
+</body>
+</html>

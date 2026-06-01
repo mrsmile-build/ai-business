@@ -1,26 +1,180 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Business Automation</title>
+  <title>AI Business Lead System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .box {
+      width: 100%;
+      max-width: 420px;
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #22c55e;
+      border: none;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .offline {
+      background: #dc2626;
+      padding: 6px;
+      border-radius: 6px;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    a {
+      color: #60a5fa;
+      display: block;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
 </head>
+
 <body>
 
-<h1>Lead Capture Demo</h1>
+<div class="box">
 
-<input id="name" placeholder="Name"><br><br>
+  <div id="netStatus"></div>
 
-<input id="phone" placeholder="Phone"><br><br>
+  <h2>AI Business Lead Form</h2>
 
-<textarea id="message" placeholder="Message"></textarea>
-<br><br>
+  <input id="name" placeholder="Name" />
+  <input id="phone" placeholder="Phone" />
+  <textarea id="message" placeholder="Message"></textarea>
+  <input id="user_id" placeholder="User ID" />
 
-<button onclick="submitLead()">
-Submit Lead
-</button>
+  <button id="btn" onclick="submitLead()">Send Lead</button>
 
-<div id="result"></div>
+  <div class="status" id="status"></div>
 
-<script src="app.js"></script>
+  <a href="/dashboard.html">Go to Dashboard</a>
+</div>
+
+<script>
+
+let isOnline = navigator.onLine;
+const statusBox = document.getElementById("netStatus");
+const btn = document.getElementById("btn");
+
+function updateNetwork() {
+  isOnline = navigator.onLine;
+
+  if (!isOnline) {
+    statusBox.innerHTML = "<div class='offline'>⚠ No Internet Connection</div>";
+    btn.disabled = true;
+  } else {
+    statusBox.innerHTML = "";
+    btn.disabled = false;
+  }
+}
+
+window.addEventListener("online", updateNetwork);
+window.addEventListener("offline", updateNetwork);
+
+updateNetwork();
+
+async function submitLead() {
+  const status = document.getElementById("status");
+
+  const data = {
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    message: document.getElementById("message").value,
+    user_id: document.getElementById("user_id").value
+  };
+
+  btn.disabled = true;
+  status.innerText = "Sending... ⏳";
+
+  try {
+    const res = await fetch("/api/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const result = await res.json();
+
+    if (result.success) {
+      status.innerText = "Lead Sent ✅";
+    } else {
+      status.innerText = "Failed to send. Will retry...";
+      retrySubmit(data, 3);
+    }
+
+  } catch (err) {
+    status.innerText = "Network error. Retrying...";
+    retrySubmit(data, 3);
+  }
+
+  btn.disabled = false;
+}
+
+async function retrySubmit(data, times) {
+  for (let i = 0; i < times; i++) {
+    if (navigator.onLine) {
+      try {
+        const res = await fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          document.getElementById("status").innerText = "Lead Sent (Auto Retry) ✅";
+          return;
+        }
+      } catch (e) {}
+    }
+
+    await new Promise(r => setTimeout(r, 3000));
+  }
+
+  document.getElementById("status").innerText =
+    "Failed after retries. Will try again when network returns.";
+}
+
+</script>
 
 </body>
 </html>

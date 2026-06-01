@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Supabase Test</h1>
+
+<p id="msg">Loading...</p>
+
+<script type="module">
+try {
+  const mod = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+  document.getElementById("msg").innerText =
+    "Supabase Import Works";
+} catch (err) {
+  document.getElementById("msg").innerText =
+    "Import Failed: " + err.message;
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Auth Test</h1>
+
+<input id="email" placeholder="Email">
+<br><br>
+
+<input id="password" type="password" placeholder="Password">
+<br><br>
+
+<button onclick="signup()">Sign Up</button>
+
+<p id="msg"></p>
+
+<script type="module">
+const { createClient } =
+  await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm");
+
+const supabase = createClient(
+  "https://qewmhaualndadheoaxkm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
+);
+
+window.signup = async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  document.getElementById("msg").innerText = "Working...";
+
+  try {
+    const result = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    document.getElementById("msg").innerText =
+      JSON.stringify(result, null, 2);
+
+  } catch (err) {
+    document.getElementById("msg").innerText =
+      err.message;
+  }
+};
+</script>
+
+</body>
+</html>
