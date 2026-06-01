@@ -31,38 +31,28 @@ app.post("/api/lead", async (req, res) => {
 
     const { data, error } = await supabase
       .from("leads")
-      .insert([{ name, phone, message, user_id }])
+      .insert([
+        {
+          name,
+          phone,
+          message,
+          user_id,
+        }
+      ])
       .select();
 
     if (error) throw error;
 
-    const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY_1}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: "You are a business assistant that replies to customer leads." },
-          { role: "user", content: message }
-        ]
-      })
+    res.json({
+      success: true,
+      lead: data[0]
     });
 
-    const aiData = await aiResponse.json();
-    const aiReply = aiData.choices?.[0]?.message?.content || "No reply";
-
-    await supabase
-      .from("leads")
-      .update({ ai_reply: aiReply })
-      .eq("id", data[0].id);
-
-    res.json({ success: true, lead: data[0], ai_reply: aiReply });
-
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
   }
 });
 
