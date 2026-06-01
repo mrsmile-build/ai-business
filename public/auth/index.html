@@ -1,28 +1,96 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Business Login</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Business Login</title>
+
   <style>
-    body { font-family: Arial; background:#0f172a; color:white; display:flex; justify-content:center; align-items:center; height:100vh; }
-    .box { width:320px; padding:20px; background:#1e293b; border-radius:10px; }
-    input { width:100%; padding:10px; margin:8px 0; }
-    button { width:100%; padding:10px; margin-top:10px; cursor:pointer; }
+    body {
+      margin:0;
+      font-family: Arial;
+      background:#0b1220;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      color:white;
+    }
+
+    .card {
+      width:320px;
+      background:#111a2e;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 0 20px rgba(0,0,0,0.3);
+    }
+
+    input {
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border-radius:6px;
+      border:none;
+      outline:none;
+    }
+
+    button {
+      width:100%;
+      padding:12px;
+      margin-top:10px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      background:#2563eb;
+      color:white;
+      font-weight:bold;
+    }
+
+    button:disabled {
+      opacity:0.6;
+      cursor:not-allowed;
+    }
+
+    .row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .eye {
+      cursor:pointer;
+      margin-left:-35px;
+      position:relative;
+      top:-38px;
+      float:right;
+      padding-right:10px;
+    }
+
+    .small {
+      font-size:12px;
+      text-align:center;
+      margin-top:10px;
+      opacity:0.7;
+    }
   </style>
 </head>
+
 <body>
 
-<div class="box">
-  <h2>AI Business</h2>
+<div class="card">
+  <h2>🚀 AI Business</h2>
 
   <input id="email" type="email" placeholder="Email">
-  
-  <input id="password" type="password" placeholder="Password">
 
-  <button onclick="togglePassword()">Show/Hide Password</button>
+  <div style="position:relative;">
+    <input id="password" type="password" placeholder="Password">
+    <span class="eye" onclick="togglePassword()" id="eye">👁️</span>
+  </div>
 
-  <button onclick="login()">Login</button>
-  <button onclick="signup()">Sign Up</button>
+  <button id="loginBtn" onclick="login()">Login</button>
+  <button id="signupBtn" onclick="signup()">Sign Up</button>
+
+  <div class="small">Fast AI business system</div>
 </div>
 
 <script type="module">
@@ -30,10 +98,22 @@ import { supabase } from "./supabase.js";
 
 window.togglePassword = function () {
   const p = document.getElementById("password");
-  p.type = p.type === "password" ? "text" : "password";
+  const eye = document.getElementById("eye");
+
+  if (p.type === "password") {
+    p.type = "text";
+    eye.innerText = "🙈";
+  } else {
+    p.type = "password";
+    eye.innerText = "👁️";
+  }
 };
 
 window.login = async function () {
+  const btn = document.getElementById("loginBtn");
+  btn.innerText = "Signing in...";
+  btn.disabled = true;
+
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
@@ -42,6 +122,9 @@ window.login = async function () {
     password
   });
 
+  btn.innerText = "Login";
+  btn.disabled = false;
+
   if (error) return alert(error.message);
 
   localStorage.setItem("user", JSON.stringify(data.user));
@@ -49,6 +132,10 @@ window.login = async function () {
 };
 
 window.signup = async function () {
+  const btn = document.getElementById("signupBtn");
+  btn.innerText = "Creating account...";
+  btn.disabled = true;
+
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
@@ -57,9 +144,12 @@ window.signup = async function () {
     password
   });
 
+  btn.innerText = "Sign Up";
+  btn.disabled = false;
+
   if (error) return alert(error.message);
 
-  alert("Account created! Please login.");
+  alert("Account created! Now login.");
 };
 </script>
 
