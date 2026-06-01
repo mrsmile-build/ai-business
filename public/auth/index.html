@@ -1,129 +1,127 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AI Business Login</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Business Auth</title>
 
-  <style>
-    body {
-      margin:0;
-      font-family: Arial;
-      background:#0b1220;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-      color:white;
-    }
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:#0b1220;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  color:white;
+}
 
-    .card {
-      width:320px;
-      background:#111a2e;
-      padding:20px;
-      border-radius:12px;
-      box-shadow:0 0 20px rgba(0,0,0,0.3);
-    }
+.card {
+  width:340px;
+  background:#111a2e;
+  padding:20px;
+  border-radius:12px;
+}
 
-    input {
-      width:100%;
-      padding:12px;
-      margin:8px 0;
-      border-radius:6px;
-      border:none;
-      outline:none;
-    }
+input, select {
+  width:100%;
+  padding:10px;
+  margin:6px 0;
+  border-radius:6px;
+  border:none;
+}
 
-    button {
-      width:100%;
-      padding:12px;
-      margin-top:10px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      background:#2563eb;
-      color:white;
-      font-weight:bold;
-    }
+button {
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
 
-    button:disabled {
-      opacity:0.6;
-      cursor:not-allowed;
-    }
+.primary { background:#2563eb; color:white; }
+.secondary { background:#334155; color:white; }
 
-    .row {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-    }
+.small {
+  text-align:center;
+  font-size:12px;
+  opacity:0.7;
+  margin-top:10px;
+}
 
-    .eye {
-      cursor:pointer;
-      margin-left:-35px;
-      position:relative;
-      top:-38px;
-      float:right;
-      padding-right:10px;
-    }
-
-    .small {
-      font-size:12px;
-      text-align:center;
-      margin-top:10px;
-      opacity:0.7;
-    }
-  </style>
+.link {
+  text-align:center;
+  margin-top:10px;
+  cursor:pointer;
+  color:#60a5fa;
+}
+</style>
 </head>
 
 <body>
 
 <div class="card">
+
   <h2>🚀 AI Business</h2>
 
-  <input id="email" type="email" placeholder="Email">
+  <!-- LOGIN -->
+  <div id="loginBox">
+    <input id="loginEmail" type="email" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
 
-  <div style="position:relative;">
-    <input id="password" type="password" placeholder="Password">
-    <span class="eye" onclick="togglePassword()" id="eye">👁️</span>
+    <button class="primary" onclick="login()">Login</button>
+
+    <div class="link" onclick="showSignup()">Create account</div>
   </div>
 
-  <button id="loginBtn" onclick="login()">Login</button>
-  <button id="signupBtn" onclick="signup()">Sign Up</button>
+  <!-- SIGNUP -->
+  <div id="signupBox" style="display:none;">
+    <input id="username" type="text" placeholder="Username">
+    <input id="signupEmail" type="email" placeholder="Email">
+    <input id="signupPassword" type="password" placeholder="Password">
+    <input id="confirmPassword" type="password" placeholder="Confirm Password">
 
-  <div class="small">Fast AI business system</div>
+    <select id="businessType">
+      <option value="">What are you using this for?</option>
+      <option>Business</option>
+      <option>Freelancing</option>
+      <option>Startup</option>
+      <option>Personal</option>
+    </select>
+
+    <button class="primary" onclick="signup()">Create Account</button>
+
+    <div class="link" onclick="showLogin()">Back to login</div>
+  </div>
+
 </div>
 
 <script type="module">
 import { supabase } from "./supabase.js";
 
-window.togglePassword = function () {
-  const p = document.getElementById("password");
-  const eye = document.getElementById("eye");
-
-  if (p.type === "password") {
-    p.type = "text";
-    eye.innerText = "🙈";
-  } else {
-    p.type = "password";
-    eye.innerText = "👁️";
-  }
+// SWITCH UI
+window.showSignup = () => {
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("signupBox").style.display = "block";
 };
 
-window.login = async function () {
-  const btn = document.getElementById("loginBtn");
-  btn.innerText = "Signing in...";
-  btn.disabled = true;
+window.showLogin = () => {
+  document.getElementById("signupBox").style.display = "none";
+  document.getElementById("loginBox").style.display = "block";
+};
 
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+// LOGIN
+window.login = async () => {
+  const email = loginEmail.value;
+  const password = loginPassword.value;
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
-
-  btn.innerText = "Login";
-  btn.disabled = false;
 
   if (error) return alert(error.message);
 
@@ -131,25 +129,21 @@ window.login = async function () {
   window.location.href = "/dashboard";
 };
 
-window.signup = async function () {
-  const btn = document.getElementById("signupBtn");
-  btn.innerText = "Creating account...";
-  btn.disabled = true;
-
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+// SIGNUP
+window.signup = async () => {
+  if (signupPassword.value !== confirmPassword.value) {
+    return alert("Passwords do not match");
+  }
 
   const { data, error } = await supabase.auth.signUp({
-    email,
-    password
+    email: signupEmail.value,
+    password: signupPassword.value
   });
-
-  btn.innerText = "Sign Up";
-  btn.disabled = false;
 
   if (error) return alert(error.message);
 
-  alert("Account created! Now login.");
+  alert("Account created! Please login.");
+  showLogin();
 };
 </script>
 
