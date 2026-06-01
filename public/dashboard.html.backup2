@@ -82,16 +82,6 @@
     <input id="user_id" placeholder="Enter User ID (test123)" />
     <input id="search" placeholder="Search leads (name/message/phone)" oninput="render()" />
     <button onclick="loadLeads()">Load Leads</button>
-<style>
-body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px;}
-.container{max-width:900px;margin:auto;}
-.card{background:#fff;padding:15px;margin:10px 0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
-h1{color:#222;}
-.badge{padding:4px 8px;border-radius:6px;font-size:12px;}
-.ok{background:#d1fae5;color:#065f46;}
-.wait{background:#fef3c7;color:#92400e;}
-.ai{color:#16a34a;margin-top:8px;}
-</style>
   </div>
 
   <!-- STATS -->
@@ -180,19 +170,3 @@ setInterval(() => {
 
 </body>
 </html>
-
-function renderLead(lead){
-  return `
-  <div class="card">
-    <h3>${lead.name}</h3>
-    <p><b>Phone:</b> ${lead.phone}</p>
-    <p><b>Message:</b> ${lead.message}</p>
-
-    <p class="ai"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
-
-    <span class="badge ${lead.ai_reply ? 'ok' : 'wait'}">
-      ${lead.ai_reply ? "AI Responded ✔" : "Pending ⏳"}
-    </span>
-  </div>
-  `;
-}
