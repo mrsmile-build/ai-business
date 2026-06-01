@@ -76,7 +76,7 @@
 
 <div class="container">
 
-  <h2>📊 <h1 style="text-align:center;margin-bottom:20px;color:#111;">📊 AI Business Dashboard</h1></h2>
+  <h2>📊 AI Business Dashboard</h2>
 
   <div class="topbar">
     <input id="user_id" placeholder="Enter User ID (test123)" />
@@ -181,6 +181,10 @@ setInterval(() => {
 </body>
 </html>
 
+function renderLead(lead){
+  return `
+  <div class="card">
+    <h3>${lead.name}</h3>
     <p><b>Phone:</b> ${lead.phone}</p>
     <p><b>Message:</b> ${lead.message}</p>
 
@@ -192,20 +196,3 @@ setInterval(() => {
   </div>
   `;
 }
-
-<script>
-function renderLead(lead){
-  return `
-    <div style="background:#fff;padding:15px;margin:10px 0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-      <h3>${lead.name}</h3>
-      <p><b>Phone:</b> ${lead.phone}</p>
-      <p><b>Message:</b> ${lead.message}</p>
-      <p style="color:green;"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
-      <span style="font-size:12px;color:gray;">
-        ${lead.ai_reply ? "AI Responded ✔" : "Pending ⏳"}
-      </span>
-    </div>
-  `;
-}
-</script>
-
