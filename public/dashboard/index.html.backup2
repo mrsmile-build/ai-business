@@ -26,21 +26,6 @@
 <button onclick="logout()">Logout</button>
 
 
-
-
-<script type="module">
-import { supabase } from "../auth/supabase.js";
-
-  if (!ok) return;
-
-  await supabase.auth.signOut();
-  localStorage.clear();
-  window.location.href = "/auth";
-};
-
-</script>
-
-
 <script type="module">
 import { supabase } from "../auth/supabase.js";
 
@@ -52,8 +37,14 @@ async function init() {
     return;
   }
 
-  const el = document.getElementById("userDisplay");
-  if (el) el.innerText = user.email;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  document.getElementById("userDisplay").innerText =
+    profile?.username || user.email;
 
   loadLeads(user.id);
 }
@@ -63,8 +54,6 @@ async function loadLeads(userId) {
   const data = await res.json();
 
   const container = document.getElementById("leads");
-  if (!container) return;
-
   container.innerHTML = "";
 
   (data.leads || []).forEach(lead => {
@@ -80,11 +69,10 @@ async function loadLeads(userId) {
 }
 
 window.logout = async function () {
-  const ok = confirm("Are you sure you want to logout?");
+  const ok = confirm("Logout?");
   if (!ok) return;
 
   await supabase.auth.signOut();
-  localStorage.clear();
   window.location.href = "/auth";
 };
 
