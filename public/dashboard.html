@@ -145,6 +145,29 @@ async function loadLeads() {
     document.getElementById("total").innerText = "Total Leads: " + leads.length;
     document.getElementById("status").innerText = "Status: Live ✔";
 
+
+  } catch (err) {
+    document.getElementById("status").innerText = "Status: Network Error ❌";
+  }
+}
+</script>
+
+
+<script>
+async function loadLeads() {
+  const user_id = document.getElementById("userId").value;
+
+  document.getElementById("status").innerText = "Status: Loading...";
+
+  try {
+    const res = await fetch(`/api/leads/${user_id}`);
+    const data = await res.json();
+
+    const leads = data.leads || [];
+
+    document.getElementById("total").innerText = "Total Leads: " + leads.length;
+    document.getElementById("status").innerText = "Status: Live ✔";
+
     document.getElementById("leads").innerHTML = leads.map(lead => `
       <div style="border:1px solid #ddd;padding:12px;margin:10px;border-radius:10px;">
         <h3>${lead.name}</h3>
