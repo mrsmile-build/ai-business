@@ -1,13 +1,28 @@
 import { supabase } from "./supabase.js";
 
-window.toggle = () => {
-  const l = document.getElementById("loginBox");
-  const s = document.getElementById("signupBox");
+/* FORM SWITCH */
+window.toggleForm = () => {
+  const login = document.getElementById("loginBox");
+  const signup = document.getElementById("signupBox");
 
-  l.style.display = l.style.display === "none" ? "block" : "none";
-  s.style.display = s.style.display === "none" ? "block" : "none";
+  login.style.display = login.style.display === "none" ? "block" : "none";
+  signup.style.display = signup.style.display === "none" ? "block" : "none";
 };
 
+/* PASSWORD TOGGLE */
+window.togglePassword = (id, el) => {
+  const input = document.getElementById(id);
+
+  if (input.type === "password") {
+    input.type = "text";
+    el.innerText = "🙈";
+  } else {
+    input.type = "password";
+    el.innerText = "👁️";
+  }
+};
+
+/* LOGIN */
 window.login = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
@@ -22,6 +37,7 @@ window.login = async () => {
   window.location.href = "/dashboard";
 };
 
+/* SIGNUP */
 window.signup = async () => {
   const email = document.getElementById("s_email").value;
   const password = document.getElementById("s_password").value;
@@ -34,5 +50,5 @@ window.signup = async () => {
   if (error) return alert(error.message);
 
   alert("Account created");
-  toggle();
+  toggleForm();
 };

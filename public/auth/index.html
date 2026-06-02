@@ -11,6 +11,8 @@ body{font-family:Arial;background:#0b1220;display:flex;justify-content:center;al
 input,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none}
 button{background:#2563eb;color:white;font-weight:bold}
 .link{text-align:center;color:#60a5fa;cursor:pointer;margin-top:10px}
+.password-box{position:relative}
+.eye{position:absolute;right:10px;top:12px;cursor:pointer}
 </style>
 </head>
 
@@ -19,18 +21,30 @@ button{background:#2563eb;color:white;font-weight:bold}
 <div class="card">
 <h2>🚀 AI Business</h2>
 
+<!-- LOGIN -->
 <div id="loginBox">
 <input id="email" type="email" placeholder="Email">
+
+<div class="password-box">
 <input id="password" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<div class="link" onclick="toggle()">Create account</div>
+<span class="eye" onclick="togglePassword('password', this)">👁️</span>
 </div>
 
+<button onclick="login()">Login</button>
+<div class="link" onclick="toggleForm()">Create account</div>
+</div>
+
+<!-- SIGNUP -->
 <div id="signupBox" style="display:none;">
 <input id="s_email" type="email" placeholder="Email">
+
+<div class="password-box">
 <input id="s_password" type="password" placeholder="Password">
+<span class="eye" onclick="togglePassword('s_password', this)">👁️</span>
+</div>
+
 <button onclick="signup()">Create Account</button>
-<div class="link" onclick="toggle()">Back to login</div>
+<div class="link" onclick="toggleForm()">Back to login</div>
 </div>
 
 </div>
