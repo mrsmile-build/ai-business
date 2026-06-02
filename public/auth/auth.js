@@ -1,15 +1,67 @@
 import { supabase } from "./supabase.js";
 
-/* UI STATE HELPERS */
-function setLoading(btnText, loading) {
-  const btn = document.querySelector(`button[data-role='${btnText}']`);
-  if (!btn) return;
+/* =========================
+   SMART ERROR MAPPER
+========================= */
+function getErrorMessage(err) {
+  if (!err) return "Something went wrong";
 
-  btn.disabled = loading;
-  btn.innerText = loading ? "Loading..." : btn.dataset.original;
+  const msg = (err.message || "").toLowerCase();
+
+  // NETWORK ERRORS
+  if (
+    msg.includes("fetch") ||
+    msg.includes("network") ||
+    msg.includes("failed to fetch")
+  ) {
+    return "Network error. Check your connection.";
+  }
+
+  // AUTH ERRORS
+  if (msg.includes("invalid login credentials")) {
+    return "Incorrect email or password.";
+  }
+
+  if (msg.includes("user already registered")) {
+    return "Account already exists.";
+  }
+
+  if (msg.includes("email not confirmed")) {
+    return "Please confirm your email.";
+  }
+
+  if (msg.includes("user not found")) {
+    return "Account does not exist.";
+  }
+
+  return "Something went wrong. Try again.";
 }
 
-/* FORM SWITCH */
+/* =========================
+   FORM VALIDATION
+========================= */
+function validateLogin(email, password) {
+  if (!email || !password) {
+    return "Please fill all fields.";
+  }
+  return null;
+}
+
+function validateSignup(username, email, password, confirm) {
+  if (!username || !email || !password || !confirm) {
+    return "Please fill all fields.";
+  }
+
+  if (password !== confirm) {
+    return "Passwords do not match.";
+  }
+
+  return null;
+}
+
+/* =========================
+   FORM TOGGLE
+========================= */
 window.toggleForm = () => {
   const login = document.getElementById("loginBox");
   const signup = document.getElementById("signupBox");
@@ -18,7 +70,9 @@ window.toggleForm = () => {
   signup.style.display = signup.style.display === "none" ? "block" : "none";
 };
 
-/* PASSWORD TOGGLE */
+/* =========================
+   PASSWORD TOGGLE
+========================= */
 window.togglePassword = (id, el) => {
   const input = document.getElementById(id);
 
@@ -31,49 +85,33 @@ window.togglePassword = (id, el) => {
   }
 };
 
-/* RETRY WRAPPER */
-async function safeRequest(fn, retries = 2) {
-  try {
-    return await fn();
-  } catch (err) {
-    if (retries > 0) {
-      return await safeRequest(fn, retries - 1);
-    }
-    throw err;
-  }
-}
-
-/* LOGIN */
+/* =========================
+   LOGIN
+========================= */
 window.login = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const btn = document.getElementById("loginBtn");
+  const check = validateLogin(email, password);
+  if (check) return alert(check);
 
   try {
-    if (btn) {
-      btn.dataset.original = btn.innerText;
-      setLoading("login", true);
-    }
-
-    await safeRequest(async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      if (error) throw error;
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
 
-    window.location.href = "/dashboard";
+    if (error) throw error;
 
+    window.location.href = "/dashboard";
   } catch (err) {
-    alert("Login failed. Check network and retry.");
-  } finally {
-    setLoading("login", false);
+    alert(getErrorMessage(err));
   }
 };
 
-/* SIGNUP */
+/* =========================
+   SIGNUP
+========================= */
 window.signup = async () => {
   const username = document.getElementById("username").value;
   const email = document.getElementById("s_email").value;
@@ -81,26 +119,23 @@ window.signup = async () => {
   const confirm = document.getElementById("s_confirm").value;
   const usage = document.getElementById("usage").value;
 
-  if (password !== confirm) {
-    return alert("Passwords do not match");
-  }
+  const check = validateSignup(username, email, password, confirm);
+  if (check) return alert(check);
 
   try {
-    await safeRequest(async () => {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { username, usage }
-        }
-      });
-      if (error) throw error;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username, usage }
+      }
     });
+
+    if (error) throw error;
 
     alert("Account created. Please login.");
     toggleForm();
-
   } catch (err) {
-    alert("Signup failed. Retrying may help.");
+    alert(getErrorMessage(err));
   }
 };
