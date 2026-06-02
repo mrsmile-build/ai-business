@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard</title>
+<title>AI Business Dashboard v1.1</title>
 
 <style>
 body{
@@ -14,16 +14,13 @@ body{
   padding:20px;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-}
+.container{max-width:900px;margin:auto;}
 
 .topbar{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:15px;
+  margin-bottom:20px;
 }
 
 .card{
@@ -33,26 +30,19 @@ body{
   margin-top:10px;
 }
 
-input,button{
+button{
   padding:10px;
   border:none;
   border-radius:6px;
-}
-
-input{
-  width:70%;
-}
-
-button{
   background:#2563eb;
   color:white;
   cursor:pointer;
 }
 
 .status{
-  margin-top:10px;
-  font-size:14px;
+  font-size:13px;
   opacity:0.8;
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -62,15 +52,11 @@ button{
 <div class="container">
 
   <div class="topbar">
-    <h2>📊 Dashboard</h2>
+    <h2>📊 Dashboard v1.1</h2>
     <button onclick="logout()">Logout</button>
   </div>
 
-  <input id="userId" placeholder="Enter User ID">
-
-  <button onclick="loadLeads()">Load Leads</button>
-
-  <div class="status" id="status">Idle</div>
+  <div class="status" id="status">Checking session...</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
