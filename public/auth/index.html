@@ -70,7 +70,7 @@ button {
   <!-- LOGIN -->
   <div id="loginBox">
     <input id="loginEmail" type="email" placeholder="Email">
-      <div style="position:relative;"><input id="loginPassword" type="password" placeholder="Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye1">👁️</span>><span onclick="togglePassword('loginPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
+      <div style="position:relative;"><input id="loginPassword" type="password" placeholder="Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye1">👁️</span>><span onclick="togglePassword(this.previousElementSibling.id, this.id)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
 
     <button class="primary" onclick="login()">Login</button>
 
@@ -81,8 +81,8 @@ button {
   <div id="signupBox" style="display:none;">
     <input id="username" type="text" placeholder="Username">
     <input id="signupEmail" type="email" placeholder="Email">
-      <div style="position:relative;"><input id="signupPassword" type="password" placeholder="Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye1">👁️</span>><span onclick="togglePassword('signupPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
-      <div style="position:relative;"><input id="confirmPassword" type="password" placeholder="Confirm Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye2">👁️</span>><span onclick="togglePassword('confirmPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
+      <div style="position:relative;"><input id="signupPassword" type="password" placeholder="Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye1">👁️</span>><span onclick="togglePassword(this.previousElementSibling.id, this.id)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
+      <div style="position:relative;"><input id="confirmPassword" type="password" placeholder="Confirm Password"><span onclick="togglePassword(this.previousElementSibling.id, this.id)" id="eye2">👁️</span>><span onclick="togglePassword(this.previousElementSibling.id, this.id)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
 
     <select id="businessType">
       <option value="">What are you using this for?</option>

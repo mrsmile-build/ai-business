@@ -176,15 +176,9 @@ window.pay = async () => {
 };
 
 /* ---------------- LOGOUT ---------------- */
-window.logout = async () => {
-  await supabase.auth.signOut();
-  window.location.href = "/auth";
-};
-
-window.loadLeads = loadLeads;
-
-init();
-</script>
 
 </body>
 </html>
+<script src="./pay-fix.js"></script>
+<script src="./logout-fix.js"></script>
+<script src="./pay.js"></script>
