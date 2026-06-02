@@ -33,19 +33,29 @@ async function authMiddleware(req, res, next) {
   }
 }
 
+/* ---------------- GET SUBSCRIPTION ---------------- */
+async function getSubscription(user) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  return data || {
+    user_id: user.id,
+    plan: "free",
+    ai_usage: 0,
+    status: "free"
+  };
+}
+
 /* ---------------- AI REPLY ---------------- */
 app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
-    const email = req.user.email;
+    const sub = await getSubscription(req.user);
 
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("email", email)
-      .single();
-
-    const plan = sub?.plan || "free";
-    const usage = sub?.ai_usage || 0;
+    const plan = sub.plan;
+    const usage = sub.ai_usage || 0;
 
     if (plan === "free" && usage >= 5) {
       return res.json({
@@ -57,7 +67,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
     await supabase
       .from("subscriptions")
       .update({ ai_usage: usage + 1 })
-      .eq("email", email);
+      .eq("user_id", req.user.id);
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -131,9 +141,12 @@ app.get("/api/paystack/verify", async (req, res) => {
     if (data?.data?.status === "success") {
       const email = data.data.customer.email;
 
-      await supabase
-        .from("subscriptions")
-        .upsert({
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const user = users.users.find(u => u.email === email);
+
+      if (user) {
+        await supabase.from("subscriptions").upsert({
+          user_id: user.id,
           email,
           plan: "pro",
           status: "active",
@@ -141,16 +154,17 @@ app.get("/api/paystack/verify", async (req, res) => {
           amount_paid: data.data.amount / 100,
           last_payment_date: new Date()
         });
+      }
     }
 
-    res.redirect(`${process.env.BASE_URL}/dashboard?payment=success`);
+    res.redirect(`${process.env.BASE_URL}/dashboard`);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ---------------- START ---------------- */
+/* ---------------- START SERVER ---------------- */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("AI SaaS running on port " + PORT);
