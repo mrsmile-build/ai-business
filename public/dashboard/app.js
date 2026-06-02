@@ -1,14 +1,17 @@
+/* =========================
+   AUTO LOAD DASHBOARD
+========================= */
+
 async function loadLeads() {
-  const userId = document.getElementById("userId").value;
+  const status = document.getElementById("status");
 
-  if (!userId) {
-    alert("Enter User ID");
-    return;
-  }
-
-  document.getElementById("status").innerText = "Loading...";
+  status.innerText = "Loading leads...";
+  status.className = "status loading";
 
   try {
+    // TEMP: using test user until auth layer (v1.3)
+    const userId = "test123";
+
     const res = await fetch(`/api/leads/${userId}`);
     const data = await res.json();
 
@@ -17,8 +20,15 @@ async function loadLeads() {
     document.getElementById("total").innerText =
       "Total Leads: " + leads.length;
 
-    document.getElementById("status").innerText =
-      "Live ✔";
+    if (leads.length === 0) {
+      document.getElementById("leads").innerHTML = `
+        <div class="empty">
+          No leads yet. Share your link to start receiving leads.
+        </div>
+      `;
+      status.innerText = "No data";
+      return;
+    }
 
     document.getElementById("leads").innerHTML =
       leads.map(l => `
@@ -30,8 +40,20 @@ async function loadLeads() {
         </div>
       `).join("");
 
+    status.innerText = "Live ✔";
+    status.className = "status";
+
   } catch (err) {
-    document.getElementById("status").innerText =
-      "Error loading leads ❌";
+    status.innerText = "Network error ❌";
   }
 }
+
+/* =========================
+   AUTO START
+========================= */
+window.addEventListener("load", () => {
+  loadLeads();
+
+  // auto refresh every 15s
+  setInterval(loadLeads, 15000);
+});
