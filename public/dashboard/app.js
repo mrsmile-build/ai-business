@@ -1,11 +1,17 @@
-import { supabase } from "../auth/supabase.js";
+/* =========================
+   INIT SUPABASE
+========================= */
+const supabase = window.supabase.createClient(
+  "https://qewmhaualndadheoaxkm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
+);
 
-let currentUser = null;
+let user = null;
 
 /* =========================
-   INIT AUTH (silent)
+   START
 ========================= */
-async function init() {
+window.addEventListener("load", async () => {
   const { data } = await supabase.auth.getUser();
 
   if (!data?.user) {
@@ -13,19 +19,19 @@ async function init() {
     return;
   }
 
-  currentUser = data.user;
+  user = data.user;
 
   document.getElementById("userBox").innerText =
-    currentUser.email;
+    user.email;
 
   loadLeads();
-}
+});
 
 /* =========================
    LOAD LEADS
 ========================= */
 async function loadLeads() {
-  const res = await fetch(`/api/leads/${currentUser.id}`);
+  const res = await fetch(`/api/leads/${user.id}`);
   const data = await res.json();
 
   const leads = data.leads || [];
@@ -45,11 +51,11 @@ async function loadLeads() {
 }
 
 /* =========================
-   MENU CONTROL
+   MENU
 ========================= */
 window.toggleMenu = () => {
-  const menu = document.getElementById("menu");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
+  const m = document.getElementById("menu");
+  m.style.display = m.style.display === "block" ? "none" : "block";
 };
 
 window.logout = async () => {
@@ -58,10 +64,5 @@ window.logout = async () => {
 };
 
 window.goSettings = () => alert("Settings coming soon");
-window.goAbout = () => alert("AI Business v1 SaaS");
-window.goPolicy = () => alert("Privacy Policy coming soon");
-
-/* =========================
-   START
-========================= */
-init();
+window.goAbout = () => alert("About AI Business");
+window.goPolicy = () => alert("Privacy Policy");

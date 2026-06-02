@@ -23,35 +23,23 @@ body{
   margin-bottom:10px;
 }
 
-.menu{
-  position:relative;
-  display:inline-block;
-}
-
 .menu-btn{
   font-size:22px;
   cursor:pointer;
-  padding:5px 10px;
 }
 
-.menu-content{
+.menu{
   display:none;
   position:absolute;
-  right:0;
+  right:20px;
   background:#1e293b;
   border-radius:8px;
-  overflow:hidden;
-  min-width:160px;
-}
-
-.menu-content div{
   padding:10px;
-  cursor:pointer;
-  border-bottom:1px solid #334155;
 }
 
-.menu-content div:hover{
-  background:#334155;
+.menu div{
+  padding:8px;
+  cursor:pointer;
 }
 
 .card{
@@ -63,8 +51,8 @@ body{
 
 .badge{
   font-size:12px;
-  padding:4px 8px;
   background:#334155;
+  padding:4px 8px;
   border-radius:6px;
 }
 </style>
@@ -76,19 +64,17 @@ body{
 
   <div class="topbar">
     <h2>📊 Dashboard</h2>
-
-    <div class="menu">
-      <div class="menu-btn" onclick="toggleMenu()">☰</div>
-      <div class="menu-content" id="menu">
-        <div onclick="goSettings()">Settings</div>
-        <div onclick="goAbout()">About</div>
-        <div onclick="goPolicy()">Privacy Policy</div>
-        <div onclick="logout()">Logout</div>
-      </div>
-    </div>
+    <div class="menu-btn" onclick="toggleMenu()">☰</div>
   </div>
 
-  <div id="userBox" class="badge"></div>
+  <div class="menu" id="menu">
+    <div onclick="goSettings()">Settings</div>
+    <div onclick="goAbout()">About</div>
+    <div onclick="goPolicy()">Policy</div>
+    <div onclick="logout()">Logout</div>
+  </div>
+
+  <div id="userBox" class="badge">Loading user...</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
@@ -96,6 +82,10 @@ body{
 
 </div>
 
+<!-- 🔥 CRITICAL: SUPABASE CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<!-- your app -->
 <script src="./app.js"></script>
 
 </body>
