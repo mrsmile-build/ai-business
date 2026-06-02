@@ -2,7 +2,6 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const fetch = require("node-fetch");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -34,31 +33,19 @@ async function authMiddleware(req, res, next) {
   }
 }
 
-/* ---------------- GET SUBSCRIPTION SAFE ---------------- */
-async function getSubscription(email) {
-  const { data } = await supabase
-    .from("subscriptions")
-    .select("*")
-    .eq("email", email)
-    .single();
-
-  return data || {
-    email,
-    plan: "free",
-    ai_usage: 0,
-    status: "free"
-  };
-}
-
-/* ---------------- AI REPLY (HARD LOCK SAFE) ---------------- */
+/* ---------------- AI REPLY ---------------- */
 app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
     const email = req.user.email;
 
-    const sub = await getSubscription(email);
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("email", email)
+      .single();
 
-    const plan = sub.plan || "free";
-    const usage = sub.ai_usage || 0;
+    const plan = sub?.plan || "free";
+    const usage = sub?.ai_usage || 0;
 
     if (plan === "free" && usage >= 5) {
       return res.json({
@@ -99,7 +86,33 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   }
 });
 
-/* ---------------- PAYSTACK VERIFY (SAFE + NO FAIL) ---------------- */
+/* ---------------- PAYSTACK INIT ---------------- */
+app.post("/api/paystack/init", authMiddleware, async (req, res) => {
+  try {
+    const { email, amount } = req.body;
+
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        amount: amount * 100,
+        callback_url: `${process.env.BASE_URL}/api/paystack/verify`
+      })
+    });
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- PAYSTACK VERIFY ---------------- */
 app.get("/api/paystack/verify", async (req, res) => {
   try {
     const { reference } = req.query;
@@ -130,40 +143,14 @@ app.get("/api/paystack/verify", async (req, res) => {
         });
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard?payment=success`);
+    res.redirect(`${process.env.BASE_URL}/dashboard?payment=success`);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-/* ---------------- PAYSTACK INIT ---------------- */
-app.post("/api/paystack/init", authMiddleware, async (req, res) => {
-  try {
-    const { email, amount } = req.body;
-
-    const response = await fetch("https://api.paystack.co/transaction/initialize", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        email,
-        amount: amount * 100,
-        callback_url: `${process.env.BASE_URL}/api/paystack/verify`
-      })
-    });
-
-    const data = await response.json();
-    res.json(data);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------------- START SERVER ---------------- */
+/* ---------------- START ---------------- */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("AI SaaS running on port " + PORT);
