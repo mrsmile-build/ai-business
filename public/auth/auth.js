@@ -1,41 +1,12 @@
 import { supabase } from "./supabase.js";
 
-/* CLEAN ERROR MAPPER */
-function cleanError(message) {
-  if (!message) return "Something went wrong";
-
-  const msg = message.toLowerCase();
-
-  if (msg.includes("invalid login credentials")) {
-    return "Wrong email or password";
-  }
-
-  if (msg.includes("user already registered")) {
-    return "Account already exists";
-  }
-
-  if (msg.includes("email not confirmed")) {
-    return "Please confirm your email";
-  }
-
-  if (msg.includes("network")) {
-    return "Network error. Try again";
-  }
-
-  return "Something went wrong. Try again";
-}
-
-/* LOADING */
-function setLoading(btnId, loading, text = "Loading...") {
-  const btn = document.getElementById(btnId);
+/* UI STATE HELPERS */
+function setLoading(btnText, loading) {
+  const btn = document.querySelector(`button[data-role='${btnText}']`);
   if (!btn) return;
 
-  if (!btn.dataset.original) {
-    btn.dataset.original = btn.innerText;
-  }
-
   btn.disabled = loading;
-  btn.innerText = loading ? text : btn.dataset.original;
+  btn.innerText = loading ? "Loading..." : btn.dataset.original;
 }
 
 /* FORM SWITCH */
@@ -60,27 +31,45 @@ window.togglePassword = (id, el) => {
   }
 };
 
+/* RETRY WRAPPER */
+async function safeRequest(fn, retries = 2) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (retries > 0) {
+      return await safeRequest(fn, retries - 1);
+    }
+    throw err;
+  }
+}
+
 /* LOGIN */
 window.login = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  setLoading("loginBtn", true);
+  const btn = document.getElementById("loginBtn");
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    if (btn) {
+      btn.dataset.original = btn.innerText;
+      setLoading("login", true);
+    }
 
-    if (error) throw error;
+    await safeRequest(async () => {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
+    });
 
     window.location.href = "/dashboard";
 
   } catch (err) {
-    alert(cleanError(err.message));
+    alert("Login failed. Check network and retry.");
   } finally {
-    setLoading("loginBtn", false);
+    setLoading("login", false);
   }
 };
 
@@ -96,25 +85,22 @@ window.signup = async () => {
     return alert("Passwords do not match");
   }
 
-  setLoading("signupBtn", true);
-
   try {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { username, usage }
-      }
+    await safeRequest(async () => {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { username, usage }
+        }
+      });
+      if (error) throw error;
     });
-
-    if (error) throw error;
 
     alert("Account created. Please login.");
     toggleForm();
 
   } catch (err) {
-    alert(cleanError(err.message));
-  } finally {
-    setLoading("signupBtn", false);
+    alert("Signup failed. Retrying may help.");
   }
 };
