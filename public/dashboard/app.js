@@ -1,32 +1,48 @@
+/* =========================
+   LOAD LEADS
+========================= */
 async function loadLeads() {
-  const user_id = document.getElementById("userId").value;
+  const userId = document.getElementById("userId").value;
 
-  document.getElementById("status").innerText = "Status: Loading...";
+  if (!userId) {
+    alert("Enter User ID");
+    return;
+  }
+
+  document.getElementById("status").innerText = "Loading...";
 
   try {
-    const res = await fetch(`/api/leads/${user_id}`);
+    const res = await fetch(`/api/leads/${userId}`);
     const data = await res.json();
 
     const leads = data.leads || [];
 
-    document.getElementById("total").innerText = "Total Leads: " + leads.length;
-    document.getElementById("status").innerText = "Status: Live ✔";
+    document.getElementById("total").innerText =
+      "Total Leads: " + leads.length;
 
-    document.getElementById("leads").innerHTML = leads.map(lead => `
-      <div class="card">
-        <h3>${lead.name}</h3>
-        <p>${lead.phone}</p>
-        <p>${lead.message}</p>
-        <p>${lead.ai_reply || "Not generated yet"}</p>
-      </div>
-    `).join("");
+    document.getElementById("status").innerText =
+      "Live ✔";
+
+    document.getElementById("leads").innerHTML =
+      leads.map(lead => `
+        <div class="card">
+          <b>${lead.name || "Unknown"}</b><br/>
+          <small>${lead.phone || ""}</small>
+          <p>${lead.message || ""}</p>
+          <p>🤖 ${lead.ai_reply || "Pending"}</p>
+        </div>
+      `).join("");
 
   } catch (err) {
-    document.getElementById("status").innerText = "Status: Error ❌";
+    document.getElementById("status").innerText =
+      "Error loading leads ❌";
   }
 }
 
-setInterval(() => {
-  const user_id = document.getElementById("userId").value;
-  if (user_id) loadLeads();
-}, 10000);
+/* =========================
+   LOGOUT (BASIC)
+========================= */
+function logout() {
+  localStorage.clear();
+  window.location.href = "/";
+}
