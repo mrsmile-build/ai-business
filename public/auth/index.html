@@ -70,7 +70,7 @@ button {
   <!-- LOGIN -->
   <div id="loginBox">
     <input id="loginEmail" type="email" placeholder="Email">
-    <input id="loginPassword" type="password" placeholder="Password">
+      <div style="position:relative;"><input id="loginPassword" type="password" placeholder="Password"><span onclick="togglePassword('loginPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
 
     <button class="primary" onclick="login()">Login</button>
 
@@ -81,8 +81,8 @@ button {
   <div id="signupBox" style="display:none;">
     <input id="username" type="text" placeholder="Username">
     <input id="signupEmail" type="email" placeholder="Email">
-    <input id="signupPassword" type="password" placeholder="Password">
-    <input id="confirmPassword" type="password" placeholder="Confirm Password">
+      <div style="position:relative;"><input id="signupPassword" type="password" placeholder="Password"><span onclick="togglePassword('signupPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
+      <div style="position:relative;"><input id="confirmPassword" type="password" placeholder="Confirm Password"><span onclick="togglePassword('confirmPassword', this)" style="position:absolute;right:10px;top:10px;cursor:pointer;">👁️</span></div>
 
     <select id="businessType">
       <option value="">What are you using this for?</option>
@@ -145,6 +145,17 @@ window.signup = async () => {
   alert("Account created! Please login.");
   showLogin();
 };
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+  if (input.type === "password") {
+    input.type = "text";
+    el.innerHTML = "🙈";
+  } else {
+    input.type = "password";
+    el.innerHTML = "👁️";
+  }
+}
+
 </script>
 
 </body>
