@@ -169,3 +169,80 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("AI SaaS running on port " + PORT);
 });
+
+/* ---------------- USER STATE (MASTER API) ---------------- */
+app.get("/api/me", authMiddleware, async (req, res) => {
+  try {
+    const user = req.user;
+
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email
+      },
+      subscription: data || {
+        plan: "free",
+        ai_usage: 0,
+        status: "free"
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- PAYSTACK AUTO UPGRADE ---------------- */
+app.get("/api/paystack/verify", async (req, res) => {
+  try {
+    const { reference } = req.query;
+
+    const response = await fetch(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (data?.data?.status === "success") {
+      const email = data.data.customer.email;
+      const amount = data.data.amount / 100;
+
+      // find user
+      const { data: users } = await supabase.auth.admin.listUsers();
+
+      const user = users.users.find(u => u.email === email);
+
+      if (user) {
+        await supabase
+          .from("subscriptions")
+          .upsert({
+            user_id: user.id,
+            plan: "pro",
+            status: "active",
+            amount_paid: amount,
+            last_payment_date: new Date()
+          });
+      }
+
+      return res.redirect("/dashboard?payment=success");
+    }
+
+    res.redirect("/dashboard?payment=failed");
+
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+

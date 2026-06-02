@@ -5,145 +5,59 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
-    body {
-      margin:0;
-      font-family: Arial;
-      background:#0b1220;
-      color:#e5e7eb;
-    }
-
-    .topbar {
-      background:#111827;
-      padding:15px 20px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border-bottom:1px solid #1f2937;
-    }
-
-    .logo {
-      font-weight:bold;
-      color:#38bdf8;
-    }
-
-    .container {
-      padding:20px;
-    }
-
-    .grid {
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap:15px;
-    }
-
-    .card {
-      background:#111827;
-      padding:15px;
-      border-radius:12px;
-      border:1px solid #1f2937;
-    }
-
-    .btn {
-      padding:10px 14px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-    }
-
-    .primary {
-      background:#38bdf8;
-      color:black;
-      font-weight:bold;
-    }
-
-    .danger {
-      background:#ef4444;
-      color:white;
-    }
-
-    .upgrade {
-      background:linear-gradient(90deg,#fbbf24,#f59e0b);
-      color:black;
-      font-weight:bold;
-    }
-
-    /* MODAL */
-    .modal {
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background:rgba(0,0,0,0.7);
-    }
-
-    .modal-box {
-      background:#111827;
-      color:white;
-      width:320px;
-      margin:120px auto;
-      padding:20px;
-      border-radius:12px;
-      text-align:center;
-      border:1px solid #1f2937;
-    }
-
-    .badge {
-      display:inline-block;
-      padding:4px 10px;
-      background:#1f2937;
-      border-radius:20px;
-      font-size:12px;
-    }
+    body { margin:0; font-family: Arial; background:#0b1220; color:#e5e7eb; }
+    .topbar { background:#111827; padding:15px; display:flex; justify-content:space-between; }
+    .card { background:#111827; padding:15px; margin:10px; border-radius:10px; }
+    .btn { padding:10px; border:none; border-radius:8px; cursor:pointer; }
+    .primary { background:#38bdf8; }
+    .danger { background:#ef4444; color:white; }
   </style>
 </head>
 
 <body>
 
 <div class="topbar">
-  <div class="logo">⚡ AI Business SaaS</div>
+  <div>⚡ AI Business</div>
   <div>
-    <span id="planBadge" class="badge">FREE</span>
+    <span id="planBadge">FREE</span>
     <button class="btn danger" onclick="logout()">Logout</button>
   </div>
 </div>
 
-<div class="container">
-
-  <div style="margin-bottom:15px;">
-    <button class="btn primary" onclick="loadLeads()">Refresh Leads</button>
-    <button class="btn upgrade" onclick="showUpgrade()">Upgrade Pro</button>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <h3>📊 Leads</h3>
-      <div id="leads"></div>
-    </div>
-
-    <div class="card">
-      <h3>🧠 AI Usage</h3>
-      <p id="usage">0</p>
-    </div>
-
-    <div class="card">
-      <h3>💰 Revenue</h3>
-      <p>Coming soon</p>
-    </div>
-  </div>
-
+<div class="card">
+  <button class="btn primary" onclick="loadLeads()">Refresh Leads</button>
+  <button class="btn primary" onclick="openUpgrade()">Upgrade</button>
 </div>
 
-<!-- MODAL -->
-<div class="modal" id="modal">
-  <div class="modal-box">
-    <h2>💎 Upgrade to Pro</h2>
-    <p>Unlimited AI replies + full automation</p>
-    <h2>₦2000/month</h2>
+<div class="card">
+  <h3>📊 Leads</h3>
+  <div id="leads"></div>
+</div>
 
-    <button class="btn primary" onclick="payNow()">Pay with Paystack</button>
-    <br><br>
+<div class="card">
+  <h3>🧠 AI Usage</h3>
+  <p id="usage">0</p>
+</div>
+
+<div class="card">
+  <h3>💰 Revenue</h3>
+  <p id="revenue">₦0</p>
+</div>
+
+<!-- UPGRADE MODAL -->
+<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black;">
+  <div style="background:#111827; padding:20px; margin:100px auto; width:320px; border-radius:10px;">
+    <h2>Upgrade Pro</h2>
+
+    <label>Select Currency</label><br>
+    <select id="currency">
+      <option value="NGN">NGN (₦)</option>
+      <option value="USD">USD ($)</option>
+    </select>
+
+    <h3 id="priceText">₦5000/month</h3>
+
+    <button class="btn primary" onclick="pay()">Pay Now</button>
     <button class="btn danger" onclick="closeModal()">Cancel</button>
   </div>
 </div>
@@ -152,8 +66,7 @@
 import { supabase } from "../auth/supabase.js";
 
 let currentUser;
-let currentPlan = "free";
-let aiUsage = 0;
+let currency = "NGN";
 
 /* ---------------- INIT ---------------- */
 async function init() {
@@ -166,26 +79,43 @@ async function init() {
 
   currentUser = user;
 
+  await syncUserState();
+  loadLeads(user.id);
+}
+
+/* ---------------- SYNC USER ---------------- */
+async function syncUserState() {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session.access_token;
+
   const res = await fetch("/api/me", {
     headers: {
-      Authorization: "Bearer " + (await supabase.auth.getSession()).data.session.access_token
+      Authorization: "Bearer " + token
     }
   });
 
   const data = await res.json();
 
-  currentPlan = data.subscription.plan;
-  aiUsage = data.subscription.ai_usage || 0;
+  if (!data.subscription) return;
 
-  document.getElementById("planBadge").innerText = currentPlan.toUpperCase();
-  document.getElementById("usage").innerText = aiUsage;
+  document.getElementById("planBadge").innerText =
+    data.subscription.plan.toUpperCase();
 
-  loadLeads(user.id);
+  document.getElementById("usage").innerText =
+    data.subscription.ai_usage || 0;
+
+  window.userState = data;
 }
 
 /* ---------------- LEADS ---------------- */
 async function loadLeads(userId) {
-  const res = await fetch(`/api/leads/${userId}`);
+  const session = await supabase.auth.getSession();
+  const token = session.data.session.access_token;
+
+  const res = await fetch(`/api/leads/${userId}`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
   const data = await res.json();
 
   const container = document.getElementById("leads");
@@ -193,15 +123,13 @@ async function loadLeads(userId) {
 
   (data.leads || []).forEach(l => {
     const div = document.createElement("div");
-    div.innerHTML = `
-      <p><b>${l.name}</b><br>${l.message}</p>
-    `;
+    div.innerHTML = `<p><b>${l.name}</b><br>${l.message}</p>`;
     container.appendChild(div);
   });
 }
 
-/* ---------------- UI ---------------- */
-window.showUpgrade = () => {
+/* ---------------- UPGRADE SYSTEM ---------------- */
+window.openUpgrade = () => {
   document.getElementById("modal").style.display = "block";
 };
 
@@ -209,17 +137,32 @@ window.closeModal = () => {
   document.getElementById("modal").style.display = "none";
 };
 
+document.getElementById("currency").onchange = (e) => {
+  currency = e.target.value;
+
+  if (currency === "NGN") {
+    document.getElementById("priceText").innerText = "₦5000/month";
+  } else {
+    document.getElementById("priceText").innerText = "$5/month";
+  }
+};
+
 /* ---------------- PAYSTACK ---------------- */
-window.payNow = async () => {
+window.pay = async () => {
+  const session = await supabase.getSession();
+
+  const amount = currency === "NGN" ? 5000 : 5;
+
   const res = await fetch("/api/paystack/init", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": "Bearer " + (await supabase.getSession()).data.session.access_token
+      Authorization: "Bearer " + session.data.session.access_token
     },
     body: JSON.stringify({
       email: currentUser.email,
-      amount: 2000
+      amount,
+      currency
     })
   });
 
