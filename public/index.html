@@ -1,180 +1,164 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>AI Business Lead System</title>
+  <title>AI Business SaaS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body {
+      margin:0;
       font-family: Arial;
-      background: #0f172a;
-      color: white;
-      display: flex;
-      justify-content: center;
-      padding: 20px;
+      background:#0b1220;
+      color:white;
     }
 
-    .box {
-      width: 100%;
-      max-width: 420px;
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 12px;
+    .hero {
+      text-align:center;
+      padding:80px 20px;
+      background: radial-gradient(circle at top, #1e3a8a, #0b1220);
     }
 
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 6px;
+    .hero h1 {
+      font-size:42px;
+      margin-bottom:10px;
     }
 
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #22c55e;
-      border: none;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      border-radius: 6px;
+    .hero p {
+      font-size:18px;
+      color:#cbd5e1;
+      max-width:600px;
+      margin:auto;
     }
 
-    button:disabled {
-      background: gray;
-      cursor: not-allowed;
+    .btn {
+      margin-top:20px;
+      padding:12px 20px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:bold;
     }
 
-    .status {
-      margin-top: 10px;
-      font-size: 14px;
+    .primary {
+      background:#38bdf8;
+      color:black;
     }
 
-    .offline {
-      background: #dc2626;
-      padding: 6px;
-      border-radius: 6px;
-      text-align: center;
-      margin-bottom: 10px;
+    .section {
+      padding:50px 20px;
+      text-align:center;
     }
 
-    a {
-      color: #60a5fa;
-      display: block;
-      margin-top: 10px;
-      text-align: center;
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap:15px;
+      max-width:1000px;
+      margin:auto;
+    }
+
+    .card {
+      background:#111827;
+      padding:20px;
+      border-radius:12px;
+      border:1px solid #1f2937;
+    }
+
+    .pricing {
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:20px;
+      margin-top:20px;
+    }
+
+    .price-card {
+      background:#111827;
+      padding:20px;
+      width:250px;
+      border-radius:12px;
+      border:1px solid #1f2937;
+    }
+
+    .highlight {
+      border:2px solid #38bdf8;
+    }
+
+    .cta {
+      background:#38bdf8;
+      color:black;
+      padding:10px;
+      border-radius:8px;
+      display:inline-block;
+      margin-top:10px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .small {
+      color:#94a3b8;
+      font-size:14px;
     }
   </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="hero">
+  <h1>🚀 AI Business CRM</h1>
+  <p>
+    Automate your business with AI. Capture leads, reply instantly, and increase sales without stress.
+  </p>
 
-  <div id="netStatus"></div>
+  <button class="btn primary" onclick="location.href='/auth'">
+    Start Free Now
+  </button>
 
-  <h2>AI Business Lead Form</h2>
-
-  <input id="name" placeholder="Name" />
-  <input id="phone" placeholder="Phone" />
-  <textarea id="message" placeholder="Message"></textarea>
-  <input id="user_id" placeholder="User ID" />
-
-  <button id="btn" onclick="submitLead()">Send Lead</button>
-
-  <div class="status" id="status"></div>
-
-  <a href="/dashboard.html">Go to Dashboard</a>
+  <p class="small">No credit card required • Setup in 2 minutes</p>
 </div>
 
-<script>
+<div class="section">
+  <h2>⚡ Why Businesses Love This</h2>
 
-let isOnline = navigator.onLine;
-const statusBox = document.getElementById("netStatus");
-const btn = document.getElementById("btn");
+  <div class="grid">
+    <div class="card">📩 Auto reply to customers instantly</div>
+    <div class="card">📊 Manage all leads in one dashboard</div>
+    <div class="card">🧠 AI writes sales messages for you</div>
+    <div class="card">💰 Helps you close more deals faster</div>
+  </div>
+</div>
 
-function updateNetwork() {
-  isOnline = navigator.onLine;
+<div class="section">
+  <h2>💎 Pricing</h2>
 
-  if (!isOnline) {
-    statusBox.innerHTML = "<div class='offline'>⚠ No Internet Connection</div>";
-    btn.disabled = true;
-  } else {
-    statusBox.innerHTML = "";
-    btn.disabled = false;
-  }
-}
+  <div class="pricing">
 
-window.addEventListener("online", updateNetwork);
-window.addEventListener("offline", updateNetwork);
+    <div class="price-card">
+      <h3>Free</h3>
+      <p>5 AI replies/day</p>
+      <p>Basic CRM</p>
+      <h2>₦0</h2>
+      <div class="cta" onclick="location.href='/auth'">Get Started</div>
+    </div>
 
-updateNetwork();
+    <div class="price-card highlight">
+      <h3>Pro 🔥</h3>
+      <p>Unlimited AI replies</p>
+      <p>Automation tools</p>
+      <p>Priority support</p>
+      <h2>₦2000/month</h2>
+      <div class="cta" onclick="location.href='/auth'">Upgrade Now</div>
+    </div>
 
-async function submitLead() {
-  const status = document.getElementById("status");
+  </div>
+</div>
 
-  const data = {
-    name: document.getElementById("name").value,
-    phone: document.getElementById("phone").value,
-    message: document.getElementById("message").value,
-    user_id: document.getElementById("user_id").value
-  };
-
-  btn.disabled = true;
-  status.innerText = "Sending... ⏳";
-
-  try {
-    const res = await fetch("/api/lead", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    const result = await res.json();
-
-    if (result.success) {
-      status.innerText = "Lead Sent ✅";
-    } else {
-      status.innerText = "Failed to send. Will retry...";
-      retrySubmit(data, 3);
-    }
-
-  } catch (err) {
-    status.innerText = "Network error. Retrying...";
-    retrySubmit(data, 3);
-  }
-
-  btn.disabled = false;
-}
-
-async function retrySubmit(data, times) {
-  for (let i = 0; i < times; i++) {
-    if (navigator.onLine) {
-      try {
-        const res = await fetch("/api/lead", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        const result = await res.json();
-
-        if (result.success) {
-          document.getElementById("status").innerText = "Lead Sent (Auto Retry) ✅";
-          return;
-        }
-      } catch (e) {}
-    }
-
-    await new Promise(r => setTimeout(r, 3000));
-  }
-
-  document.getElementById("status").innerText =
-    "Failed after retries. Will try again when network returns.";
-}
-
-</script>
+<div class="section">
+  <h2>🚀 Built for real businesses</h2>
+  <p class="small">
+    Stop replying manually. Let AI handle your customers while you focus on growth.
+  </p>
+</div>
 
 </body>
 </html>

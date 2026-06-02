@@ -2,48 +2,160 @@
 <html>
 <head>
   <title>AI Business Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body { font-family: Arial; padding: 20px; background: #f4f4f4; }
-    h1 { color: #333; }
-    .lead { background: white; padding: 10px; margin: 10px 0; border-radius: 8px; }
+    body {
+      margin:0;
+      font-family: Arial;
+      background:#0b1220;
+      color:#e5e7eb;
+    }
+
+    .topbar {
+      background:#111827;
+      padding:15px 20px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid #1f2937;
+    }
+
+    .logo {
+      font-weight:bold;
+      color:#38bdf8;
+    }
+
+    .container {
+      padding:20px;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap:15px;
+    }
+
+    .card {
+      background:#111827;
+      padding:15px;
+      border-radius:12px;
+      border:1px solid #1f2937;
+    }
+
+    .btn {
+      padding:10px 14px;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+    }
+
+    .primary {
+      background:#38bdf8;
+      color:black;
+      font-weight:bold;
+    }
+
+    .danger {
+      background:#ef4444;
+      color:white;
+    }
+
+    .upgrade {
+      background:linear-gradient(90deg,#fbbf24,#f59e0b);
+      color:black;
+      font-weight:bold;
+    }
+
+    /* MODAL */
+    .modal {
+      display:none;
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.7);
+    }
+
+    .modal-box {
+      background:#111827;
+      color:white;
+      width:320px;
+      margin:120px auto;
+      padding:20px;
+      border-radius:12px;
+      text-align:center;
+      border:1px solid #1f2937;
+    }
+
+    .badge {
+      display:inline-block;
+      padding:4px 10px;
+      background:#1f2937;
+      border-radius:20px;
+      font-size:12px;
+    }
   </style>
 </head>
+
 <body>
 
-<h1>📊 Business Leads Dashboard</h1>
+<div class="topbar">
+  <div class="logo">⚡ AI Business SaaS</div>
+  <div>
+    <span id="planBadge" class="badge">FREE</span>
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>
+</div>
 
-<button onclick="loadLeads()">Refresh Leads</button>
+<div class="container">
 
-<div id="leads"></div>
+  <div style="margin-bottom:15px;">
+    <button class="btn primary" onclick="loadLeads()">Refresh Leads</button>
+    <button class="btn upgrade" onclick="showUpgrade()">Upgrade Pro</button>
+  </div>
 
+  <div class="grid">
+    <div class="card">
+      <h3>📊 Leads</h3>
+      <div id="leads"></div>
+    </div>
 
-</body>
-</html>
+    <div class="card">
+      <h3>🧠 AI Usage</h3>
+      <p id="usage">0</p>
+    </div>
 
+    <div class="card">
+      <h3>💰 Revenue</h3>
+      <p>Coming soon</p>
+    </div>
+  </div>
 
+</div>
 
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <h2>💎 Upgrade to Pro</h2>
+    <p>Unlimited AI replies + full automation</p>
+    <h2>₦2000/month</h2>
 
-<button onclick="logout()">Logout</button>
-
-
-
+    <button class="btn primary" onclick="payNow()">Pay with Paystack</button>
+    <br><br>
+    <button class="btn danger" onclick="closeModal()">Cancel</button>
+  </div>
+</div>
 
 <script type="module">
 import { supabase } from "../auth/supabase.js";
 
-  if (!ok) return;
+let currentUser;
+let currentPlan = "free";
+let aiUsage = 0;
 
-  await supabase.auth.signOut();
-  localStorage.clear();
-  window.location.href = "/auth";
-};
-
-</script>
-
-
-<script type="module">
-import { supabase } from "../auth/supabase.js";
-
+/* ---------------- INIT ---------------- */
 async function init() {
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -52,42 +164,84 @@ async function init() {
     return;
   }
 
-  const el = document.getElementById("userDisplay");
-  if (el) el.innerText = user.email;
+  currentUser = user;
+
+  const res = await fetch("/api/me", {
+    headers: {
+      Authorization: "Bearer " + (await supabase.auth.getSession()).data.session.access_token
+    }
+  });
+
+  const data = await res.json();
+
+  currentPlan = data.subscription.plan;
+  aiUsage = data.subscription.ai_usage || 0;
+
+  document.getElementById("planBadge").innerText = currentPlan.toUpperCase();
+  document.getElementById("usage").innerText = aiUsage;
 
   loadLeads(user.id);
 }
 
+/* ---------------- LEADS ---------------- */
 async function loadLeads(userId) {
   const res = await fetch(`/api/leads/${userId}`);
   const data = await res.json();
 
   const container = document.getElementById("leads");
-  if (!container) return;
-
   container.innerHTML = "";
 
-  (data.leads || []).forEach(lead => {
+  (data.leads || []).forEach(l => {
     const div = document.createElement("div");
-    div.className = "lead";
     div.innerHTML = `
-      <b>Name:</b> ${lead.name}<br>
-      <b>Phone:</b> ${lead.phone}<br>
-      <b>Message:</b> ${lead.message}
+      <p><b>${l.name}</b><br>${l.message}</p>
     `;
     container.appendChild(div);
   });
 }
 
-window.logout = async function () {
-  const ok = confirm("Are you sure you want to logout?");
-  if (!ok) return;
+/* ---------------- UI ---------------- */
+window.showUpgrade = () => {
+  document.getElementById("modal").style.display = "block";
+};
 
+window.closeModal = () => {
+  document.getElementById("modal").style.display = "none";
+};
+
+/* ---------------- PAYSTACK ---------------- */
+window.payNow = async () => {
+  const res = await fetch("/api/paystack/init", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + (await supabase.getSession()).data.session.access_token
+    },
+    body: JSON.stringify({
+      email: currentUser.email,
+      amount: 2000
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.data?.authorization_url) {
+    window.location.href = data.data.authorization_url;
+  } else {
+    alert("Payment failed");
+  }
+};
+
+/* ---------------- LOGOUT ---------------- */
+window.logout = async () => {
   await supabase.auth.signOut();
-  localStorage.clear();
   window.location.href = "/auth";
 };
+
+window.loadLeads = loadLeads;
 
 init();
 </script>
 
+</body>
+</html>

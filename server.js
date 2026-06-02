@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const fetch = require("node-fetch");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
@@ -10,122 +11,66 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
-// Supabase connection
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
-// Health check
-app.get("/api/status", (req, res) => {
-  res.json({
-    success: true,
-    message: "AI Business SaaS Backend Running"
-  });
-});
-
-// CREATE LEAD (STORE IN SUPABASE)
-app.post("/api/lead", authMiddleware, async (req, res) => {
-app.post
+/* ---------------- AUTH ---------------- */
+async function authMiddleware(req, res, next) {
   try {
-    const { name, phone, message, user_id } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) return res.status(401).json({ error: "No token" });
 
-    const { data, error } = await supabase
-      .from("leads")
-      .insert([{ name, phone, message, user_id }])
-      .select();
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data.user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
 
-    if (error) throw error;
-
-    const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY_1}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: "You are a business assistant that replies to customer leads." },
-          { role: "user", content: message }
-        ]
-      })
-    });
-
-    const aiData = await aiResponse.json();
-    const aiReply = aiData.choices?.[0]?.message?.content || "No reply";
-
-    await supabase
-      .from("leads")
-      .update({ ai_reply: aiReply })
-      .eq("id", data[0].id);
-
-    res.json({ success: true, lead: data[0], ai_reply: aiReply });
-
+    req.user = data.user;
+    next();
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
-});
+}
 
-// GET ALL LEADS (FROM SUPABASE)
-app.get("/api/leads", authMiddleware, async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("id", { ascending: false });
+/* ---------------- GET SUBSCRIPTION SAFE ---------------- */
+async function getSubscription(email) {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("email", email)
+    .single();
 
-    if (error) throw error;
+  return data || {
+    email,
+    plan: "free",
+    ai_usage: 0,
+    status: "free"
+  };
+}
 
-    res.json({
-      success: true,
-      leads: data
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-
-// GET LEADS FOR ONE USER
-app.get("/api/leads/:user_id", authMiddleware, async (req, res) => {
-  try {
-    const user_id = req.params.user_id;
-
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("user_id", user_id)
-      .order("id", { ascending: false });
-
-    if (error) throw error;
-
-    res.json({
-      success: true,
-      leads: data
-    });
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log("AI Business Server running on port " + PORT);
-});
-
+/* ---------------- AI REPLY (HARD LOCK SAFE) ---------------- */
 app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
-    const { message } = req.body;
+    const email = req.user.email;
+
+    const sub = await getSubscription(email);
+
+    const plan = sub.plan || "free";
+    const usage = sub.ai_usage || 0;
+
+    if (plan === "free" && usage >= 5) {
+      return res.json({
+        success: false,
+        reply: "🚫 Free limit reached. Upgrade to Pro."
+      });
+    }
+
+    await supabase
+      .from("subscriptions")
+      .update({ ai_usage: usage + 1 })
+      .eq("email", email);
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -136,14 +81,8 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          {
-            role: "system",
-            content: "You are a helpful business assistant that replies to customer messages professionally."
-          },
-          {
-            role: "user",
-            content: message
-          }
+          { role: "system", content: "You are a business assistant." },
+          { role: "user", content: req.body.message }
         ]
       })
     });
@@ -152,37 +91,80 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      reply: data.choices?.[0]?.message?.content || "No response from AI"
+      reply: data.choices?.[0]?.message?.content
     });
-
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      error: err.message
-    });
-  }
-});
-
-
-async function authMiddleware(req, res, next) {
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-
-    if (!token) {
-      return res.status(401).json({ error: "No token provided" });
-    }
-
-    const { data, error } = await supabase.auth.getUser(token);
-
-    if (error || !data.user) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    req.user = data.user;
-    next();
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+});
 
+/* ---------------- PAYSTACK VERIFY (SAFE + NO FAIL) ---------------- */
+app.get("/api/paystack/verify", async (req, res) => {
+  try {
+    const { reference } = req.query;
+
+    const response = await fetch(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (data?.data?.status === "success") {
+      const email = data.data.customer.email;
+
+      await supabase
+        .from("subscriptions")
+        .upsert({
+          email,
+          plan: "pro",
+          status: "active",
+          ai_usage: 0,
+          amount_paid: data.data.amount / 100,
+          last_payment_date: new Date()
+        });
+    }
+
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?payment=success`);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- PAYSTACK INIT ---------------- */
+app.post("/api/paystack/init", authMiddleware, async (req, res) => {
+  try {
+    const { email, amount } = req.body;
+
+    const response = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email,
+        amount: amount * 100,
+        callback_url: `${process.env.BASE_URL}/api/paystack/verify`
+      })
+    });
+
+    const data = await response.json();
+    res.json(data);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- START SERVER ---------------- */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("AI SaaS running on port " + PORT);
+});
