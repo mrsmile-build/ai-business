@@ -1,18 +1,32 @@
+import { supabase } from "../auth/supabase.js";
+
+let currentUser = null;
+
 /* =========================
-   AUTO LOAD DASHBOARD
+   AUTH CHECK
 ========================= */
+async function initAuth() {
+  const { data } = await supabase.auth.getUser();
 
+  if (!data || !data.user) {
+    window.location.href = "/auth";
+    return;
+  }
+
+  currentUser = data.user;
+
+  document.getElementById("userBox").innerText =
+    "Logged in: " + currentUser.email;
+
+  loadLeads();
+}
+
+/* =========================
+   LOAD LEADS
+========================= */
 async function loadLeads() {
-  const status = document.getElementById("status");
-
-  status.innerText = "Loading leads...";
-  status.className = "status loading";
-
   try {
-    // TEMP: using test user until auth layer (v1.3)
-    const userId = "test123";
-
-    const res = await fetch(`/api/leads/${userId}`);
+    const res = await fetch(`/api/leads/${currentUser.id}`);
     const data = await res.json();
 
     const leads = data.leads || [];
@@ -21,12 +35,8 @@ async function loadLeads() {
       "Total Leads: " + leads.length;
 
     if (leads.length === 0) {
-      document.getElementById("leads").innerHTML = `
-        <div class="empty">
-          No leads yet. Share your link to start receiving leads.
-        </div>
-      `;
-      status.innerText = "No data";
+      document.getElementById("leads").innerHTML =
+        "<div class='card'>No leads yet</div>";
       return;
     }
 
@@ -40,20 +50,21 @@ async function loadLeads() {
         </div>
       `).join("");
 
-    status.innerText = "Live ✔";
-    status.className = "status";
-
   } catch (err) {
-    status.innerText = "Network error ❌";
+    document.getElementById("leads").innerHTML =
+      "<div class='card'>Error loading leads</div>";
   }
 }
 
 /* =========================
-   AUTO START
+   LOGOUT
 ========================= */
-window.addEventListener("load", () => {
-  loadLeads();
+window.logout = async () => {
+  await supabase.auth.signOut();
+  window.location.href = "/auth";
+};
 
-  // auto refresh every 15s
-  setInterval(loadLeads, 15000);
-});
+/* =========================
+   START
+========================= */
+initAuth();
