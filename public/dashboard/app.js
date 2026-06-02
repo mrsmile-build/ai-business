@@ -3,12 +3,12 @@ import { supabase } from "../auth/supabase.js";
 let currentUser = null;
 
 /* =========================
-   AUTH CHECK
+   INIT AUTH (silent)
 ========================= */
-async function initAuth() {
+async function init() {
   const { data } = await supabase.auth.getUser();
 
-  if (!data || !data.user) {
+  if (!data?.user) {
     window.location.href = "/auth";
     return;
   }
@@ -16,7 +16,7 @@ async function initAuth() {
   currentUser = data.user;
 
   document.getElementById("userBox").innerText =
-    "Logged in: " + currentUser.email;
+    currentUser.email;
 
   loadLeads();
 }
@@ -25,46 +25,43 @@ async function initAuth() {
    LOAD LEADS
 ========================= */
 async function loadLeads() {
-  try {
-    const res = await fetch(`/api/leads/${currentUser.id}`);
-    const data = await res.json();
+  const res = await fetch(`/api/leads/${currentUser.id}`);
+  const data = await res.json();
 
-    const leads = data.leads || [];
+  const leads = data.leads || [];
 
-    document.getElementById("total").innerText =
-      "Total Leads: " + leads.length;
+  document.getElementById("total").innerText =
+    "Total Leads: " + leads.length;
 
-    if (leads.length === 0) {
-      document.getElementById("leads").innerHTML =
-        "<div class='card'>No leads yet</div>";
-      return;
-    }
-
-    document.getElementById("leads").innerHTML =
-      leads.map(l => `
-        <div class="card">
-          <b>${l.name || "Unknown"}</b><br/>
-          <small>${l.phone || ""}</small>
-          <p>${l.message || ""}</p>
-          <p>🤖 ${l.ai_reply || "Pending"}</p>
-        </div>
-      `).join("");
-
-  } catch (err) {
-    document.getElementById("leads").innerHTML =
-      "<div class='card'>Error loading leads</div>";
-  }
+  document.getElementById("leads").innerHTML =
+    leads.map(l => `
+      <div class="card">
+        <b>${l.name || "Unknown"}</b><br/>
+        <small>${l.phone || ""}</small>
+        <p>${l.message || ""}</p>
+        <p>🤖 ${l.ai_reply || "Pending"}</p>
+      </div>
+    `).join("");
 }
 
 /* =========================
-   LOGOUT
+   MENU CONTROL
 ========================= */
+window.toggleMenu = () => {
+  const menu = document.getElementById("menu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+};
+
 window.logout = async () => {
   await supabase.auth.signOut();
   window.location.href = "/auth";
 };
 
+window.goSettings = () => alert("Settings coming soon");
+window.goAbout = () => alert("AI Business v1 SaaS");
+window.goPolicy = () => alert("Privacy Policy coming soon");
+
 /* =========================
    START
 ========================= */
-initAuth();
+init();

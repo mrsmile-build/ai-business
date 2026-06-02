@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard v1.3</title>
+<title>AI Business Dashboard</title>
 
 <style>
 body{
@@ -16,6 +16,44 @@ body{
 
 .container{max-width:900px;margin:auto;}
 
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.menu{
+  position:relative;
+  display:inline-block;
+}
+
+.menu-btn{
+  font-size:22px;
+  cursor:pointer;
+  padding:5px 10px;
+}
+
+.menu-content{
+  display:none;
+  position:absolute;
+  right:0;
+  background:#1e293b;
+  border-radius:8px;
+  overflow:hidden;
+  min-width:160px;
+}
+
+.menu-content div{
+  padding:10px;
+  cursor:pointer;
+  border-bottom:1px solid #334155;
+}
+
+.menu-content div:hover{
+  background:#334155;
+}
+
 .card{
   background:#1e293b;
   padding:15px;
@@ -23,17 +61,11 @@ body{
   margin-top:10px;
 }
 
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
 .badge{
-  padding:4px 8px;
-  border-radius:6px;
   font-size:12px;
+  padding:4px 8px;
   background:#334155;
+  border-radius:6px;
 }
 </style>
 </head>
@@ -43,11 +75,20 @@ body{
 <div class="container">
 
   <div class="topbar">
-    <h2>📊 Dashboard v1.3</h2>
-    <button onclick="logout()">Logout</button>
+    <h2>📊 Dashboard</h2>
+
+    <div class="menu">
+      <div class="menu-btn" onclick="toggleMenu()">☰</div>
+      <div class="menu-content" id="menu">
+        <div onclick="goSettings()">Settings</div>
+        <div onclick="goAbout()">About</div>
+        <div onclick="goPolicy()">Privacy Policy</div>
+        <div onclick="logout()">Logout</div>
+      </div>
+    </div>
   </div>
 
-  <div id="userBox" class="badge">Checking user...</div>
+  <div id="userBox" class="badge"></div>
 
   <h3 id="total">Total Leads: 0</h3>
 
