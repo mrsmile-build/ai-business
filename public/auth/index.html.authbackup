@@ -161,17 +161,8 @@ function togglePassword(id, el) {
 </body>
 </html>
 
-
-
-
-
-
-
-<script type="module">
-import { supabase } from "./supabase.js";
-
-/* ---------------- PASSWORD TOGGLE ---------------- */
-window.togglePassword = function (id, iconId) {
+<script>
+function togglePassword(id, iconId) {
   const input = document.getElementById(id);
   const icon = document.getElementById(iconId);
 
@@ -179,60 +170,17 @@ window.togglePassword = function (id, iconId) {
 
   if (input.type === "password") {
     input.type = "text";
-    if (icon) icon.innerText = "🙈";
+    if (icon) icon.textContent = "🙈";
   } else {
     input.type = "password";
-    if (icon) icon.innerText = "👁️";
+    if (icon) icon.textContent = "👁️";
   }
-};
+}
+</script>
 
-/* ---------------- LOGIN ---------------- */
-window.login = async function () {
-  setLoading("loginBtn", true);
 
-  const email = document.getElementById("loginEmail").value;
-  const password = document.getElementById("loginPassword").value;
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  setLoading("loginBtn", false);
-
-  if (error) return alert(error.message);
-
-  localStorage.setItem("user", JSON.stringify(data.user));
-  window.location.href = "/dashboard";
-};
-
-/* ---------------- SIGNUP ---------------- */
-window.signup = async function () {
-  setLoading("signupBtn", true);
-
-  const email = document.getElementById("signupEmail").value;
-  const password = document.getElementById("signupPassword").value;
-  const confirm = document.getElementById("confirmPassword").value;
-
-  if (password !== confirm) {
-    setLoading("signupBtn", false);
-    return alert("Passwords do not match");
-  }
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password
-  });
-
-  setLoading("signupBtn", false);
-
-  if (error) return alert(error.message);
-
-  alert("Account created! Please login.");
-};
-
-/* ---------------- LOADING UI ---------------- */
-window.setLoading = function (btnId, state, text = "Loading...") {
+<script>
+function setLoading(btnId, state, text = "Loading...") {
   const btn = document.getElementById(btnId);
   if (!btn) return;
 
@@ -244,6 +192,22 @@ window.setLoading = function (btnId, state, text = "Loading...") {
     btn.disabled = false;
     btn.innerText = btn.dataset.oldText || "Submit";
   }
-};
+}
+</script>
+
+
+<script>
+function togglePassword(id, iconId) {
+  const input = document.getElementById(id);
+  const icon = document.getElementById(iconId);
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.innerText = "🙈";
+  } else {
+    input.type = "password";
+    icon.innerText = "👁️";
+  }
+}
 </script>
 
