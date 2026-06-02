@@ -1,34 +1,24 @@
-import { supabase } from "../auth/supabase.js";
+async function loadLeads() {
+  const userId = document.getElementById("userId").value;
 
-/* =========================
-   SESSION CHECK
-========================= */
-async function checkAuth() {
-  const { data } = await supabase.auth.getUser();
-
-  if (!data?.user) {
-    window.location.href = "/auth";
-    return null;
+  if (!userId) {
+    alert("Enter User ID");
+    return;
   }
 
-  document.getElementById("status").innerText =
-    "Logged in as: " + data.user.email;
+  document.getElementById("status").innerText = "Loading...";
 
-  return data.user;
-}
-
-/* =========================
-   LOAD LEADS
-========================= */
-async function loadLeads(user) {
   try {
-    const res = await fetch(`/api/leads/${user.id}`);
+    const res = await fetch(`/api/leads/${userId}`);
     const data = await res.json();
 
     const leads = data.leads || [];
 
     document.getElementById("total").innerText =
       "Total Leads: " + leads.length;
+
+    document.getElementById("status").innerText =
+      "Live ✔";
 
     document.getElementById("leads").innerHTML =
       leads.map(l => `
@@ -42,24 +32,6 @@ async function loadLeads(user) {
 
   } catch (err) {
     document.getElementById("status").innerText =
-      "Error loading leads";
+      "Error loading leads ❌";
   }
 }
-
-/* =========================
-   LOGOUT (REAL)
-========================= */
-window.logout = async () => {
-  await supabase.auth.signOut();
-  window.location.href = "/auth";
-};
-
-/* =========================
-   INIT
-========================= */
-(async () => {
-  const user = await checkAuth();
-  if (!user) return;
-
-  await loadLeads(user);
-})();
