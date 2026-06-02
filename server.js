@@ -246,3 +246,11 @@ app.get("/api/paystack/verify", async (req, res) => {
   }
 });
 
+
+app.get("/api/status", (req, res) => {
+  res.json({
+    success: true,
+    message: "AI Business SaaS Backend Running"
+  });
+});
+
