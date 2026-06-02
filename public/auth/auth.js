@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.js";
 
-/* FORM SWITCH */
+/* SWITCH FORM */
 window.toggleForm = () => {
   const login = document.getElementById("loginBox");
   const signup = document.getElementById("signupBox");
@@ -37,18 +37,35 @@ window.login = async () => {
   window.location.href = "/dashboard";
 };
 
-/* SIGNUP */
+/* SIGNUP V2 */
 window.signup = async () => {
+  const username = document.getElementById("username").value;
   const email = document.getElementById("s_email").value;
   const password = document.getElementById("s_password").value;
+  const confirm = document.getElementById("s_confirm").value;
+  const usage = document.getElementById("usage").value;
 
-  const { error } = await supabase.auth.signUp({
+  if (!username || !email || !password || !confirm) {
+    return alert("Fill all fields");
+  }
+
+  if (password !== confirm) {
+    return alert("Passwords do not match");
+  }
+
+  const { data, error } = await supabase.auth.signUp({
     email,
-    password
+    password,
+    options: {
+      data: {
+        username,
+        usage
+      }
+    }
   });
 
   if (error) return alert(error.message);
 
-  alert("Account created");
+  alert("Account created. Login now.");
   toggleForm();
 };
