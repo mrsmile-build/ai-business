@@ -1,12 +1,41 @@
 import { supabase } from "./supabase.js";
 
-/* UI STATE HELPERS */
-function setLoading(btnText, loading) {
-  const btn = document.querySelector(`button[data-role='${btnText}']`);
+/* CLEAN ERROR MAPPER */
+function cleanError(message) {
+  if (!message) return "Something went wrong";
+
+  const msg = message.toLowerCase();
+
+  if (msg.includes("invalid login credentials")) {
+    return "Wrong email or password";
+  }
+
+  if (msg.includes("user already registered")) {
+    return "Account already exists";
+  }
+
+  if (msg.includes("email not confirmed")) {
+    return "Please confirm your email";
+  }
+
+  if (msg.includes("network")) {
+    return "Network error. Try again";
+  }
+
+  return "Something went wrong. Try again";
+}
+
+/* LOADING */
+function setLoading(btnId, loading, text = "Loading...") {
+  const btn = document.getElementById(btnId);
   if (!btn) return;
 
+  if (!btn.dataset.original) {
+    btn.dataset.original = btn.innerText;
+  }
+
   btn.disabled = loading;
-  btn.innerText = loading ? "Loading..." : btn.dataset.original;
+  btn.innerText = loading ? text : btn.dataset.original;
 }
 
 /* FORM SWITCH */
@@ -31,45 +60,27 @@ window.togglePassword = (id, el) => {
   }
 };
 
-/* RETRY WRAPPER */
-async function safeRequest(fn, retries = 2) {
-  try {
-    return await fn();
-  } catch (err) {
-    if (retries > 0) {
-      return await safeRequest(fn, retries - 1);
-    }
-    throw err;
-  }
-}
-
 /* LOGIN */
 window.login = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const btn = document.getElementById("loginBtn");
+  setLoading("loginBtn", true);
 
   try {
-    if (btn) {
-      btn.dataset.original = btn.innerText;
-      setLoading("login", true);
-    }
-
-    await safeRequest(async () => {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      if (error) throw error;
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
+
+    if (error) throw error;
 
     window.location.href = "/dashboard";
 
   } catch (err) {
-    alert("Login failed. Check network and retry.");
+    alert(cleanError(err.message));
   } finally {
-    setLoading("login", false);
+    setLoading("loginBtn", false);
   }
 };
 
@@ -85,22 +96,25 @@ window.signup = async () => {
     return alert("Passwords do not match");
   }
 
+  setLoading("signupBtn", true);
+
   try {
-    await safeRequest(async () => {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { username, usage }
-        }
-      });
-      if (error) throw error;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username, usage }
+      }
     });
+
+    if (error) throw error;
 
     alert("Account created. Please login.");
     toggleForm();
 
   } catch (err) {
-    alert("Signup failed. Retrying may help.");
+    alert(cleanError(err.message));
+  } finally {
+    setLoading("signupBtn", false);
   }
 };
