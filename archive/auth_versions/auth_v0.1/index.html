@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Business Auth</title>
+
+<style>
+body{font-family:Arial;background:#0b1220;display:flex;justify-content:center;align-items:center;height:100vh;color:white}
+.card{width:340px;background:#111a2e;padding:20px;border-radius:12px}
+input,select,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none}
+button{background:#2563eb;color:white;font-weight:bold}
+.link{text-align:center;color:#60a5fa;cursor:pointer;margin-top:10px}
+.password-box{position:relative}
+.eye{position:absolute;right:10px;top:12px;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+<h2>🚀 AI Business</h2>
+
+<!-- LOGIN -->
+<div id="loginBox">
+<input id="email" type="email" placeholder="Email">
+
+<div class="password-box">
+<input id="password" type="password" placeholder="Password">
+<span class="eye" onclick="togglePassword('password', this)">👁️</span>
+</div>
+
+<button onclick="login()">Login</button>
+<div class="link" onclick="toggleForm()">Create account</div>
+</div>
+
+<!-- SIGNUP -->
+<div id="signupBox" style="display:none;">
+
+<input id="username" type="text" placeholder="Username">
+<input id="s_email" type="email" placeholder="Email">
+
+<div class="password-box">
+<input id="s_password" type="password" placeholder="Password">
+<span class="eye" onclick="togglePassword('s_password', this)">👁️</span>
+</div>
+
+<div class="password-box">
+<input id="s_confirm" type="password" placeholder="Confirm Password">
+<span class="eye" onclick="togglePassword('s_confirm', this)">👁️</span>
+</div>
+
+<select id="usage">
+<option value="">What are you using it for?</option>
+<option>Business</option>
+<option>Freelancing</option>
+<option>Startup</option>
+<option>Personal</option>
+</select>
+
+<button onclick="signup()">Create Account</button>
+<div class="link" onclick="toggleForm()">Back to login</div>
+
+</div>
+
+</div>
+
+<script type="module" src="./auth.js"></script>
+
+</body>
+</html>
