@@ -45,7 +45,7 @@
 </div>
 
 <!-- UPGRADE MODAL -->
-<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:black;">
+<div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8);">
   <div style="background:#111827; padding:20px; margin:100px auto; width:320px; border-radius:10px;">
     <h2>Upgrade Pro</h2>
 
@@ -62,9 +62,7 @@
   </div>
 </div>
 
-<script type="module">
-import { supabase } from "../auth/supabase.js";
-
+<script>
 let currentUser;
 let currency = "NGN";
 
@@ -83,15 +81,13 @@ async function init() {
   loadLeads(user.id);
 }
 
-/* ---------------- SYNC USER ---------------- */
+/* ---------------- SYNC ---------------- */
 async function syncUserState() {
   const session = await supabase.auth.getSession();
   const token = session.data.session.access_token;
 
   const res = await fetch("/api/me", {
-    headers: {
-      Authorization: "Bearer " + token
-    }
+    headers: { Authorization: "Bearer " + token }
   });
 
   const data = await res.json();
@@ -108,11 +104,11 @@ async function syncUserState() {
 }
 
 /* ---------------- LEADS ---------------- */
-async function loadLeads(userId) {
+async function loadLeads() {
   const session = await supabase.auth.getSession();
   const token = session.data.session.access_token;
 
-  const res = await fetch(`/api/leads/${userId}`, {
+  const res = await fetch(`/api/leads/${currentUser.id}`, {
     headers: { Authorization: "Bearer " + token }
   });
 
@@ -123,33 +119,31 @@ async function loadLeads(userId) {
 
   (data.leads || []).forEach(l => {
     const div = document.createElement("div");
-    div.innerHTML = `<p><b>${l.name}</b><br>${l.message}</p>`;
+    div.className = "card";
+    div.innerHTML = `<b>${l.name}</b><br>${l.message}`;
     container.appendChild(div);
   });
 }
 
-/* ---------------- UPGRADE SYSTEM ---------------- */
-window.openUpgrade = () => {
+/* ---------------- UPGRADE ---------------- */
+function openUpgrade() {
   document.getElementById("modal").style.display = "block";
-};
+}
 
-window.closeModal = () => {
+function closeModal() {
   document.getElementById("modal").style.display = "none";
-};
+}
 
 document.getElementById("currency").onchange = (e) => {
   currency = e.target.value;
-
-  if (currency === "NGN") {
-    document.getElementById("priceText").innerText = "₦5000/month";
-  } else {
-    document.getElementById("priceText").innerText = "$5/month";
-  }
+  document.getElementById("priceText").innerText =
+    currency === "NGN" ? "₦5000/month" : "$5/month";
 };
 
-/* ---------------- PAYSTACK ---------------- */
-window.pay = async () => {
-  const session = await supabase.getSession();
+/* ---------------- PAY ---------------- */
+async function pay() {
+  const session = await supabase.auth.getSession();
+  const token = session.data.session.access_token;
 
   const amount = currency === "NGN" ? 5000 : 5;
 
@@ -157,12 +151,11 @@ window.pay = async () => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Bearer " + session.data.session.access_token
+      Authorization: "Bearer " + token
     },
     body: JSON.stringify({
       email: currentUser.email,
-      amount,
-      currency
+      amount
     })
   });
 
@@ -173,12 +166,20 @@ window.pay = async () => {
   } else {
     alert("Payment failed");
   }
-};
+}
 
 /* ---------------- LOGOUT ---------------- */
+async function logout() {
+  const ok = confirm("Are you sure you want to logout?");
+  if (!ok) return;
 
+  await supabase.auth.signOut();
+  window.location.href = "/auth";
+}
+
+init();
+</script>
+
+<script src="./supabase.js"></script>
 </body>
 </html>
-<script src="./pay-fix.js"></script>
-<script src="./logout-fix.js"></script>
-<script src="./pay.js"></script>
