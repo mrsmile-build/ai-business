@@ -1,208 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SaaS Leads Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Business Dashboard</title>
 
-  <style>
-    body {
-      font-family: Arial;
-      background: #0f172a;
-      color: white;
-      padding: 20px;
-    }
+<style>
+body{
+  font-family:Arial,sans-serif;
+  background:#0f172a;
+  color:white;
+  margin:0;
+  padding:20px;
+}
 
-    .container {
-      max-width: 800px;
-      margin: auto;
-    }
+.container{
+  max-width:900px;
+  margin:auto;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
+.card{
+  background:#1e293b;
+  padding:15px;
+  border-radius:10px;
+  margin-top:10px;
+}
 
-    .card {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 10px;
-    }
+input{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  margin-bottom:10px;
+}
 
-    .stat {
-      font-size: 22px;
-      font-weight: bold;
-    }
+button{
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+  background:#2563eb;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: none;
-      border-radius: 6px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      background: #3b82f6;
-      border: none;
-      color: white;
-      font-weight: bold;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .lead {
-      background: #1e293b;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
-    }
-
-    .muted {
-      color: #94a3b8;
-      font-size: 13px;
-    }
-
-    .topbar {
-      margin-bottom: 10px;
-    }
-  </style>
+#status{
+  margin-top:10px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h2>📊 <h1 style="text-align:center;margin-bottom:20px;color:#111;">📊 AI Business Dashboard</h1></h2>
+<h1>📊 AI Business Dashboard</h1>
 
-  <div class="topbar">
-    <input id="user_id" placeholder="Enter User ID (test123)" />
-    <input id="search" placeholder="Search leads (name/message/phone)" oninput="render()" />
-    <button onclick="loadLeads()">Load Leads</button>
-<style>
-body{font-family:Arial;background:#f6f7fb;margin:0;padding:20px;}
-.container{max-width:900px;margin:auto;}
-.card{background:#fff;padding:15px;margin:10px 0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
-h1{color:#222;}
-.badge{padding:4px 8px;border-radius:6px;font-size:12px;}
-.ok{background:#d1fae5;color:#065f46;}
-.wait{background:#fef3c7;color:#92400e;}
-.ai{color:#16a34a;margin-top:8px;}
-</style>
-  </div>
+<input id="userId" placeholder="Enter User ID">
 
-  <!-- STATS -->
-  <div class="grid">
-    <div class="card">
-      <div>Total Leads</div>
-      <div class="stat" id="total">0</div>
-    </div>
+<button onclick="loadLeads()">Load Leads</button>
 
-    <div class="card">
-      <div>Status</div>
-      <div class="stat" id="status">Idle</div>
-    </div>
-  </div>
+<p id="total">Total Leads: 0</p>
+<p id="status">Status: Idle</p>
 
-  <!-- LEADS -->
-  <div id="leads"></div>
+<div id="leads"></div>
 
 </div>
 
-<script>
-
-let allLeads = [];
-
-  }
-
-  filtered.forEach(l => {
-    box.innerHTML += `
-      <div class="lead">
-        <b>${l.name}</b><br/>
-        <span class="muted">${l.phone}</span><br/>
-        <p>${l.message}</p>
-      </div>
-    `;
-  });
-}
-
-// AUTO REFRESH EVERY 10s
-setInterval(() => {
-  const user_id = document.getElementById("user_id").value;
-  if (user_id) loadLeads();
-}, 10000);
-
-</script>
+<script src="./app.js"></script>
 
 </body>
 </html>
-
-    <p><b>Phone:</b> ${lead.phone}</p>
-    <p><b>Message:</b> ${lead.message}</p>
-
-    <p class="ai"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
-
-    <span class="badge ${lead.ai_reply ? 'ok' : 'wait'}">
-      ${lead.ai_reply ? "AI Responded ✔" : "Pending ⏳"}
-    </span>
-  </div>
-  `;
-}
-
-<script>
-
-<script>
-
-<h1 style="text-align:center;">📊 AI Business Dashboard</h1>
-
-<div style="max-width:900px;margin:auto;">
-
-  <input id="userId" placeholder="Enter User ID" style="padding:10px;width:60%;">
-  <button onclick="loadLeads()">Load Leads</button>
-
-  <h3 id="total">Total Leads: 0</h3>
-  <h4 id="status">Status: Idle</h4>
-
-  <div id="leads"></div>
-
-</div>
-
-<script>
-
-<script>
-async function loadLeads() {
-  const user_id = document.getElementById("userId").value;
-
-  document.getElementById("status").innerText = "Status: Loading...";
-
-  try {
-    const res = await fetch(`/api/leads/${user_id}`);
-    const data = await res.json();
-
-    const leads = data.leads || [];
-
-    document.getElementById("total").innerText = "Total Leads: " + leads.length;
-    document.getElementById("status").innerText = "Status: Live ✔";
-
-    document.getElementById("leads").innerHTML = leads.map(lead => `
-      <div class="card">
-        <h3>${lead.name}</h3>
-        <p><b>Phone:</b> ${lead.phone}</p>
-        <p><b>Message:</b> ${lead.message}</p>
-        <p style="color:#22c55e;"><b>🤖 AI Reply:</b> ${lead.ai_reply || "Not generated yet"}</p>
-        <p>${lead.ai_reply ? "AI Responded ✔" : "Pending ⏳"}</p>
-      </div>
-    `).join("");
-
-  } catch (err) {
-    document.getElementById("status").innerText = "Status: Network Error ❌";
-  }
-}
-</script>
-
-<script src="./pay.js"></script>
-<script src="./logout-fix.js"></script>
-<script src="./upgrade.js"></script>
