@@ -66,3 +66,7 @@ window.logout = async () => {
 window.goSettings = () => alert("Settings coming soon");
 window.goAbout = () => alert("About AI Business");
 window.goPolicy = () => alert("Privacy Policy");
+
+console.log("window.supabase =", window.supabase);
+console.log("Supabase loaded");
+
