@@ -1,3 +1,4 @@
+console.log("DASHBOARD JS STARTED");
 const supabase = window.supabase.createClient(
   "https://qewmhaualndadheoaxkm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
@@ -9,17 +10,26 @@ let currentUser = null;
    INIT USER
 ========================= */
 window.addEventListener("load", async () => {
-  const { data } = await supabase.auth.getUser();
+  console.log("INIT RUNNING");
+
+  let data;
+  try {
+    const res = await supabase.auth.getUser();
+    data = res.data;
+  } catch (e) {
+    console.log("AUTH ERROR:", e);
+    document.getElementById("userBox").innerText = "Auth error";
+    return;
+  }
 
   if (!data?.user) {
     window.location.href = "/auth";
     return;
   }
 
-  currentUser = data.user;
+  window.currentUser = data.user;
 
-  document.getElementById("userBox").innerText =
-    "👤 " + currentUser.email;
+  document.getElementById("userBox").innerText = data.user.email;
 
   loadLeads();
 });
