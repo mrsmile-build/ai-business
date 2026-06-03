@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Business Dashboard v1</title>
 <div style="height:20px;"></div>
-.menu-btn{
-  position:absolute;
-  top:15px;
-  right:15px;
-  font-size:24px;
-  cursor:pointer;
-  z-index:1000;
-}
 <div class="menu" id="menu">
   <div onclick="goAbout()">About</div>
   <div onclick="goPolicy()">Policy</div>
@@ -115,3 +107,37 @@ button{
 
 </body>
 </html>
+
+<style>
+.menu-btn{
+  position:absolute;
+  top:15px;
+  right:15px;
+  font-size:24px;
+  cursor:pointer;
+  z-index:1000;
+}
+
+.menu{
+  position:absolute;
+  top:50px;
+  right:15px;
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px;
+  width:160px;
+  display:none;
+  flex-direction:column;
+  z-index:999;
+}
+
+.menu div{
+  padding:10px;
+  cursor:pointer;
+}
+
+.menu div:hover{
+  background:#334155;
+}
+</style>
+
