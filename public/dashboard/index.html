@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Business Dashboard v1</title>
 <div class="topbar"></div>
-  <div onclick="goAbout()">About</div>
-  <div onclick="goPolicy()">Policy</div>
-  <div onclick="goSettings()">Settings</div>
-  <div onclick="logout()">Logout</div>
 </div>
 
 <style>
@@ -101,12 +97,6 @@ button{
   <h2>📊 Dashboard</h2>
   <div class="menu-btn" onclick="toggleMenu()">☰</div>
 
-  <div class="menu" id="menu">
-    <div onclick="goAbout()">About</div>
-    <div onclick="goPolicy()">Policy</div>
-    <div onclick="goSettings()">Settings</div>
-    <div onclick="logout()">Logout</div>
-  </div>
 </div>
 
 <style>
@@ -117,4 +107,14 @@ button{
   position:relative;
 }
 </style>
+
+
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+
+<div class="menu" id="menu">
+  <div onclick="goAbout()">About</div>
+  <div onclick="goPolicy()">Policy</div>
+  <div onclick="goSettings()">Settings</div>
+  <div onclick="logout()">Logout</div>
+</div>
 
