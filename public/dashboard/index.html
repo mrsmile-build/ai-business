@@ -8,24 +8,31 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
+  font-family: system-ui, Arial;
+  background:#0b1220;
+  color:#e5e7eb;
 }
 
-/* TOP BAR (REAL FIX) */
+/* TOPBAR */
 .topbar{
   position:fixed;
   top:0;
   left:0;
   right:0;
-  height:55px;
-  background:#111827;
+  height:60px;
+  background:rgba(17,24,39,0.7);
+  backdrop-filter: blur(10px);
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:0 15px;
+  padding:0 18px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
   z-index:1000;
+}
+
+.title{
+  font-weight:600;
+  letter-spacing:0.3px;
 }
 
 .menu-btn{
@@ -36,35 +43,51 @@ body{
 /* MENU */
 .menu{
   position:fixed;
-  top:60px;
+  top:65px;
   right:15px;
-  background:#1e293b;
-  border-radius:10px;
+  background:#111827;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
   padding:10px;
-  width:160px;
+  width:170px;
   display:none;
   z-index:1001;
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
 }
 
 .menu div{
   padding:10px;
+  border-radius:8px;
   cursor:pointer;
+  transition:0.2s;
 }
 
 .menu div:hover{
-  background:#334155;
+  background:#1f2937;
 }
 
-/* CONTENT AREA */
+/* CONTENT */
 .content{
-  padding:70px 15px 15px 15px;
+  padding:90px 18px 18px 18px;
 }
 
 .card{
-  background:#1e293b;
+  background:#111827;
+  border:1px solid rgba(255,255,255,0.06);
   padding:15px;
-  margin-top:10px;
-  border-radius:10px;
+  border-radius:14px;
+  margin-top:12px;
+  transition:0.2s;
+}
+
+.card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(59,130,246,0.4);
+}
+
+.badge{
+  font-size:12px;
+  opacity:0.7;
 }
 </style>
 </head>
@@ -72,7 +95,7 @@ body{
 <body>
 
 <div class="topbar">
-  <div>📊 Dashboard v1</div>
+  <div class="title">📊 AI Business</div>
   <div class="menu-btn" onclick="toggleMenu()">☰</div>
 </div>
 
@@ -84,7 +107,8 @@ body{
 </div>
 
 <div class="content">
-  <h3>Total Leads: 0</h3>
+  <div class="badge">Dashboard Overview</div>
+  <h2>Total Leads: 0</h2>
   <div id="leads"></div>
 </div>
 
