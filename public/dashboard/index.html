@@ -64,6 +64,7 @@ body{
   </div>
 
   <div class="menu" id="menu">
+style="display:none;"
     <div onclick="goAbout()">About</div>
     <div onclick="goPolicy()">Privacy Policy</div>
     <div onclick="goUpgrade()">Upgrade</div>
@@ -99,6 +100,7 @@ body{
   pointer-events:none;
   transform:scale(0.95);
   transition:0.2s ease;
+  visibility:hidden;
 }
 
 .menu.show{
