@@ -37,8 +37,23 @@ function goPolicy(){
 }
 
 function goSettings(){
-  renderPage("Settings",
-  "Settings panel is under development.");
+  app.innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3>Settings</h3>
+        <span style="cursor:pointer" onclick="renderDashboard()">← Back</span>
+      </div>
+      <div style="margin-top:15px">
+        <p>👤 Profile</p>
+        <p>🔔 Notifications (Coming Soon)</p>
+        <p>📊 Analytics (Coming Soon)</p>
+        <p>💳 Subscription (Coming Soon)</p>
+        <p>🔒 Security (Coming Soon)</p>
+        <p onclick="logout()" style="color:#ff6b6b;cursor:pointer">🚪 Logout</p>
+      </div>
+    </div>
+  `;
+  closeMenu();
 }
 
 /* MENU CONTROL */
@@ -55,3 +70,10 @@ function closeMenu(){
 
 /* INIT */
 renderDashboard();
+
+function logout(){
+  const ok = confirm("Are you sure you want to logout?");
+  if(ok){
+    alert("Logout system will be connected in a future version.");
+  }
+}
