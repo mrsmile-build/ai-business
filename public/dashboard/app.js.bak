@@ -50,6 +50,19 @@ function logout(){
   alert("Logout clicked");
 }
 
+function goAbout(){ openModal("About AI Business","AI Business helps automate leads, manage customers, and scale businesses efficiently."); }
+  alert("About AI Business");
+}
+
+function goPolicy(){ openModal("Privacy Policy","Your data is securely stored. Supabase handles authentication and encryption."); }
+  alert("Privacy Policy");
+}
+
+function goSettings(){ openModal("Settings","Settings panel coming soon: profile, notifications, subscriptions."); }
+  alert("Settings coming soon");
+}
+
+function openModal(title, content){
   const overlay = document.getElementById("modalOverlay");
   const box = document.getElementById("modalBox");
 
@@ -84,6 +97,7 @@ document.addEventListener("click", function(e){
 });
 
 
+window.toggleMenu = function () {
   const menu = document.getElementById("menu");
   if (!menu) return;
 
@@ -92,29 +106,4 @@ document.addEventListener("click", function(e){
   } else {
     menu.style.display = "block";
   }
-};
-
-function goAbout(){
-  openModal("About AI Business",
-  "AI Business is a smart automation platform that helps businesses capture leads, respond automatically, and manage customer data efficiently. Built for speed, simplicity, and scalability.");
-}
-
-function goPolicy(){
-  openModal("Privacy Policy",
-  "We respect user privacy. Data is securely stored and never sold.");
-}
-
-function goSettings(){
-  openModal("Settings",
-  "Settings panel is under development.");
-}
-
-function logout(){
-  alert("Logout clicked");
-}
-
-window.toggleMenu = function () {
-  const m = document.getElementById("menu");
-  if (!m) return;
-  m.style.display = (m.style.display === "block") ? "none" : "block";
 };
