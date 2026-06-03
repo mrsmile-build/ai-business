@@ -61,29 +61,3 @@ function goPolicy(){
 function goSettings(){
   alert("Settings coming soon");
 }
-
-function closePage(){
-  const box = document.getElementById("pageBox");
-  if(box) box.style.display = "none";
-}
-
-window.closePage = function(){
-  const box = document.getElementById("pageBox");
-  if(box) box.style.display = "none";
-};
-
-
-function goAbout(){
-  showPage("About AI Business",
-  "AI Business helps automate leads, manage customers, and scale businesses using smart tools.");
-}
-
-function goPolicy(){
-  showPage("Policy",
-  "We respect user privacy. Data is securely handled and never sold.");
-}
-
-function goSettings(){
-  showPage("Settings",
-  "Settings panel coming soon: subscription, profile, notifications.");
-}
