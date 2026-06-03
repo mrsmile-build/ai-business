@@ -50,14 +50,49 @@ function logout(){
   alert("Logout clicked");
 }
 
-function goAbout(){
+function goAbout(){ openModal("About AI Business","AI Business helps automate leads, manage customers, and scale businesses efficiently."); }
   alert("About AI Business");
 }
 
-function goPolicy(){
+function goPolicy(){ openModal("Privacy Policy","Your data is securely stored. Supabase handles authentication and encryption."); }
   alert("Privacy Policy");
 }
 
-function goSettings(){
+function goSettings(){ openModal("Settings","Settings panel coming soon: profile, notifications, subscriptions."); }
   alert("Settings coming soon");
 }
+
+function openModal(title, content){
+  const overlay = document.getElementById("modalOverlay");
+  const box = document.getElementById("modalBox");
+
+  overlay.style.display = "block";
+  box.style.display = "block";
+
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h3 style="margin:0">${title}</h3>
+      <span onclick="closeModal()" style="cursor:pointer;font-size:20px;">❌</span>
+    </div>
+
+    <div style="margin-top:10px;opacity:0.85;line-height:1.5">
+      ${content}
+    </div>
+  `;
+}
+
+function closeModal(){
+  document.getElementById("modalOverlay").style.display = "none";
+  document.getElementById("modalBox").style.display = "none";
+}
+
+// click outside to close
+document.addEventListener("click", function(e){
+  const box = document.getElementById("modalBox");
+  const overlay = document.getElementById("modalOverlay");
+
+  if (e.target === overlay) {
+    closeModal();
+  }
+});
+
