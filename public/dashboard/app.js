@@ -66,3 +66,9 @@ function closePage(){
   const box = document.getElementById("pageBox");
   if(box) box.style.display = "none";
 }
+
+window.closePage = function(){
+  const box = document.getElementById("pageBox");
+  if(box) box.style.display = "none";
+};
+
