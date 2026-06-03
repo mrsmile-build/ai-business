@@ -101,18 +101,20 @@ body{
 
 <div class="menu" id="menu">
   <div onclick="goAbout()">About</div>
-  <div onclick="goPolicy()">Policy</div>
+  <div onclick="goPrivacy()">Policy</div>
   <div onclick="goSettings()">Settings</div>
   <div onclick="logout()">Logout</div>
 </div>
 
 <div class="content">
+<div id="pageBox" class="card" style="display:none;"></div>
   <div class="badge">Dashboard Overview</div>
   <h2>Total Leads: 0</h2>
   <div id="leads"></div>
 </div>
 
 <script src="./app.js"></script>
+<script src="./pages.js"></script>
 
 </body>
 </html>
