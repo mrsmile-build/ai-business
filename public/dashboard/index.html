@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business</title>
+<title>AI Business Dashboard v1</title>
 
 <style>
 body{
@@ -14,42 +14,36 @@ body{
   padding:20px;
 }
 
-.container{max-width:900px;margin:auto;}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.menu-btn{
-  font-size:24px;
-  cursor:pointer;
-}
-
-
-.menu div{
-  padding:10px;
-  cursor:pointer;
-  border-bottom:1px solid #334155;
-}
-
-.menu div:hover{
-  background:#334155;
+.container{
+  max-width:900px;
+  margin:auto;
 }
 
 .card{
   background:#1e293b;
   padding:15px;
-  margin-top:10px;
   border-radius:10px;
+  margin-top:10px;
 }
 
-.badge{
-  background:#334155;
-  padding:4px 8px;
+input,button{
+  padding:10px;
+  border:none;
   border-radius:6px;
-  font-size:12px;
+}
+
+input{width:70%;}
+
+button{
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
+}
+
+.status{
+  margin:10px 0;
+  font-size:13px;
+  opacity:0.8;
 }
 </style>
 </head>
@@ -58,20 +52,12 @@ body{
 
 <div class="container">
 
-  <div class="topbar">
-    <h2>📊 AI Business</h2>
-    <div class="menu-btn" onclick="toggleMenu()">☰</div>
-  </div>
+  <h2>📊 Dashboard v1</h2>
 
-  <div class="menu" id="menu">
-style="display:none;"
-    <div onclick="goAbout()">About</div>
-    <div onclick="goPolicy()">Privacy Policy</div>
-    <div onclick="goUpgrade()">Upgrade</div>
-    <div onclick="logout()">Logout</div>
-  </div>
+  <input id="userId" placeholder="Enter User ID">
+  <button onclick="loadLeads()">Load Leads</button>
 
-  <div id="userBox" class="badge">Loading user...</div>
+  <div class="status" id="status">Idle</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
@@ -79,37 +65,7 @@ style="display:none;"
 
 </div>
 
-<!-- Supabase CDN -->
-
-<script src="./app.js?v=1"></script>
+<script src="./app.js"></script>
 
 </body>
 </html>
-
-<style>
-.menu{
-  position:absolute;
-  right:20px;
-  top:60px;
-  background:#1e293b;
-  border-radius:10px;
-  padding:10px;
-  width:180px;
-  opacity:0;
-  pointer-events:none;
-  transform:scale(0.95);
-  transition:0.2s ease;
-  visibility:hidden;
-}
-
-.menu.show{
-  opacity:1;
-  pointer-events:auto;
-  transform:scale(1);
-}
-</style>
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-<script src="./app.js?v=1"></script>
-
