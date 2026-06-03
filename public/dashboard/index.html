@@ -2,92 +2,54 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Business</title>
 
 <style>
 body{
   margin:0;
-  font-family: system-ui, Arial;
-  background:#0b1220;
-  color:#e5e7eb;
+  font-family:Arial;
+  background:#0f172a;
+  color:white;
 }
 
-/* TOPBAR */
 .topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  background:#111827;
   position:fixed;
   top:0;
   left:0;
   right:0;
-  height:60px;
-  background:rgba(17,24,39,0.7);
-  backdrop-filter: blur(10px);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 18px;
-  border-bottom:1px solid rgba(255,255,255,0.05);
   z-index:1000;
 }
 
-.title{
-  font-weight:600;
-  letter-spacing:0.3px;
-}
-
 .menu-btn{
-  font-size:24px;
+  font-size:26px;
   cursor:pointer;
 }
 
-/* MENU */
-.menu{
-  position:fixed;
-  top:65px;
-  right:15px;
-  background:#111827;
-  border:1px solid rgba(255,255,255,0.08);
-  border-radius:12px;
-  padding:10px;
-  width:170px;
-  display:none;
-  z-index:1001;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-}
-
-.menu div{
-  padding:10px;
-  border-radius:8px;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-.menu div:hover{
-  background:#1f2937;
-}
-
-/* CONTENT */
-.content{
-  padding:90px 18px 18px 18px;
+.container{
+  padding:80px 15px;
 }
 
 .card{
-  background:#111827;
-  border:1px solid rgba(255,255,255,0.06);
+  background:#1e293b;
   padding:15px;
-  border-radius:14px;
-  margin-top:12px;
-  transition:0.2s;
+  border-radius:10px;
+  margin-top:10px;
 }
 
-.card:hover{
-  transform:translateY(-2px);
-  border-color:rgba(59,130,246,0.4);
-}
-
-.badge{
-  font-size:12px;
-  opacity:0.7;
+button{
+  padding:10px;
+  margin-top:10px;
+  border:none;
+  border-radius:6px;
+  background:#2563eb;
+  color:white;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -95,26 +57,13 @@ body{
 <body>
 
 <div class="topbar">
-  <div class="title">📊 AI Business</div>
-  <div class="menu-btn" onclick="toggleMenu()">☰</div>
+  <div>📊 AI Business</div>
+  <div class="menu-btn" onclick="renderMenu()">☰</div>
 </div>
 
-<div class="menu" id="menu">
-  <div onclick="goAbout()">About</div>
-  <div onclick="goPrivacy()">Policy</div>
-  <div onclick="goSettings()">Settings</div>
-  <div onclick="logout()">Logout</div>
-</div>
-
-<div class="content">
-<div id="pageBox" class="card" style="display:none;"></div>
-  <div class="badge">Dashboard Overview</div>
-  <h2>Total Leads: 0</h2>
-  <div id="leads"></div>
-</div>
+<div id="app" class="container"></div>
 
 <script src="./app.js"></script>
-<script src="./pages.js"></script>
 
 </body>
 </html>
