@@ -60,10 +60,9 @@ async function loadLeads() {
 ========================= */
 window.toggleMenu = function () {
   const m = document.getElementById("menu");
-  m.style.display = m.style.display === "block" ? "none" : "block";
+  if (!m) return;
+  m.classList.toggle("show");
 };
-
-window.logout = async function () {
   await supabase.auth.signOut();
   window.location.href = "/auth";
 };

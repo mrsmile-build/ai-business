@@ -27,16 +27,6 @@ body{
   cursor:pointer;
 }
 
-.menu{
-  display:none;
-  position:absolute;
-  right:20px;
-  top:60px;
-  background:#1e293b;
-  border-radius:10px;
-  padding:10px;
-  width:180px;
-}
 
 .menu div{
   padding:10px;
@@ -95,3 +85,26 @@ body{
 
 </body>
 </html>
+
+<style>
+.menu{
+  position:absolute;
+  right:20px;
+  top:60px;
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px;
+  width:180px;
+  opacity:0;
+  pointer-events:none;
+  transform:scale(0.95);
+  transition:0.2s ease;
+}
+
+.menu.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:scale(1);
+}
+</style>
+
