@@ -50,71 +50,14 @@ function logout(){
   alert("Logout clicked");
 }
 
-  const overlay = document.getElementById("modalOverlay");
-  const box = document.getElementById("modalBox");
-
-  overlay.style.display = "block";
-  box.style.display = "block";
-
-  box.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <h3 style="margin:0">${title}</h3>
-      <span onclick="closeModal()" style="cursor:pointer;font-size:20px;">❌</span>
-    </div>
-
-    <div style="margin-top:10px;opacity:0.85;line-height:1.5">
-      ${content}
-    </div>
-  `;
-}
-
-function closeModal(){
-  document.getElementById("modalOverlay").style.display = "none";
-  document.getElementById("modalBox").style.display = "none";
-}
-
-// click outside to close
-document.addEventListener("click", function(e){
-  const box = document.getElementById("modalBox");
-  const overlay = document.getElementById("modalOverlay");
-
-  if (e.target === overlay) {
-    closeModal();
-  }
-});
-
-
-  const menu = document.getElementById("menu");
-  if (!menu) return;
-
-  if (menu.style.display === "block") {
-    menu.style.display = "none";
-  } else {
-    menu.style.display = "block";
-  }
-};
-
 function goAbout(){
-  openModal("About AI Business",
-  "AI Business is a smart automation platform that helps businesses capture leads, respond automatically, and manage customer data efficiently. Built for speed, simplicity, and scalability.");
+  alert("About AI Business");
 }
 
 function goPolicy(){
-  openModal("Privacy Policy",
-  "We respect user privacy. Data is securely stored and never sold.");
+  alert("Privacy Policy");
 }
 
 function goSettings(){
-  openModal("Settings",
-  "Settings panel is under development.");
+  alert("Settings coming soon");
 }
-
-function logout(){
-  alert("Logout clicked");
-}
-
-window.toggleMenu = function () {
-  const m = document.getElementById("menu");
-  if (!m) return;
-  m.style.display = (m.style.display === "block") ? "none" : "block";
-};
