@@ -1,24 +1,34 @@
-async function loadLeads() {
-  const userId = document.getElementById("userId").value;
+import { supabase } from "../auth/supabase.js";
 
-  if (!userId) {
-    alert("Enter User ID");
-    return;
+/* =========================
+   SESSION CHECK
+========================= */
+async function checkAuth() {
+  const { data } = await supabase.auth.getUser();
+
+  if (!data?.user) {
+    window.location.href = "/auth";
+    return null;
   }
 
-  document.getElementById("status").innerText = "Loading...";
+  document.getElementById("status").innerText =
+    "Logged in as: " + data.user.email;
 
+  return data.user;
+}
+
+/* =========================
+   LOAD LEADS
+========================= */
+async function loadLeads(user) {
   try {
-    const res = await fetch(`/api/leads/${userId}`);
+    const res = await fetch(`/api/leads/${user.id}`);
     const data = await res.json();
 
     const leads = data.leads || [];
 
     document.getElementById("total").innerText =
       "Total Leads: " + leads.length;
-
-    document.getElementById("status").innerText =
-      "Live ✔";
 
     document.getElementById("leads").innerHTML =
       leads.map(l => `
@@ -32,32 +42,24 @@ async function loadLeads() {
 
   } catch (err) {
     document.getElementById("status").innerText =
-      "Error loading leads ❌";
+      "Error loading leads";
   }
 }
 
 /* =========================
-   MENU SYSTEM
+   LOGOUT (REAL)
 ========================= */
+window.logout = async () => {
+  await supabase.auth.signOut();
+  window.location.href = "/auth";
+};
 
-function toggleMenu(){
-  const m = document.getElementById("menu");
-  if(!m) return;
-  m.style.display = (m.style.display === "block") ? "none" : "block";
-}
+/* =========================
+   INIT
+========================= */
+(async () => {
+  const user = await checkAuth();
+  if (!user) return;
 
-function logout(){
-  alert("Logout clicked");
-}
-
-function goAbout(){
-  alert("About AI Business");
-}
-
-function goPolicy(){
-  alert("Privacy Policy");
-}
-
-function goSettings(){
-  alert("Settings coming soon");
-}
+  await loadLeads(user);
+})();
