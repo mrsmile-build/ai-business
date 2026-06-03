@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard</title>
+<title>AI Business Dashboard v1.3</title>
 
 <style>
 body{
@@ -16,32 +16,6 @@ body{
 
 .container{max-width:900px;margin:auto;}
 
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-
-.menu-btn{
-  font-size:22px;
-  cursor:pointer;
-}
-
-.menu{
-  display:none;
-  position:absolute;
-  right:20px;
-  background:#1e293b;
-  border-radius:8px;
-  padding:10px;
-}
-
-.menu div{
-  padding:8px;
-  cursor:pointer;
-}
-
 .card{
   background:#1e293b;
   padding:15px;
@@ -49,11 +23,17 @@ body{
   margin-top:10px;
 }
 
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
 .badge{
-  font-size:12px;
-  background:#334155;
   padding:4px 8px;
   border-radius:6px;
+  font-size:12px;
+  background:#334155;
 }
 </style>
 </head>
@@ -63,18 +43,11 @@ body{
 <div class="container">
 
   <div class="topbar">
-    <h2>📊 Dashboard</h2>
-    <div class="menu-btn" onclick="toggleMenu()">☰</div>
+    <h2>📊 Dashboard v1.3</h2>
+    <button onclick="logout()">Logout</button>
   </div>
 
-  <div class="menu" id="menu">
-    <div onclick="goSettings()">Settings</div>
-    <div onclick="goAbout()">About</div>
-    <div onclick="goPolicy()">Policy</div>
-    <div onclick="logout()">Logout</div>
-  </div>
-
-  <div id="userBox" class="badge">Loading user...</div>
+  <div id="userBox" class="badge">Checking user...</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
@@ -82,10 +55,6 @@ body{
 
 </div>
 
-<!-- 🔥 CRITICAL: SUPABASE CDN -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-<!-- your app -->
 <script src="./app.js"></script>
 
 </body>
