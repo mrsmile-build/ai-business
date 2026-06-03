@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Business Dashboard v1</title>
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div class="menu" id="menu">
+  <div onclick="goAbout()">About</div>
+  <div onclick="goPolicy()">Policy</div>
+  <div onclick="goSettings()">Settings</div>
+  <div onclick="logout()">Logout</div>
+</div>
 
 <style>
 body{
@@ -44,6 +51,25 @@ button{
   margin:10px 0;
   font-size:13px;
   opacity:0.8;
+}
+.menu{
+  position:absolute;
+  right:20px;
+  top:60px;
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px;
+  width:160px;
+  display:none;
+  flex-direction:column;
+  z-index:999;
+}
+.menu div{
+  padding:10px;
+  cursor:pointer;
+}
+.menu div:hover{
+  background:#334155;
 }
 </style>
 </head>

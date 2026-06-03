@@ -35,3 +35,29 @@ async function loadLeads() {
       "Error loading leads ❌";
   }
 }
+
+/* =========================
+   MENU SYSTEM
+========================= */
+
+function toggleMenu(){
+  const m = document.getElementById("menu");
+  if(!m) return;
+  m.style.display = (m.style.display === "block") ? "none" : "block";
+}
+
+function logout(){
+  alert("Logout clicked");
+}
+
+function goAbout(){
+  alert("About AI Business");
+}
+
+function goPolicy(){
+  alert("Privacy Policy");
+}
+
+function goSettings(){
+  alert("Settings coming soon");
+}
