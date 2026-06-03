@@ -1,3 +1,4 @@
+alert("APP JS LOADED");
 console.log("DASHBOARD JS STARTED");
 const supabase = window.supabase.createClient(
   "https://qewmhaualndadheoaxkm.supabase.co",
