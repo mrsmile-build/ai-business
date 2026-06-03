@@ -4,8 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Business Dashboard v1</title>
-<div class="menu-btn" onclick="toggleMenu()">☰</div>
-<div class="menu" id="menu">
+<div class="topbar"></div>
   <div onclick="goAbout()">About</div>
   <div onclick="goPolicy()">Policy</div>
   <div onclick="goSettings()">Settings</div>
@@ -55,14 +54,14 @@ button{
 }
 .menu{
   position:absolute;
-  top:50px;
-  right:15px;
+  top:40px;
+  right:0;
   background:#1e293b;
   border-radius:10px;
   padding:10px;
   width:160px;
   display:none;
-  z-index:1999;
+  z-index:999;
 }
 .menu div{
   padding:10px;
@@ -79,6 +78,7 @@ button{
 <div class="container">
 
   <h2>📊 Dashboard v1</h2>
+<div class="topbar"></div>
 
 <div style="position:relative; min-height:60px;"></div>
   <input id="userId" placeholder="Enter User ID">
@@ -96,3 +96,25 @@ button{
 
 </body>
 </html>
+
+<div class="topbar">
+  <h2>📊 Dashboard</h2>
+  <div class="menu-btn" onclick="toggleMenu()">☰</div>
+
+  <div class="menu" id="menu">
+    <div onclick="goAbout()">About</div>
+    <div onclick="goPolicy()">Policy</div>
+    <div onclick="goSettings()">Settings</div>
+    <div onclick="logout()">Logout</div>
+  </div>
+</div>
+
+<style>
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:relative;
+}
+</style>
+
