@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard v1.3</title>
+<title>AI Business</title>
 
 <style>
 body{
@@ -16,24 +16,50 @@ body{
 
 .container{max-width:900px;margin:auto;}
 
-.card{
-  background:#1e293b;
-  padding:15px;
-  border-radius:10px;
-  margin-top:10px;
-}
-
 .topbar{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 
+.menu-btn{
+  font-size:24px;
+  cursor:pointer;
+}
+
+.menu{
+  display:none;
+  position:absolute;
+  right:20px;
+  top:60px;
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px;
+  width:180px;
+}
+
+.menu div{
+  padding:10px;
+  cursor:pointer;
+  border-bottom:1px solid #334155;
+}
+
+.menu div:hover{
+  background:#334155;
+}
+
+.card{
+  background:#1e293b;
+  padding:15px;
+  margin-top:10px;
+  border-radius:10px;
+}
+
 .badge{
+  background:#334155;
   padding:4px 8px;
   border-radius:6px;
   font-size:12px;
-  background:#334155;
 }
 </style>
 </head>
@@ -43,17 +69,27 @@ body{
 <div class="container">
 
   <div class="topbar">
-    <h2>📊 Dashboard v1.3</h2>
-    <button onclick="logout()">Logout</button>
+    <h2>📊 AI Business</h2>
+    <div class="menu-btn" onclick="toggleMenu()">☰</div>
   </div>
 
-  <div id="userBox" class="badge">Checking user...</div>
+  <div class="menu" id="menu">
+    <div onclick="goAbout()">About</div>
+    <div onclick="goPolicy()">Privacy Policy</div>
+    <div onclick="goUpgrade()">Upgrade</div>
+    <div onclick="logout()">Logout</div>
+  </div>
+
+  <div id="userBox" class="badge">Loading user...</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
   <div id="leads"></div>
 
 </div>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <script src="./app.js"></script>
 

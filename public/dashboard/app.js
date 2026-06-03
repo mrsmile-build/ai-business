@@ -5,7 +5,10 @@ const supabase = window.supabase.createClient(
 
 let currentUser = null;
 
-async function initAuth() {
+/* =========================
+   INIT USER
+========================= */
+window.addEventListener("load", async () => {
   const { data } = await supabase.auth.getUser();
 
   if (!data?.user) {
@@ -16,11 +19,14 @@ async function initAuth() {
   currentUser = data.user;
 
   document.getElementById("userBox").innerText =
-    currentUser.email;
+    "👤 " + currentUser.email;
 
   loadLeads();
-}
+});
 
+/* =========================
+   LOAD LEADS
+========================= */
 async function loadLeads() {
   try {
     const res = await fetch(`/api/leads/${currentUser.id}`);
@@ -49,18 +55,20 @@ async function loadLeads() {
   }
 }
 
-window.toggleMenu = () => {
+/* =========================
+   MENU
+========================= */
+window.toggleMenu = function () {
   const m = document.getElementById("menu");
   m.style.display = m.style.display === "block" ? "none" : "block";
 };
 
-window.logout = async () => {
+window.logout = async function () {
   await supabase.auth.signOut();
   window.location.href = "/auth";
 };
 
-window.goAbout = () => alert("About");
-window.goPolicy = () => alert("Policy");
-window.goSettings = () => alert("Settings");
+window.goAbout = () => alert("AI Business SaaS");
+window.goPolicy = () => alert("Privacy Policy");
+window.goUpgrade = () => alert("Upgrade coming soon");
 
-initAuth();
