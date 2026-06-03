@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI Business Dashboard v1.1</title>
+<title>AI Business Dashboard v1</title>
+<div class="menu-btn" onclick="toggleMenu()">☰</div>
+<div class="menu" id="menu">
+  <div onclick="goAbout()">About</div>
+  <div onclick="goPolicy()">Policy</div>
+  <div onclick="goSettings()">Settings</div>
+  <div onclick="logout()">Logout</div>
+</div>
 
 <style>
 body{
@@ -14,13 +21,9 @@ body{
   padding:20px;
 }
 
-.container{max-width:900px;margin:auto;}
-
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:20px;
+.container{
+  max-width:900px;
+  margin:auto;
 }
 
 .card{
@@ -30,19 +33,43 @@ body{
   margin-top:10px;
 }
 
-button{
+input,button{
   padding:10px;
   border:none;
   border-radius:6px;
+}
+
+input{width:70%;}
+
+button{
   background:#2563eb;
   color:white;
   cursor:pointer;
 }
 
 .status{
+  margin:10px 0;
   font-size:13px;
   opacity:0.8;
-  margin-bottom:10px;
+}
+.menu{
+  position:absolute;
+  right:20px;
+  top:60px;
+  background:#1e293b;
+  border-radius:10px;
+  padding:10px;
+  width:160px;
+  display:none;
+  flex-direction:column;
+  z-index:999;
+}
+.menu div{
+  padding:10px;
+  cursor:pointer;
+}
+.menu div:hover{
+  background:#334155;
 }
 </style>
 </head>
@@ -51,12 +78,12 @@ button{
 
 <div class="container">
 
-  <div class="topbar">
-    <h2>📊 Dashboard v1.1</h2>
-    <button onclick="logout()">Logout</button>
-  </div>
+  <h2>📊 Dashboard v1</h2>
 
-  <div class="status" id="status">Checking session...</div>
+  <input id="userId" placeholder="Enter User ID">
+  <button onclick="loadLeads()">Load Leads</button>
+
+  <div class="status" id="status">Idle</div>
 
   <h3 id="total">Total Leads: 0</h3>
 
