@@ -40,7 +40,6 @@ async function loadLeads() {
    MENU SYSTEM
 ========================= */
 
-function toggleMenu(){
   const m = document.getElementById("menu");
   if(!m) return;
   m.style.display = (m.style.display === "block") ? "none" : "block";
@@ -61,3 +60,14 @@ function goPolicy(){
 function goSettings(){
   alert("Settings coming soon");
 }
+
+function toggleMenu(){
+  const m = document.getElementById("menu");
+  if(!m) return;
+  m.style.display = (m.style.display === "block") ? "none" : "block";
+}
+
+function logout(){ alert("Logout"); }
+function goAbout(){ alert("About"); }
+function goPolicy(){ alert("Policy"); }
+function goSettings(){ alert("Settings"); }
