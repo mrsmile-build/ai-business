@@ -61,3 +61,8 @@ function goPolicy(){
 function goSettings(){
   alert("Settings coming soon");
 }
+
+function closePage(){
+  const box = document.getElementById("pageBox");
+  if(box) box.style.display = "none";
+}
