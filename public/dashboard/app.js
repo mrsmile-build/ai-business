@@ -1,57 +1,63 @@
-const app = document.getElementById("app");
+async function loadLeads() {
+  const userId = document.getElementById("userId").value;
 
-/* DASHBOARD */
-function renderDashboard(){
-  app.innerHTML = `
-    <div class="card">
-      <h2>Dashboard Overview</h2>
-      <p>Total Leads: 0</p>
-    </div>
-  `;
+  if (!userId) {
+    alert("Enter User ID");
+    return;
+  }
+
+  document.getElementById("status").innerText = "Loading...";
+
+  try {
+    const res = await fetch(`/api/leads/${userId}`);
+    const data = await res.json();
+
+    const leads = data.leads || [];
+
+    document.getElementById("total").innerText =
+      "Total Leads: " + leads.length;
+
+    document.getElementById("status").innerText =
+      "Live ✔";
+
+    document.getElementById("leads").innerHTML =
+      leads.map(l => `
+        <div class="card">
+          <b>${l.name || "Unknown"}</b><br/>
+          <small>${l.phone || ""}</small>
+          <p>${l.message || ""}</p>
+          <p>🤖 ${l.ai_reply || "Pending"}</p>
+        </div>
+      `).join("");
+
+  } catch (err) {
+    document.getElementById("status").innerText =
+      "Error loading leads ❌";
+  }
 }
 
-/* ABOUT */
-function renderAbout(){
-  app.innerHTML = `
-    <div class="card">
-      <h2>About AI Business</h2>
-      <p>AI Business helps automate leads, manage customers, and scale businesses efficiently.</p>
-      <button onclick="renderDashboard()">← Back to Dashboard</button>
-    </div>
-  `;
+/* =========================
+   MENU SYSTEM
+========================= */
+
+function toggleMenu(){
+  const m = document.getElementById("menu");
+  if(!m) return;
+  m.style.display = (m.style.display === "block") ? "none" : "block";
 }
 
-/* POLICY */
-function renderPolicy(){
-  app.innerHTML = `
-    <div class="card">
-      <h2>Policy</h2>
-      <p>We respect user privacy. Data is securely handled and never sold.</p>
-      <button onclick="renderDashboard()">← Back to Dashboard</button>
-    </div>
-  `;
+function logout(){
+  alert("Logout clicked");
 }
 
-/* PRIVACY */
-function renderPrivacy(){
-  app.innerHTML = `
-    <div class="card">
-      <h2>Privacy Policy</h2>
-      <p>Your data is securely stored and protected with encryption.</p>
-      <button onclick="renderDashboard()">← Back to Dashboard</button>
-    </div>
-  `;
+function goAbout(){
+  alert("About AI Business");
 }
 
-/* MENU */
-function renderMenu(){
-  const choice = prompt("Type: about / policy / privacy");
-
-  if(choice === "about") renderAbout();
-  else if(choice === "policy") renderPolicy();
-  else if(choice === "privacy") renderPrivacy();
-  else renderDashboard();
+function goPolicy(){
+  alert("Privacy Policy");
 }
 
-/* INIT */
-renderDashboard();
+function goSettings(){
+  alert("Settings coming soon");
+}
