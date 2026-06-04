@@ -2,7 +2,9 @@ const app = document.getElementById("app");
 
 let currentUser = null;
 
-/* INIT */
+/* =========================
+   INIT USER
+========================= */
 async function init(){
   try {
     const res = await fetch("/api/me", {
@@ -15,228 +17,191 @@ async function init(){
     currentUser = data.user;
   } catch (e) {}
 
-  renderDashboard();
+  loadPage("dashboard");
 }
 
-/* DASHBOARD */
-function renderDashboard(){
-  app.innerHTML = `
-    <div class="card">
-      <h2>Dashboard</h2>
-      <p>Total Leads: 0</p>
-      <p style="opacity:0.7">${currentUser?.email || ""}</p>
-    </div>
-  `;
+/* =========================
+   CLEAN RENDER ENGINE
+========================= */
+function setView(html){
+  app.innerHTML = html;
 }
 
-/* ROUTER */
+/* =========================
+   ROUTER
+========================= */
 function loadPage(page){
   closeMenu();
 
-  switch(page){
-    case "dashboard":
-      renderDashboard();
-      break;
+  const routes = {
+    dashboard: renderDashboard,
+    profile: renderProfile,
+    analytics: renderAnalytics,
+    leads: renderLeads,
+    aiTools: renderAITools,
+    subscription: renderSubscription,
+    settings: renderSettings,
+    support: renderSupport
+  };
 
-    case "profile":
-      renderProfile();
-      break;
-
-    case "analytics":
-      renderAnalytics();
-      break;
-
-    case "leads":
-      renderLeads();
-      break;
-
-    case "aiTools":
-      renderAITools();
-      break;
-
-    case "subscription":
-      renderSubscription();
-      break;
-
-    case "settings":
-      renderSettings();
-      break;
-
-    case "support":
-      renderSupport();
-      break;
-
-    default:
-      renderDashboard();
-  }
+  (routes[page] || renderDashboard)();
 }
 
-/* PROFILE */
+/* =========================
+   DASHBOARD (CORE SAAS)
+========================= */
+function renderDashboard(){
+  setView(`
+    <div class="card">
+      <h2>📊 AI Business Control Center</h2>
+
+      <div style="margin-top:15px">
+        <p><strong>Email:</strong> ${currentUser?.email || "Loading..."}</p>
+        <p><strong>Plan:</strong> Free</p>
+        <p><strong>Total Leads:</strong> 0</p>
+      </div>
+
+      <div style="margin-top:20px">
+        <button onclick="loadPage('leads')">📩 Leads</button>
+        <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
+        <button onclick="loadPage('subscription')">💳 Upgrade</button>
+      </div>
+    </div>
+  `);
+}
+
+/* =========================
+   PROFILE
+========================= */
 function renderProfile(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>👤 Profile</h3>
 
       <p>Email: ${currentUser?.email || "Loading..."}</p>
       <p>Username: ${currentUser?.email?.split("@")[0] || ""}</p>
 
-      <br>
-
-      <span onclick="loadPage('settings')" style="cursor:pointer">
-      ← Back to Settings
-      </span>
+      <button onclick="loadPage('settings')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* ANALYTICS */
+/* =========================
+   ANALYTICS
+========================= */
 function renderAnalytics(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>📊 Analytics</h3>
       <p>Coming soon...</p>
 
-      <br>
-
-      <span onclick="loadPage('dashboard')" style="cursor:pointer">
-      ← Back to Dashboard
-      </span>
+      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* LEADS */
+/* =========================
+   LEADS
+========================= */
 function renderLeads(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>📩 Leads</h3>
       <p>No leads yet</p>
 
-      <br>
-
-      <span onclick="loadPage('dashboard')" style="cursor:pointer">
-      ← Back to Dashboard
-      </span>
+      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* AI TOOLS */
+/* =========================
+   AI TOOLS
+========================= */
 function renderAITools(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>🧠 AI Tools</h3>
-      <p>Coming soon...</p>
+      <p>This will become your MONEY engine</p>
 
-      <br>
-
-      <span onclick="loadPage('dashboard')" style="cursor:pointer">
-      ← Back to Dashboard
-      </span>
+      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* SUBSCRIPTION */
+/* =========================
+   SUBSCRIPTION
+========================= */
 function renderSubscription(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>💳 Subscription</h3>
+      <p>Plan: Free</p>
 
-      <p>Free Plan</p>
-
-      <br>
-
-      <span onclick="loadPage('settings')" style="cursor:pointer">
-      ← Back to Settings
-      </span>
+      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* SETTINGS */
+/* =========================
+   SETTINGS
+========================= */
 function renderSettings(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
-
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3>⚙️ Settings</h3>
-
-        <span onclick="loadPage('dashboard')" style="cursor:pointer">
-        ← Dashboard
-        </span>
-      </div>
+      <h3>⚙️ Settings</h3>
 
       <div style="margin-top:15px">
-
-        <p onclick="loadPage('profile')" style="cursor:pointer">
-        👤 Profile
-        </p>
-
-        <p>
-        🔔 Notifications (Coming Soon)
-        </p>
-
-        <p>
-        🔐 Security (Coming Soon)
-        </p>
-
-        <p onclick="loadPage('subscription')" style="cursor:pointer">
-        💳 Subscription
-        </p>
-
-        <p onclick="logout()" style="color:red;cursor:pointer">
-        🚪 Logout
-        </p>
-
+        <p onclick="loadPage('profile')" style="cursor:pointer">👤 Profile</p>
+        <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
+        <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
+        <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
       </div>
 
+      <button onclick="loadPage('dashboard')">← Dashboard</button>
     </div>
-  `;
+  `);
 }
 
-/* SUPPORT */
+/* =========================
+   SUPPORT
+========================= */
 function renderSupport(){
-  app.innerHTML = `
+  setView(`
     <div class="card">
       <h3>🆘 Support</h3>
       <p>Coming soon...</p>
 
-      <br>
-
-      <span onclick="loadPage('dashboard')" style="cursor:pointer">
-      ← Back to Dashboard
-      </span>
+      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
-  `;
+  `);
 }
 
-/* MENU */
+/* =========================
+   MENU CONTROL
+========================= */
 function toggleMenu(){
   const m = document.getElementById("menu");
-
   if(!m) return;
-
-  m.style.display =
-    m.style.display === "block"
-    ? "none"
-    : "block";
+  m.style.display = m.style.display === "block" ? "none" : "block";
 }
 
 function closeMenu(){
   const m = document.getElementById("menu");
+  if(m) m.style.display = "none";
+}
 
-  if(m){
-    m.style.display = "none";
+/* =========================
+   LOGOUT
+========================= */
+function logout(){
+  const ok = confirm("Are you sure you want to logout?");
+  if(ok){
+    localStorage.removeItem("token");
+    location.href = "/auth";
   }
 }
 
-/* LOGOUT */
-function logout(){
-  localStorage.removeItem("token");
-  alert("Logged out");
-  location.href = "/auth";
-}
-
-/* START */
+/* =========================
+   START APP
+========================= */
 init();
