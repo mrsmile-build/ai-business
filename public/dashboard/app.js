@@ -1,7 +1,6 @@
 const app = document.getElementById("app");
 
 let currentUser = null;
-let currentSub = null;
 
 /* =========================
    INIT USER
@@ -16,7 +15,6 @@ async function init(){
 
     const data = await res.json();
     currentUser = data.user;
-    currentSub = data.subscription;
   } catch (e) {}
 
   loadPage("dashboard");
@@ -60,15 +58,18 @@ function loadPage(page){
 
 /* =========================
    DASHBOARD (CORE SAAS)
+========================= */
 function renderDashboard(){
-setView(`
+  setView(`
     <div class="card">
       <h2>📊 AI Business Control Center</h2>
+
       <div style="margin-top:15px">
         <p><strong>Email:</strong> ${currentUser?.email || "Loading..."}</p>
-        <p><strong>Plan:</strong> ${currentSub?.plan === "pro" ? "⭐ Pro" : "Free"}</p>
-        <p><strong>AI Uses:</strong> ${currentSub?.ai_usage || 0} / ${currentSub?.plan === "pro" ? "Unlimited" : "5"}</p>
+        <p><strong>Plan:</strong> Free</p>
+        <p><strong>Total Leads:</strong> 0</p>
       </div>
+
       <div style="margin-top:20px">
         <button onclick="loadPage('leads')">📩 Leads</button>
         <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
@@ -85,6 +86,7 @@ function renderProfile(){
   setView(`
     <div class="card">
       ${header("👤 Profile","settings")}
+
       <p>Email: ${currentUser?.email || "Loading..."}</p>
       <p>Username: ${currentUser?.email?.split("@")[0] || ""}</p>
     </div>
@@ -146,6 +148,7 @@ function renderSettings(){
   setView(`
     <div class="card">
       ${header("⚙️ Settings","dashboard")}
+
       <div style="margin-top:15px">
         <p onclick="loadPage('profile')" style="cursor:pointer">👤 Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
@@ -155,6 +158,7 @@ function renderSettings(){
     </div>
   `);
 }
+
 /* =========================
    SUPPORT
 ========================= */
