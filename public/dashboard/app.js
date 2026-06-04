@@ -1,6 +1,7 @@
 const app = document.getElementById("app");
 
 let currentUser = null;
+let currentSub = null;
 
 /* =========================
    INIT USER
@@ -15,6 +16,7 @@ async function init(){
 
     const data = await res.json();
     currentUser = data.user;
+    currentSub = data.subscription;
   } catch (e) {}
 
   loadPage("dashboard");
@@ -23,6 +25,15 @@ async function init(){
 /* =========================
    CLEAN RENDER ENGINE
 ========================= */
+function header(title, backPage){
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h3>${title}</h3>
+      <span onclick="loadPage('${backPage}')" style="cursor:pointer;font-size:14px">← Back</span>
+    </div>
+    <hr>
+  `;
+}
 function setView(html){
   app.innerHTML = html;
 }
@@ -49,18 +60,15 @@ function loadPage(page){
 
 /* =========================
    DASHBOARD (CORE SAAS)
-========================= */
 function renderDashboard(){
-  setView(`
+setView(`
     <div class="card">
       <h2>📊 AI Business Control Center</h2>
-
       <div style="margin-top:15px">
         <p><strong>Email:</strong> ${currentUser?.email || "Loading..."}</p>
-        <p><strong>Plan:</strong> Free</p>
-        <p><strong>Total Leads:</strong> 0</p>
+        <p><strong>Plan:</strong> ${currentSub?.plan === "pro" ? "⭐ Pro" : "Free"}</p>
+        <p><strong>AI Uses:</strong> ${currentSub?.ai_usage || 0} / ${currentSub?.plan === "pro" ? "Unlimited" : "5"}</p>
       </div>
-
       <div style="margin-top:20px">
         <button onclick="loadPage('leads')">📩 Leads</button>
         <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
@@ -76,12 +84,9 @@ function renderDashboard(){
 function renderProfile(){
   setView(`
     <div class="card">
-      <h3>👤 Profile</h3>
-
+      ${header("👤 Profile","settings")}
       <p>Email: ${currentUser?.email || "Loading..."}</p>
       <p>Username: ${currentUser?.email?.split("@")[0] || ""}</p>
-
-      <button onclick="loadPage('settings')">← Back</button>
     </div>
   `);
 }
@@ -92,10 +97,8 @@ function renderProfile(){
 function renderAnalytics(){
   setView(`
     <div class="card">
-      <h3>📊 Analytics</h3>
+      ${header("📊 Analytics","dashboard")}
       <p>Coming soon...</p>
-
-      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
   `);
 }
@@ -106,10 +109,8 @@ function renderAnalytics(){
 function renderLeads(){
   setView(`
     <div class="card">
-      <h3>📩 Leads</h3>
+      ${header("📩 Leads","dashboard")}
       <p>No leads yet</p>
-
-      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
   `);
 }
@@ -120,10 +121,8 @@ function renderLeads(){
 function renderAITools(){
   setView(`
     <div class="card">
-      <h3>🧠 AI Tools</h3>
+      ${header("🧠 AI Tools","dashboard")}
       <p>This will become your MONEY engine</p>
-
-      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
   `);
 }
@@ -134,10 +133,8 @@ function renderAITools(){
 function renderSubscription(){
   setView(`
     <div class="card">
-      <h3>💳 Subscription</h3>
+      ${header("💳 Subscription","dashboard")}
       <p>Plan: Free</p>
-
-      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
   `);
 }
@@ -148,30 +145,24 @@ function renderSubscription(){
 function renderSettings(){
   setView(`
     <div class="card">
-      <h3>⚙️ Settings</h3>
-
+      ${header("⚙️ Settings","dashboard")}
       <div style="margin-top:15px">
         <p onclick="loadPage('profile')" style="cursor:pointer">👤 Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
       </div>
-
-      <button onclick="loadPage('dashboard')">← Dashboard</button>
     </div>
   `);
 }
-
 /* =========================
    SUPPORT
 ========================= */
 function renderSupport(){
   setView(`
     <div class="card">
-      <h3>🆘 Support</h3>
+      ${header("🆘 Support","dashboard")}
       <p>Coming soon...</p>
-
-      <button onclick="loadPage('dashboard')">← Back</button>
     </div>
   `);
 }
