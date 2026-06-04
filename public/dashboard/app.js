@@ -1,66 +1,114 @@
 const app = document.getElementById("app");
 
+let currentUser = null;
+
+/* INIT */
+async function init(){
+  try {
+    const res = await fetch("/api/me", {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+    currentUser = data.user;
+
+    renderDashboard();
+  } catch (e) {
+    renderDashboard();
+  }
+}
+
 /* DASHBOARD */
 function renderDashboard(){
   app.innerHTML = `
     <div class="card">
       <h2>Dashboard</h2>
       <p>Total Leads: 0</p>
+      <p style="opacity:0.7">${currentUser?.email || ""}</p>
     </div>
   `;
 }
 
-/* PAGE SYSTEM */
-function renderPage(title, content){
+/* SIMPLE ROUTER */
+function loadPage(page){
+  switch(page){
+    case "dashboard":
+      return renderDashboard();
+    case "profile":
+      return renderProfile();
+    case "analytics":
+      return renderAnalytics();
+    case "leads":
+      return renderLeads();
+    case "aiTools":
+      return renderAITools();
+    case "subscription":
+      return renderSubscription();
+    case "settings":
+      return renderSettings();
+    case "support":
+      return renderSupport();
+    default:
+      return renderDashboard();
+  }
+}
+
+/* PAGES */
+function renderProfile(){
   app.innerHTML = `
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3>${title}</h3>
-        <span style="cursor:pointer" onclick="renderDashboard()">← Back</span>
-      </div>
-      <p style="opacity:0.85;line-height:1.6">${content}</p>
+      <h3>👤 Profile</h3>
+      <p>Email: ${currentUser?.email || "Loading..."}</p>
+      <p>Username: ${currentUser?.email?.split("@")[0] || ""}</p>
+      <span onclick="loadPage('settings')" style="cursor:pointer">← Back</span>
     </div>
   `;
-
-  closeMenu();
 }
 
-/* FEATURES */
-function goAbout(){
-  renderPage("About AI Business",
-  "AI Business helps automate leads, manage customers, and scale businesses efficiently.");
+function renderAnalytics(){
+  app.innerHTML = `<div class="card"><h3>📊 Analytics</h3><p>Coming soon...</p></div>`;
 }
 
-function goPolicy(){
-  renderPage("Policy",
-  "We respect user privacy. Data is securely handled and never sold.");
+function renderLeads(){
+  app.innerHTML = `<div class="card"><h3>📩 Leads</h3><p>No leads yet</p></div>`;
 }
 
-function goSettings(){
+function renderAITools(){
+  app.innerHTML = `<div class="card"><h3>🧠 AI Tools</h3><p>Coming soon...</p></div>`;
+}
+
+function renderSubscription(){
+  app.innerHTML = `<div class="card"><h3>💳 Subscription</h3><p>Free Plan</p></div>`;
+}
+
+/* SETTINGS (MAIN FOCUS) */
+function renderSettings(){
   app.innerHTML = `
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h3>Settings</h3>
-        <span style="cursor:pointer" onclick="renderDashboard()">← Back</span>
-      </div>
+      <h3>⚙️ Settings</h3>
+
       <div style="margin-top:15px">
-        <p>👤 Profile</p>
+        <p onclick="loadPage('profile')" style="cursor:pointer">👤 Profile</p>
         <p>🔔 Notifications (Coming Soon)</p>
-        <p>📊 Analytics (Coming Soon)</p>
-        <p>💳 Subscription (Coming Soon)</p>
-        <p>🔒 Security (Coming Soon)</p>
-        <p onclick="logout()" style="color:#ff6b6b;cursor:pointer">🚪 Logout</p>
+        <p>🔐 Security (Coming Soon)</p>
+        <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
+        <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
       </div>
     </div>
   `;
-  closeMenu();
 }
 
-/* MENU CONTROL */
+function renderSupport(){
+  app.innerHTML = `<div class="card"><h3>🆘 Support</h3><p>Coming soon...</p></div>`;
+}
+
+/* MENU */
 function toggleMenu(){
   const m = document.getElementById("menu");
   if(!m) return;
-  m.style.display = (m.style.display === "block") ? "none" : "block";
+  m.style.display = m.style.display === "block" ? "none" : "block";
 }
 
 function closeMenu(){
@@ -68,12 +116,13 @@ function closeMenu(){
   if(m) m.style.display = "none";
 }
 
-/* INIT */
-renderDashboard();
-
+/* LOGOUT */
 function logout(){
-  const ok = confirm("Are you sure you want to logout?");
-  if(ok){
-    alert("Logout system will be connected in a future version.");
-  }
+  localStorage.removeItem("token");
+  alert("Logged out");
+  location.href = "/auth";
 }
+
+/* INIT */
+init();
+renderDashboard();
