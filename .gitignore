@@ -1,2 +1,5 @@
 node_modules
 .env
+.env
+backups/
+backup_current_ai_business/
