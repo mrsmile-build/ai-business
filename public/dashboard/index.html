@@ -77,7 +77,16 @@ body{
 
 <!-- MENU -->
 <div id="menu" class="menu">
-  <div onclick="goAbout()">About</div>
+  <div onclick="loadPage('dashboard')">Dashboard</div>
+  <div onclick="loadPage('profile')">Profile</div>
+  <div onclick="loadPage('analytics')">Analytics</div>
+  <div onclick="loadPage('leads')">Leads</div>
+  <div onclick="loadPage('aiTools')">AI Tools</div>
+  <div onclick="loadPage('subscription')">Subscription</div>
+  <div onclick="loadPage('settings')">Settings</div>
+  <div onclick="loadPage('support')">Help / Support</div>
+  <div onclick="logout()">Logout</div>
+</div>
   <div onclick="goPolicy()">Policy</div>
   <div onclick="goSettings()">Settings</div>
 </div>
