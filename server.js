@@ -5,7 +5,6 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
@@ -15,17 +14,21 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-/* ---------------- AUTH ---------------- */
+/* ---------------- PLAN LIMITS ---------------- */
+const PLANS = {
+  free:     { leads: 10,       ai_per_day: 3,        label: "Free",     price: 0 },
+  starter:  { leads: 50,       ai_per_day: 15,       label: "Starter",  price: 6000 },
+  pro:      { leads: 500,      ai_per_day: 50,       label: "Pro",      price: 15000 },
+  business: { leads: Infinity, ai_per_day: Infinity, label: "Business", price: 45000 }
+};
+
+/* ---------------- AUTH MIDDLEWARE ---------------- */
 async function authMiddleware(req, res, next) {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(401).json({ error: "No token" });
-
     const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
+    if (error || !data.user) return res.status(401).json({ error: "Invalid token" });
     req.user = data.user;
     next();
   } catch (err) {
@@ -40,57 +43,106 @@ async function getSubscription(user) {
     .select("*")
     .eq("user_id", user.id)
     .single();
-
-  return data || {
-    user_id: user.id,
-    plan: "free",
-    ai_usage: 0,
-    status: "free"
-  };
+  return data || { user_id: user.id, plan: "free", ai_usage: 0, status: "free" };
 }
+
+/* ---------------- ME ---------------- */
+app.get("/api/me", authMiddleware, async (req, res) => {
+  try {
+    const sub = await getSubscription(req.user);
+    const limits = PLANS[sub.plan] || PLANS.free;
+    const { count } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", req.user.id);
+    res.json({
+      success: true,
+      user: { id: req.user.id, email: req.user.email },
+      subscription: { ...sub, limits, leads_count: count || 0 }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- LEADS GET ---------------- */
+app.get("/api/leads", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("leads")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, leads: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- LEADS POST ---------------- */
+app.post("/api/leads", authMiddleware, async (req, res) => {
+  try {
+    const sub = await getSubscription(req.user);
+    const limits = PLANS[sub.plan] || PLANS.free;
+    const { count } = await supabase
+      .from("leads")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", req.user.id);
+    if (limits.leads !== Infinity && count >= limits.leads) {
+      return res.json({ success: false, error: "Lead limit reached. Upgrade your plan." });
+    }
+    const { name, phone, email, business, message } = req.body;
+    const { data, error } = await supabase
+      .from("leads")
+      .insert({ user_id: req.user.id, name, phone, email, business, message })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ success: true, lead: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* ---------------- LEADS DELETE ---------------- */
+app.delete("/api/leads/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from("leads")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /* ---------------- AI REPLY ---------------- */
 app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
     const sub = await getSubscription(req.user);
-
-    const plan = sub.plan;
+    const limits = PLANS[sub.plan] || PLANS.free;
     const usage = sub.ai_usage || 0;
-
-    if (plan === "free" && usage >= 5) {
-      return res.json({
-        success: false,
-        reply: "🚫 Free limit reached. Upgrade to Pro."
-      });
+    if (limits.ai_per_day !== Infinity && usage >= limits.ai_per_day) {
+      return res.json({ success: false, reply: "Daily AI limit reached. Upgrade your plan." });
     }
-
-    await supabase
-      .from("subscriptions")
-      .update({ ai_usage: usage + 1 })
-      .eq("user_id", req.user.id);
-
+    await supabase.from("subscriptions").update({ ai_usage: usage + 1 }).eq("user_id", req.user.id);
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY_1}`
-      },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "You are a business assistant." },
+          { role: "system", content: "You are a smart business assistant helping Nigerian entrepreneurs grow their business." },
           { role: "user", content: req.body.message }
         ]
       })
     });
-
     const data = await response.json();
-
-    res.json({
-      success: true,
-      reply: data.choices?.[0]?.message?.content
-    });
-
+    res.json({ success: true, reply: data.choices?.[0]?.message?.content });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -99,24 +151,20 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
 /* ---------------- PAYSTACK INIT ---------------- */
 app.post("/api/paystack/init", authMiddleware, async (req, res) => {
   try {
-    const { email, amount } = req.body;
-
+    const { email, plan } = req.body;
+    const planData = PLANS[plan];
+    if (!planData || planData.price === 0) return res.status(400).json({ error: "Invalid plan" });
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        "Content-Type": "application/json"
-      },
+      headers: { Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
-        email,
-        amount: amount * 100,
-        callback_url: `${process.env.BASE_URL}/api/paystack/verify`
+        email, amount: planData.price * 100,
+        metadata: { plan },
+        callback_url: process.env.BASE_URL + "/api/paystack/verify"
       })
     });
-
     const data = await response.json();
     res.json(data);
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -126,131 +174,35 @@ app.post("/api/paystack/init", authMiddleware, async (req, res) => {
 app.get("/api/paystack/verify", async (req, res) => {
   try {
     const { reference } = req.query;
-
-    const response = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    if (data?.data?.status === "success") {
-      const email = data.data.customer.email;
-
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users.users.find(u => u.email === email);
-
-      if (user) {
-        await supabase.from("subscriptions").upsert({
-          user_id: user.id,
-          email,
-          plan: "pro",
-          status: "active",
-          ai_usage: 0,
-          amount_paid: data.data.amount / 100,
-          last_payment_date: new Date()
-        });
-      }
-    }
-
-    res.redirect(`${process.env.BASE_URL}/dashboard`);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------------- START SERVER ---------------- */
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("AI SaaS running on port " + PORT);
-});
-
-/* ---------------- USER STATE (MASTER API) ---------------- */
-app.get("/api/me", authMiddleware, async (req, res) => {
-  try {
-    const user = req.user;
-
-    const { data } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        email: user.email
-      },
-      subscription: data || {
-        plan: "free",
-        ai_usage: 0,
-        status: "free"
-      }
+    const response = await fetch("https://api.paystack.co/transaction/verify/" + reference, {
+      headers: { Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY }
     });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------------- PAYSTACK AUTO UPGRADE ---------------- */
-app.get("/api/paystack/verify", async (req, res) => {
-  try {
-    const { reference } = req.query;
-
-    const response = await fetch(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-        }
-      }
-    );
-
     const data = await response.json();
-
     if (data?.data?.status === "success") {
       const email = data.data.customer.email;
       const amount = data.data.amount / 100;
-
-      // find user
+      const plan = amount >= 45000 ? "business" : "pro";
       const { data: users } = await supabase.auth.admin.listUsers();
-
       const user = users.users.find(u => u.email === email);
-
       if (user) {
-        await supabase
-          .from("subscriptions")
-          .upsert({
-            user_id: user.id,
-            plan: "pro",
-            status: "active",
-            amount_paid: amount,
-            last_payment_date: new Date()
-          });
+        await supabase.from("subscriptions").upsert({
+          user_id: user.id, email, plan, status: "active",
+          ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
+        });
       }
-
       return res.redirect("/dashboard?payment=success");
     }
-
     res.redirect("/dashboard?payment=failed");
-
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-
+/* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
-  res.json({
-    success: true,
-    message: "AI Business SaaS Backend Running"
-  });
+  res.json({ success: true, message: "AI Business SaaS Running" });
 });
 
+/* ---------------- START ---------------- */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("AI SaaS running on port " + PORT));
