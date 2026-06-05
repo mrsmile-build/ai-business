@@ -43,6 +43,15 @@ async function getSubscription(user) {
     .select("*")
     .eq("user_id", user.id)
     .single();
+  if(data){
+    const today = new Date().toDateString();
+    if(data.usage_date !== today){
+      await supabase.from("subscriptions")
+        .update({ ai_usage: 0, usage_date: today })
+        .eq("user_id", user.id);
+      return { ...data, ai_usage: 0, usage_date: today };
+    }
+  }
   return data || { user_id: user.id, plan: "free", ai_usage: 0, status: "free" };
 }
 
@@ -130,16 +139,24 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
       return res.json({ success: false, reply: "Daily AI limit reached. Upgrade your plan." });
     }
     await supabase.from("subscriptions").update({ ai_usage: usage + 1 }).eq("user_id", req.user.id);
+    const { message, tool, history } = req.body;
+    const systemPrompts = {
+      idea: "You are a business consultant for Nigerian/African entrepreneurs. Give specific, practical business ideas with estimated costs in Naira. Format responses as numbered items.",
+      ad: "You are an expert copywriter for the Nigerian/African market. Write compelling ad copy that resonates with local culture. Format multiple options as numbered items.",
+      sales: "You are a sales expert for Nigerian market. Write persuasive WhatsApp/SMS messages that feel personal. Format multiple options as numbered items.",
+      content: "You are a social media expert for Nigerian/African brands. Create engaging posts with captions and hashtags. Format as numbered items.",
+      email: "You are an email marketing expert for Nigerian businesses. Write professional emails that convert. Format multiple options as numbered items."
+    };
+    const systemMsg = systemPrompts[tool] || "You are a smart business assistant helping Nigerian entrepreneurs grow. Be practical and direct. Format lists as numbered items.";
+    const messages = [
+      { role: "system", content: systemMsg },
+      ...((history || []).slice(-6)),
+      { role: "user", content: message }
+    ];
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: "You are a smart business assistant helping Nigerian entrepreneurs grow their business." },
-          { role: "user", content: req.body.message }
-        ]
-      })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages })
     });
     const data = await response.json();
     res.json({ success: true, reply: data.choices?.[0]?.message?.content });
@@ -196,6 +213,16 @@ app.get("/api/paystack/verify", async (req, res) => {
   } catch (err) {
     res.status(500).send(err.message);
   }
+});
+
+/* ---------------- REFRESH TOKEN ---------------- */
+app.post("/api/refresh", async (req, res) => {
+  try {
+    const { refresh_token } = req.body;
+    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+    if(error) return res.status(401).json({ error: "Session expired" });
+    res.json({ token: data.session.access_token, refresh_token: data.session.refresh_token });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 /* ---------------- STATUS ---------------- */

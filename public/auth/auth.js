@@ -92,6 +92,7 @@ window.login = async () => {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
+  if(!document.getElementById("terms_agree")?.checked) return alert("Please agree to the Terms and Conditions to continue.");
   const check = validateLogin(email, password);
   if (check) return alert(check);
 
@@ -104,6 +105,7 @@ window.login = async () => {
     if (error) throw error;
 
     localStorage.setItem("token", data.session.access_token);
+    localStorage.setItem("refresh_token", data.session.refresh_token);
     window.location.href = "/dashboard";
   } catch (err) {
     alert(getErrorMessage(err));
@@ -120,6 +122,7 @@ window.signup = async () => {
   const confirm = document.getElementById("s_confirm").value;
   const usage = document.getElementById("usage").value;
 
+  if(!document.getElementById("terms_agree")?.checked) return alert("Please agree to the Terms and Conditions to continue.");
   const check = validateSignup(username, email, password, confirm);
   if (check) return alert(check);
 

@@ -7,17 +7,28 @@ let currentUser = null;
 ========================= */
 async function init(){
   try {
-    const res = await fetch("/api/me", {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token")
-      }
-    });
-
+    let token = localStorage.getItem("token");
+    let res = await fetch("/api/me", { headers: { Authorization: "Bearer " + token }});
+    if(res.status === 401){
+      const rt = localStorage.getItem("refresh_token");
+      if(rt){
+        const rr = await fetch("/api/refresh", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({refresh_token: rt})
+        });
+        const rd = await rr.json();
+        if(rd.token){
+          localStorage.setItem("token", rd.token);
+          localStorage.setItem("refresh_token", rd.refresh_token);
+          res = await fetch("/api/me", { headers: { Authorization: "Bearer " + rd.token }});
+        } else { location.href="/auth"; return; }
+      } else { location.href="/auth"; return; }
+    }
     const data = await res.json();
     currentUser = data.user;
     currentSub = data.subscription;
-  } catch (e) {}
-
+  } catch(e) {}
+  loadConversations();
   loadPage("dashboard");
 }
 
@@ -186,13 +197,174 @@ async function deleteLead(id){
 /* =========================
    AI TOOLS
 ========================= */
+let aiConvs = [];
+let aiCurrentId = null;
+let aiCopyData = {};
+
+const TOOL_LABELS = {
+  idea:"💡 Business Ideas", ad:"📢 Ad Copy",
+  sales:"💬 Sales Message", content:"📱 Social Media", email:"📧 Email Marketing"
+};
+
+function convKey(){ return "ai_convs_"+(currentUser?.id||"guest"); }
+function saveConversations(){
+  try{ localStorage.setItem(convKey(), JSON.stringify(aiConvs)); }catch(e){}
+}
+function loadConversations(){
+  try{ const s=localStorage.getItem(convKey()); if(s) aiConvs=JSON.parse(s); else aiConvs=[]; }catch(e){ aiConvs=[]; }
+}
+function genId(){ return Date.now().toString(36)+Math.random().toString(36).substr(2); }
+function timeAgo(ts){
+  const d=Date.now()-ts;
+  if(d<60000) return "Just now";
+  if(d<3600000) return Math.floor(d/60000)+"m ago";
+  if(d<86400000) return Math.floor(d/3600000)+"h ago";
+  return Math.floor(d/86400000)+"d ago";
+}
+
 function renderAITools(){
+  aiCurrentId = null;
+  const list = aiConvs.filter(c=>c.messages?.length>0).sort((a,b)=>b.updatedAt-a.updatedAt);
   setView(`
     <div class="card">
       ${header("🧠 AI Tools","dashboard")}
-      <p>This will become your MONEY engine</p>
+      <button onclick="newAIChat()" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;margin-bottom:15px">+ New Chat</button>
+      ${list.length===0
+        ? '<p style="color:#64748b;text-align:center;font-size:13px;padding:20px 0">No conversations yet.<br>Tap New Chat to start.</p>'
+        : list.map(c=>`
+          <div onclick="openConv('${c.id}')" style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;cursor:pointer;border:1px solid #1e293b">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:12px;color:#3b82f6">${TOOL_LABELS[c.tool]||c.tool}</span>
+              <span style="font-size:11px;color:#475569">${timeAgo(c.updatedAt)}</span>
+            </div>
+            <p style="margin:5px 0 0;font-size:13px;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.title}</p>
+          </div>
+        `).join("")}
     </div>
   `);
+}
+
+function openConv(id){
+  aiCurrentId = id;
+  const conv = aiConvs.find(c=>c.id===id);
+  if(!conv) return renderAITools();
+  renderConvView(conv.tool);
+}
+
+function newAIChat(){
+  const id = genId();
+  aiConvs.unshift({id, tool:"idea", title:"New conversation", messages:[], createdAt:Date.now(), updatedAt:Date.now()});
+  aiCurrentId = id;
+  saveConversations();
+  renderConvView("idea");
+}
+
+function renderConvView(tool){
+  const conv = aiConvs.find(c=>c.id===aiCurrentId);
+  if(!conv) return renderAITools();
+  setView(`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span onclick="renderAITools()" style="cursor:pointer;color:#64748b;font-size:13px">← Chats</span>
+        <select id="ai_tool" onchange="changeConvTool()" style="padding:6px 10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;font-size:13px">
+          ${Object.entries(TOOL_LABELS).map(([k,v])=>`<option value="${k}" ${k===conv.tool?"selected":""}>${v}</option>`).join("")}
+        </select>
+      </div>
+      <hr style="border:none;border-top:1px solid #1e293b;margin-bottom:10px">
+      <div id="ai_chat" style="min-height:80px;max-height:55vh;overflow-y:auto;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input id="ai_input" placeholder="Ask anything..." onkeydown="if(event.key==='Enter') runAITool()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white">
+        <button onclick="runAITool()" style="padding:10px 16px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:18px">⚡</button>
+      </div>
+    </div>
+  `);
+  renderChat();
+}
+
+function changeConvTool(){
+  const conv = aiConvs.find(c=>c.id===aiCurrentId);
+  if(conv){ conv.tool=document.getElementById("ai_tool")?.value||"idea"; saveConversations(); }
+}
+
+function parseItems(text){
+  const lines=text.split("\n"); const items=[]; let cur="";
+  for(const line of lines){
+    if(/^\*?\*?\d+[.)]\s/.test(line.trim())){
+      if(cur) items.push(cur.trim());
+      cur=line.replace(/^\*?\*?\d+[.)]\s*\*?\*?/,"").trim();
+    } else if(cur&&line.trim()) cur+=" "+line.trim();
+  }
+  if(cur) items.push(cur.trim());
+  return items.length>1?items:null;
+}
+
+function renderChat(){
+  const chat=document.getElementById("ai_chat");
+  if(!chat) return;
+  const conv=aiConvs.find(c=>c.id===aiCurrentId);
+  const msgs=conv?.messages||[];
+  let k=0; aiCopyData={};
+  if(msgs.length===0){
+    chat.innerHTML="<p style=\"color:#64748b;font-size:13px;text-align:center;padding:20px 0\">Ask anything to get started...</p>";
+    return;
+  }
+  const renderAns=(text)=>{
+    const items=parseItems(text);
+    if(items){
+      return "<div>"+items.map((item,i)=>{
+        aiCopyData[k]=item;
+        return "<div style=\"background:#162032;padding:10px;border-radius:8px;margin-bottom:5px;position:relative;padding-right:60px\"><p style=\"margin:0;font-size:13px;line-height:1.6\"><strong>"+(i+1)+".</strong> "+item+"</p><button data-k=\""+k+++"\" onclick=\"copyAI(this)\" style=\"position:absolute;top:6px;right:6px;padding:3px 7px;background:#334155;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px\">Copy</button></div>";
+      }).join("")+"</div>";
+    }
+    aiCopyData[k]=text;
+    return "<div style=\"background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid #3b82f6;position:relative;padding-right:60px\"><p style=\"margin:0;font-size:13px;line-height:1.6\">"+text+"</p><button data-k=\""+k+++"\" onclick=\"copyAI(this)\" style=\"position:absolute;top:6px;right:6px;padding:3px 7px;background:#334155;color:white;border:none;border-radius:5px;cursor:pointer;font-size:11px\">Copy</button></div>";
+  };
+  chat.innerHTML=msgs.map(m=>
+    m.role==="user"
+      ? "<div style=\"text-align:right;margin-bottom:8px\"><span style=\"background:#3b82f6;padding:8px 12px;border-radius:12px 12px 0 12px;font-size:13px;display:inline-block;max-width:90%\">"+m.content+"</span></div>"
+      : renderAns(m.content)
+  ).join("");
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function copyAI(btn){
+  const text=aiCopyData[btn.getAttribute("data-k")]||"";
+  navigator.clipboard.writeText(text).then(()=>{
+    btn.textContent="Copied!"; setTimeout(()=>btn.textContent="Copy",2000);
+  }).catch(()=>{ btn.textContent="Copied!"; setTimeout(()=>btn.textContent="Copy",2000); });
+}
+
+async function runAITool(){
+  const input=document.getElementById("ai_input")?.value.trim();
+  if(!input) return;
+  const conv=aiConvs.find(c=>c.id===aiCurrentId);
+  if(!conv) return;
+  const tool=document.getElementById("ai_tool")?.value||"idea";
+  conv.tool=tool;
+  if(conv.title==="New conversation") conv.title=input.substring(0,60);
+  const btn=document.querySelector("button[onclick='runAITool()']");
+  if(btn){btn.disabled=true;btn.textContent="...";}
+  document.getElementById("ai_input").value="";
+  conv.messages.push({role:"user",content:input});
+  renderChat();
+  try{
+    const res=await fetch("/api/ai-reply",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body:JSON.stringify({message:input,tool,history:conv.messages.slice(-6)})
+    });
+    const data=await res.json();
+    if(data.success){
+      conv.messages.push({role:"assistant",content:data.reply});
+      conv.updatedAt=Date.now();
+      saveConversations();
+      renderChat();
+    } else {
+      alert(data.reply||"AI limit reached. Upgrade your plan.");
+      conv.messages.pop();
+    }
+  }catch(e){alert("Error: "+e.message);conv.messages.pop();}
+  if(btn){btn.disabled=false;btn.textContent="⚡";}
 }
 
 /* =========================
