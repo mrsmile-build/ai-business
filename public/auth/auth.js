@@ -96,13 +96,14 @@ window.login = async () => {
   if (check) return alert(check);
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) throw error;
 
+    localStorage.setItem("token", data.session.access_token);
     window.location.href = "/dashboard";
   } catch (err) {
     alert(getErrorMessage(err));
