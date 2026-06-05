@@ -225,6 +225,18 @@ app.post("/api/refresh", async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- DELETE ACCOUNT ---------------- */
+app.delete("/api/account", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    await supabase.from("leads").delete().eq("user_id", uid);
+    await supabase.from("subscriptions").delete().eq("user_id", uid);
+    const { error } = await supabase.auth.admin.deleteUser(uid);
+    if(error) throw error;
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });

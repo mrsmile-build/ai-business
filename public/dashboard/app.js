@@ -108,13 +108,65 @@ function renderProfile(){
 /* =========================
    ANALYTICS
 ========================= */
-function renderAnalytics(){
-  setView(`
-    <div class="card">
-      ${header("📊 Analytics","dashboard")}
-      <p>Coming soon...</p>
-    </div>
-  `);
+async function renderAnalytics(){
+  setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try{
+    const res = await fetch("/api/me",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const data = await res.json();
+    const sub = data.subscription;
+    const leadsCount = sub?.leads_count||0;
+    const leadsLimit = sub?.limits?.leads;
+    const aiUsage = sub?.ai_usage||0;
+    const aiLimit = sub?.limits?.ai_per_day;
+    const plan = sub?.plan||"free";
+    const planColor = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
+    const lPct = leadsLimit===Infinity?5:Math.min(100,Math.round(leadsCount/(leadsLimit||10)*100));
+    const aPct = aiLimit===Infinity?5:Math.min(100,Math.round(aiUsage/(aiLimit||3)*100));
+
+    setView(`
+      <div class="card">
+        ${header("📊 Analytics","dashboard")}
+
+        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">📩 Leads Used</p>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:26px;font-weight:bold">${leadsCount}</span>
+            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${leadsLimit===Infinity?"Unlimited":leadsLimit}</span>
+          </div>
+          <div style="background:#1e293b;border-radius:6px;height:8px">
+            <div style="background:#3b82f6;width:${lPct}%;height:8px;border-radius:6px"></div>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">🧠 AI Uses Today</p>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:26px;font-weight:bold">${aiUsage}</span>
+            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${aiLimit===Infinity?"Unlimited":aiLimit} per day</span>
+          </div>
+          <div style="background:#1e293b;border-radius:6px;height:8px">
+            <div style="background:${aPct>80?"#ef4444":"#10b981"};width:${aPct}%;height:8px;border-radius:6px"></div>
+          </div>
+          ${aPct>80?'<p style="margin:6px 0 0;font-size:11px;color:#ef4444">Running low — consider upgrading</p>':""}
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Plan</p>
+            <p style="margin:5px 0 0;font-size:16px;font-weight:bold;color:${planColor}">${plan.toUpperCase()}</p>
+          </div>
+          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Account</p>
+            <p style="margin:5px 0 0;font-size:12px;color:#cbd5e1;word-break:break-all">${currentUser?.email||"..."}</p>
+          </div>
+        </div>
+
+        <button onclick="loadPage('subscription')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">💳 Upgrade Plan</button>
+      </div>
+    `);
+  }catch(e){
+    setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error loading analytics.</p></div>`);
+  }
 }
 
 /* =========================
@@ -469,6 +521,8 @@ function renderSettings(){
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
+        <hr style="border:none;border-top:1px solid #1e293b;margin:10px 0">
+        <p onclick="deleteAccount()" style="color:#ef4444;cursor:pointer;font-size:13px">🗑 Delete Account</p>
       </div>
     </div>
   `);
@@ -477,13 +531,119 @@ function renderSettings(){
 /* =========================
    SUPPORT
 ========================= */
+let supportHistory = [];
+
 function renderSupport(){
+  supportHistory = [];
   setView(`
     <div class="card">
       ${header("🆘 Support","dashboard")}
-      <p>Coming soon...</p>
+
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:12px">Tell our AI support what you need help with. It will collect your issue and send it directly to our team.</p>
+
+      <div id="support_chat" style="min-height:60px;max-height:40vh;overflow-y:auto;margin-bottom:10px"></div>
+
+      <div id="support_input_area" style="display:flex;gap:8px;margin-bottom:15px">
+        <input id="support_input" placeholder="Describe your issue..." onkeydown="if(event.key==='Enter') sendSupportMsg()" style="flex:1;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;font-size:13px">
+        <button onclick="sendSupportMsg()" style="padding:10px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer">Send</button>
+      </div>
+
+      <div id="wa_send_btn" style="display:none;margin-bottom:15px">
+        <button onclick="sendToWhatsApp()" style="width:100%;padding:12px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold">📤 Send Issue to WhatsApp Support</button>
+      </div>
+
+      <p style="font-size:13px;font-weight:bold;margin-bottom:10px">❓ FAQ</p>
+      ${[
+        ["How do I upgrade my plan?","Go to Menu → Subscription → choose a plan → pay via Paystack."],
+        ["How many leads can I add?","Free: 10. Starter: 50. Pro: 500. Business: Unlimited."],
+        ["How many AI uses do I get?","Free: 3/day. Starter: 15/day. Pro: 50/day. Business: Unlimited."],
+        ["Why is my email showing Loading?","Log out and log back in to refresh your session."],
+        ["Can I export my leads?","CSV export is available on Pro and Business plans."],
+        ["How do I delete my account?","Go to Settings → Delete Account."]
+      ].map(([q,a],i)=>`
+        <div style="background:#0f172a;border-radius:8px;margin-bottom:8px;overflow:hidden">
+          <div onclick="toggleFaq(${i})" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+            <p style="margin:0;font-size:13px">${q}</p>
+            <span id="faq_arrow_${i}" style="color:#64748b;font-size:12px">▼</span>
+          </div>
+          <div id="faq_${i}" style="display:none;padding:0 12px 12px">
+            <p style="margin:0;font-size:13px;color:#94a3b8;line-height:1.6">${a}</p>
+          </div>
+        </div>
+      `).join("")}
     </div>
   `);
+  renderSupportChat();
+  // AI greeting
+  setTimeout(()=>{
+    supportHistory.push({role:"assistant",content:"Hi! I am the AI Business support assistant. Please describe your issue and I will help collect the details to send to our support team."});
+    renderSupportChat();
+  },300);
+}
+
+function renderSupportChat(){
+  const chat = document.getElementById("support_chat");
+  if(!chat) return;
+  chat.innerHTML = supportHistory.map(m=>
+    m.role==="user"
+      ? `<div style="text-align:right;margin-bottom:8px"><span style="background:#3b82f6;padding:8px 12px;border-radius:12px 12px 0 12px;font-size:13px;display:inline-block;max-width:90%">${m.content}</span></div>`
+      : `<div style="background:#0f172a;padding:10px 12px;border-radius:8px;margin-bottom:8px;border-left:3px solid #3b82f6"><p style="margin:0;font-size:13px;line-height:1.5;color:#cbd5e1">${m.content}</p></div>`
+  ).join("");
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendSupportMsg(){
+  const input = document.getElementById("support_input")?.value.trim();
+  if(!input) return;
+  document.getElementById("support_input").value="";
+  supportHistory.push({role:"user",content:input});
+  renderSupportChat();
+
+  const btn = document.querySelector("button[onclick='sendSupportMsg()']");
+  if(btn){btn.disabled=true;btn.textContent="...";}
+
+  try{
+    const res = await fetch("/api/ai-reply",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body:JSON.stringify({
+        message: input,
+        tool: "support",
+        history: supportHistory.slice(-6),
+        systemOverride: "You are an AI support agent for AI Business SaaS. Your job is to collect information about the user issue: what the problem is, when it started, what they tried. Ask 1-2 follow-up questions if needed. After 2-3 exchanges, summarize the issue clearly and tell them to click the button below to send it to the support team. Be friendly and professional."
+      })
+    });
+    const data = await res.json();
+    if(data.success){
+      supportHistory.push({role:"assistant",content:data.reply});
+      renderSupportChat();
+      // Show WhatsApp button after 2 exchanges
+      if(supportHistory.length >= 4){
+        const wabtn = document.getElementById("wa_send_btn");
+        if(wabtn) wabtn.style.display="block";
+      }
+    }
+  }catch(e){
+    supportHistory.push({role:"assistant",content:"Sorry, I am having trouble connecting. Please email support@aibusiness.ng directly."});
+    renderSupportChat();
+  }
+  if(btn){btn.disabled=false;btn.textContent="Send";}
+}
+
+function sendToWhatsApp(){
+  const summary = supportHistory
+    .map(m=>(m.role==="user"?"User: ":"Support AI: ")+m.content)
+    .join("\n");
+  const msg = encodeURIComponent("*AI Business Support Request*\nUser: "+( currentUser?.email||"Unknown")+"\n\n"+summary);
+  window.open("https://wa.me/2348127538882?text="+msg,"_blank");
+}
+
+function toggleFaq(i){
+  const el=document.getElementById("faq_"+i);
+  const ar=document.getElementById("faq_arrow_"+i);
+  if(!el) return;
+  if(el.style.display==="none"){ el.style.display="block"; ar.textContent="▲"; }
+  else{ el.style.display="none"; ar.textContent="▼"; }
 }
 
 /* =========================
@@ -509,6 +669,23 @@ function logout(){
     localStorage.removeItem("token");
     location.href = "/auth";
   }
+}
+
+async function deleteAccount(){
+  const code = prompt("Type DELETE to confirm:");
+  if(code !== "DELETE") return;
+  try{
+    const res = await fetch("/api/account",{
+      method:"DELETE",
+      headers:{Authorization:"Bearer "+localStorage.getItem("token")}
+    });
+    const data = await res.json();
+    if(data.success){
+      localStorage.clear();
+      alert("Account deleted.");
+      location.href="/auth";
+    } else { alert("Error: "+(data.error||"Failed")); }
+  }catch(e){ alert("Error: "+e.message); }
 }
 
 /* =========================

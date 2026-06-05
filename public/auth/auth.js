@@ -122,7 +122,7 @@ window.signup = async () => {
   const confirm = document.getElementById("s_confirm").value;
   const usage = document.getElementById("usage").value;
 
-  if(!document.getElementById("terms_agree")?.checked) return alert("Please agree to the Terms and Conditions to continue.");
+  if(!document.getElementById("signup_terms")?.checked) return alert("Please agree to the Terms and Conditions to continue.");
   const check = validateSignup(username, email, password, confirm);
   if (check) return alert(check);
 
