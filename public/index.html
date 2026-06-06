@@ -1,102 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>AI Business Dashboard</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Business — Smart Business Operating System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#0f172a;
-  color:white;
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c14;--surface:#0f1623;--card:#131d2e;
+  --border:#1e2d42;--blue:#2563eb;--blue2:#3b82f6;
+  --green:#10b981;--purple:#7c3aed;--text:#f1f5f9;--muted:#64748b;
 }
+body{background:var(--bg);color:var(--text);font-family:"DM Sans",sans-serif;overflow-x:hidden}
+h1,h2,h3,.brand{font-family:"Syne",sans-serif}
 
-/* TOP BAR */
-.topbar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px;
-  background:#111827;
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  z-index:1000;
-}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:15px 20px;
+  display:flex;justify-content:space-between;align-items:center;
+  background:rgba(8,12,20,0.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(255,255,255,0.05)}
+.logo{font-family:"Syne",sans-serif;font-weight:800;font-size:18px;
+  color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px}
+.nav-btns{display:flex;gap:10px}
+.btn-ghost{padding:8px 16px;border:1px solid var(--border);border-radius:8px;
+  color:var(--muted);background:transparent;font-size:14px;cursor:pointer;
+  text-decoration:none;transition:all 0.2s}
+.btn-ghost:hover{border-color:var(--blue2);color:var(--text)}
+.btn-blue{padding:8px 18px;background:var(--blue);border:none;border-radius:8px;
+  color:white;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;
+  transition:background 0.2s}
+.btn-blue:hover{background:var(--blue2)}
 
-.menu-btn{
-  font-size:26px;
-  cursor:pointer;
-}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:center;padding:100px 20px 60px;position:relative}
+.hero::before{content:"";position:absolute;width:500px;height:500px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
+  background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.3);
+  border-radius:20px;font-size:12px;color:#93c5fd;margin-bottom:24px}
+.hero h1{font-size:clamp(30px,8vw,54px);font-weight:800;line-height:1.1;margin-bottom:18px}
+.hero h1 span{background:linear-gradient(135deg,#3b82f6,#7c3aed);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{font-size:15px;color:var(--muted);max-width:440px;line-height:1.7;margin-bottom:32px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn-hero{padding:13px 26px;background:var(--blue);border:none;border-radius:10px;
+  color:white;font-size:15px;font-weight:500;cursor:pointer;text-decoration:none;
+  transition:all 0.2s}
+.btn-hero:hover{background:var(--blue2);transform:translateY(-2px)}
+.btn-outline{padding:13px 26px;border:1px solid var(--border);border-radius:10px;
+  color:var(--muted);background:transparent;font-size:15px;cursor:pointer;
+  text-decoration:none;transition:all 0.2s}
+.btn-outline:hover{border-color:var(--blue2);color:var(--text)}
+.stats{display:flex;gap:28px;margin-top:44px;flex-wrap:wrap;justify-content:center}
+.stat-num{font-family:"Syne",sans-serif;font-size:24px;font-weight:800}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:2px}
 
-/* MENU */
-.menu{
-  position:fixed;
-  top:60px;
-  right:15px;
-  background:#1e293b;
-  width:180px;
-  border-radius:10px;
-  display:none;
-  z-index:2000;
-  box-shadow:0 10px 30px rgba(0,0,0,0.4);
-}
+.mockup{max-width:400px;margin:0 auto;background:var(--surface);
+  border:1px solid var(--border);border-radius:18px;overflow:hidden;
+  box-shadow:0 30px 60px rgba(0,0,0,0.4)}
+.mock-bar{background:var(--card);padding:11px 14px;display:flex;
+  justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.mock-body{padding:14px}
+.mock-card{background:var(--card);border-radius:10px;padding:12px;margin-bottom:10px}
+.mock-row{display:flex;gap:8px;margin-bottom:8px}
+.mock-box{flex:1;background:#1e293b;border-radius:7px;padding:9px;text-align:center}
+.mock-num{font-size:17px;font-weight:bold}
+.mock-lbl{font-size:9px;color:var(--muted);margin-top:2px}
+.mock-lead{background:#1e293b;border-radius:7px;padding:9px 11px;margin-bottom:5px;
+  display:flex;align-items:center;justify-content:space-between}
+.mock-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:10px;font-weight:bold;color:white;margin-right:7px}
+.mock-name{font-size:11px;font-weight:600}
+.mock-sub{font-size:9px;color:var(--muted)}
+.mock-chip{font-size:9px;padding:2px 7px;border-radius:8px;font-weight:600}
 
-.menu div{
-  padding:12px;
-  cursor:pointer;
-}
+section{padding:65px 20px}
+.sec-lbl{font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--blue2);margin-bottom:10px;text-align:center}
+.sec-h{font-size:clamp(24px,5vw,36px);font-weight:800;text-align:center;
+  margin-bottom:10px;line-height:1.2}
+.sec-sub{font-size:14px;color:var(--muted);text-align:center;max-width:420px;
+  margin:0 auto 40px;line-height:1.6}
+.hr{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:0 20px}
 
-.menu div:hover{
-  background:#334155;
-}
+.problems{display:flex;flex-direction:column;gap:10px;max-width:440px;margin:0 auto}
+.prob{display:flex;align-items:center;gap:10px;padding:12px 14px;
+  background:var(--card);border-radius:9px;border:1px solid var(--border);
+  font-size:13px;color:var(--muted)}
 
-/* CONTENT */
-.container{
-  padding:80px 15px 15px 15px;
-}
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:460px;margin:0 auto}
+.feat{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:16px 12px;transition:all 0.2s}
+.feat:hover{border-color:var(--blue);transform:translateY(-2px)}
+.feat-icon{font-size:24px;margin-bottom:8px}
+.feat-t{font-size:13px;font-weight:700;margin-bottom:4px}
+.feat-d{font-size:11px;color:var(--muted);line-height:1.5}
 
-.card{
-  background:#1e293b;
-  padding:15px;
-  border-radius:10px;
-  margin-top:10px;
-}
+.steps{display:flex;flex-direction:column;max-width:440px;margin:0 auto;position:relative}
+.steps::before{content:"";position:absolute;left:19px;top:20px;bottom:20px;
+  width:1px;background:linear-gradient(to bottom,var(--blue),var(--purple),transparent)}
+.step{display:flex;gap:14px;padding:18px 0}
+.step-n{width:38px;height:38px;border-radius:50%;background:var(--blue);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Syne",sans-serif;font-weight:800;font-size:14px;flex-shrink:0;z-index:1;position:relative}
+.step-t{font-size:14px;font-weight:700;margin-bottom:3px}
+.step-d{font-size:12px;color:var(--muted);line-height:1.5}
+
+.price-grid{display:flex;flex-direction:column;gap:12px;max-width:460px;margin:0 auto}
+.price-card{background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:18px;position:relative;transition:transform 0.2s}
+.price-card:hover{transform:translateY(-2px)}
+.price-card.hot{border-color:var(--blue);background:linear-gradient(135deg,rgba(37,99,235,0.07),var(--card))}
+.hot-badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  background:var(--blue);color:white;font-size:10px;font-weight:600;
+  padding:2px 10px;border-radius:8px}
+.price-plan{font-size:12px;color:var(--muted);margin-bottom:3px}
+.price-amt{font-family:"Syne",sans-serif;font-size:26px;font-weight:800;margin-bottom:2px}
+.price-per{font-size:11px;color:var(--muted);margin-bottom:12px}
+.price-feats{list-style:none;margin-bottom:14px}
+.price-feats li{font-size:12px;color:var(--muted);padding:4px 0;
+  display:flex;align-items:center;gap:7px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.price-feats li:last-child{border-bottom:none}
+.price-feats li::before{content:"✓";color:var(--green);font-weight:bold;flex-shrink:0}
+.btn-price{width:100%;padding:10px;border-radius:7px;font-size:13px;font-weight:500;
+  cursor:pointer;text-decoration:none;display:block;text-align:center;
+  font-family:"DM Sans",sans-serif;transition:all 0.2s}
+.bp{background:var(--blue);color:white;border:none}
+.bp:hover{background:var(--blue2)}
+.bo{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.bo:hover{border-color:var(--blue2);color:var(--text)}
+
+.cta-box{background:var(--card);border:1px solid var(--border);
+  border-radius:18px;padding:36px 22px;max-width:440px;margin:0 auto;text-align:center;
+  position:relative}
+.cta-box::before{content:"";position:absolute;inset:0;border-radius:18px;
+  background:radial-gradient(ellipse at center,rgba(37,99,235,0.08) 0%,transparent 70%);pointer-events:none}
+
+footer{background:var(--surface);border-top:1px solid var(--border);padding:28px 20px;text-align:center}
+.foot-links{display:flex;justify-content:center;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+.foot-links a{color:var(--muted);text-decoration:none;font-size:12px;transition:color 0.2s}
+.foot-links a:hover{color:var(--text)}
+.foot-copy{font-size:11px;color:var(--muted)}
+
+.fade{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+.fade.on{opacity:1;transform:translateY(0)}
 </style>
 </head>
-
 <body>
 
-<!-- TOP BAR -->
-<div class="topbar">
-  <div>📊 AI Business</div>
-  <div class="menu-btn" onclick="toggleMenu()">☰</div>
-</div>
-
-<!-- MENU -->
-<div class="menu" id="menu">
-  <div onclick="showPage('About', aboutText)">About</div>
-  <div onclick="showPage('Policy', policyText)">Policy</div>
-  <div onclick="showPage('Settings', settingsText)">Settings</div>
-  <div onclick="logout()">Logout</div>
-</div>
-
-<!-- CONTENT -->
-<div class="container">
-
-  <div class="card">
-    <h3>Dashboard Overview</h3>
-    <p>Total Leads: 0</p>
+<nav>
+  <a href="/" class="logo">📊 AI Business</a>
+  <div class="nav-btns">
+    <a href="/auth" class="btn-ghost">Login</a>
+    <a href="/auth/signup.html" class="btn-blue">Get Started</a>
   </div>
+</nav>
 
-  <div class="card" id="pageBox" style="display:none;"></div>
+<section class="hero">
+  <div class="badge">🚀 Built for African Entrepreneurs</div>
+  <h1>Grow Your Business<br>with <span>AI Power</span></h1>
+  <p>Manage leads, close more sales, and save hours every week — with AI tools built for Nigerian and African businesses.</p>
+  <div class="hero-btns">
+    <a href="/auth/signup.html" class="btn-hero">Start Free — No Card Needed</a>
+    <a href="#features" class="btn-outline">See Features</a>
+  </div>
+  <div class="stats">
+    <div><div class="stat-num">10+</div><div class="stat-lbl">AI Tools</div></div>
+    <div><div class="stat-num">4</div><div class="stat-lbl">Plan Tiers</div></div>
+    <div><div class="stat-num">₦0</div><div class="stat-lbl">To Start</div></div>
+  </div>
+</section>
 
+<div style="padding:0 20px 60px">
+  <div class="mockup fade">
+    <div class="mock-bar">
+      <span style="font-family:Syne;font-size:12px;font-weight:700">📊 AI Business</span>
+      <div style="display:flex;gap:4px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#ef4444"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b"></div>
+        <div style="width:8px;height:8px;border-radius:50%;background:#10b981"></div>
+      </div>
+    </div>
+    <div class="mock-body">
+      <div class="mock-card">
+        <div style="font-size:10px;color:#64748b;margin-bottom:8px">CONTROL CENTER</div>
+        <div class="mock-row">
+          <div class="mock-box"><div class="mock-num" style="color:#3b82f6">12</div><div class="mock-lbl">Leads</div></div>
+          <div class="mock-box"><div class="mock-num" style="color:#10b981">5</div><div class="mock-lbl">Won</div></div>
+          <div class="mock-box"><div class="mock-num" style="color:#f59e0b">⭐</div><div class="mock-lbl">Pro</div></div>
+        </div>
+        <div class="mock-lead">
+          <div style="display:flex;align-items:center">
+            <div class="mock-av" style="background:#3b82f6">AD</div>
+            <div><div class="mock-name">Adunola Fabrics</div><div class="mock-sub">Lagos · Fashion</div></div>
+          </div>
+          <div class="mock-chip" style="background:rgba(16,185,129,0.15);color:#10b981">Won ✓</div>
+        </div>
+        <div class="mock-lead">
+          <div style="display:flex;align-items:center">
+            <div class="mock-av" style="background:#8b5cf6">CH</div>
+            <div><div class="mock-name">Chidi Tech Hub</div><div class="mock-sub">Abuja · Tech</div></div>
+          </div>
+          <div class="mock-chip" style="background:rgba(245,158,11,0.15);color:#f59e0b">Interested</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script src="./app.js"></script>
+<div class="hr"></div>
 
+<section class="fade">
+  <div class="sec-lbl">The Problem</div>
+  <h2 class="sec-h">Businesses lose money<br>without a system</h2>
+  <p class="sec-sub">Not from lack of work — but from lack of organisation.</p>
+  <div class="problems">
+    <div class="prob">❌ &nbsp;Leads saved on paper or WhatsApp and forgotten</div>
+    <div class="prob">❌ &nbsp;No follow-up — customers go cold and buy elsewhere</div>
+    <div class="prob">❌ &nbsp;Hours wasted writing the same messages every day</div>
+    <div class="prob">❌ &nbsp;No idea which customers are ready to buy</div>
+    <div class="prob">❌ &nbsp;Marketing feels random with no real strategy</div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<section id="features" class="fade">
+  <div class="sec-lbl">The Solution</div>
+  <h2 class="sec-h">Everything your business<br>needs — one place</h2>
+  <p class="sec-sub">AI Business is your all-in-one business operating system.</p>
+  <div class="feat-grid">
+    <div class="feat"><div class="feat-icon">📩</div><div class="feat-t">Lead CRM</div><div class="feat-d">Store, track, and manage every customer contact.</div></div>
+    <div class="feat"><div class="feat-icon">📊</div><div class="feat-t">Sales Pipeline</div><div class="feat-d">Track leads from New → Contacted → Won.</div></div>
+    <div class="feat"><div class="feat-icon">🧠</div><div class="feat-t">AI Tools</div><div class="feat-d">Generate ad copy, sales messages, business ideas instantly.</div></div>
+    <div class="feat"><div class="feat-icon">📢</div><div class="feat-t">Ad Copy Writer</div><div class="feat-d">Write ads for Facebook, Instagram and WhatsApp.</div></div>
+    <div class="feat"><div class="feat-icon">📱</div><div class="feat-t">Social Content</div><div class="feat-d">Create posts that drive engagement for your brand.</div></div>
+    <div class="feat"><div class="feat-icon">📥</div><div class="feat-t">CSV Export</div><div class="feat-d">Download all your leads anytime. Your data, your control.</div></div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<section class="fade">
+  <div class="sec-lbl">How It Works</div>
+  <h2 class="sec-h">Running in 3 minutes</h2>
+  <p class="sec-sub">No tech skills. No complicated setup.</p>
+  <div class="steps">
+    <div class="step"><div class="step-n">1</div><div><div class="step-t">Create your free account</div><div class="step-d">Sign up in 30 seconds. No credit card. Start free immediately.</div></div></div>
+    <div class="step"><div class="step-n">2</div><div><div class="step-t">Add your leads</div><div class="step-d">Import existing customers or add new ones. Set pipeline status and track.</div></div></div>
+    <div class="step"><div class="step-n">3</div><div><div class="step-t">Use AI to grow faster</div><div class="step-d">Generate marketing content, follow-up scripts and business ideas instantly.</div></div></div>
+    <div class="step"><div class="step-n">4</div><div><div class="step-t">Close more deals</div><div class="step-d">Track your pipeline, see analytics, and convert more leads every week.</div></div></div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<section id="pricing" class="fade">
+  <div class="sec-lbl">Pricing</div>
+  <h2 class="sec-h">Plans that grow<br>with your business</h2>
+  <p class="sec-sub">Start free. Upgrade when ready. Cancel anytime.</p>
+  <div class="price-grid">
+    <div class="price-card">
+      <div class="price-plan">Free</div>
+      <div class="price-amt">₦0</div>
+      <div class="price-per">Forever free</div>
+      <ul class="price-feats"><li>10 leads</li><li>3 AI uses per day</li><li>Basic dashboard</li><li>Lead pipeline</li></ul>
+      <a href="/auth/signup.html" class="btn-price bo">Get Started Free</a>
+    </div>
+    <div class="price-card">
+      <div class="price-plan">Starter</div>
+      <div class="price-amt">₦6,000</div>
+      <div class="price-per">per month</div>
+      <ul class="price-feats"><li>50 leads</li><li>15 AI uses per day</li><li>All AI tools</li><li>Analytics</li></ul>
+      <a href="/auth/signup.html" class="btn-price bo">Start Starter</a>
+    </div>
+    <div class="price-card hot">
+      <div class="hot-badge">MOST POPULAR</div>
+      <div class="price-plan" style="color:#93c5fd">Pro</div>
+      <div class="price-amt" style="color:#3b82f6">₦15,000</div>
+      <div class="price-per">per month</div>
+      <ul class="price-feats"><li>500 leads</li><li>50 AI uses per day</li><li>CSV export</li><li>Full AI tools suite</li><li>Priority support</li></ul>
+      <a href="/auth/signup.html" class="btn-price bp">Go Pro</a>
+    </div>
+    <div class="price-card" style="border-color:rgba(124,58,237,0.3)">
+      <div class="price-plan" style="color:#c4b5fd">Business</div>
+      <div class="price-amt" style="color:#7c3aed">₦45,000</div>
+      <div class="price-per">per month</div>
+      <ul class="price-feats"><li>Unlimited leads</li><li>Unlimited AI</li><li>Team access</li><li>Weekly AI report</li><li>Onboarding call</li></ul>
+      <a href="/auth/signup.html" class="btn-price bo" style="border-color:rgba(124,58,237,0.4);color:#c4b5fd">Get Business</a>
+    </div>
+  </div>
+</section>
+
+<div class="hr"></div>
+
+<section class="fade" style="text-align:center">
+  <div class="cta-box">
+    <div style="font-size:34px;margin-bottom:12px">🚀</div>
+    <h2 style="font-size:24px;font-weight:800;margin-bottom:10px">Start growing today</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6">Join entrepreneurs across Nigeria and Africa using AI to manage customers, close deals, and save hours every week.</p>
+    <a href="/auth/signup.html" class="btn-hero" style="display:inline-block">Create Free Account →</a>
+    <p style="font-size:11px;color:var(--muted);margin-top:12px">No credit card · Free forever plan · Cancel anytime</p>
+  </div>
+</section>
+
+<footer>
+  <div class="logo" style="justify-content:center;margin-bottom:18px;display:flex">📊 AI Business</div>
+  <div class="foot-links">
+    <a href="/auth">Login</a>
+    <a href="/auth/signup.html">Sign Up</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#features">Features</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/privacy.html">Privacy</a>
+  </div>
+  <div class="foot-copy">© 2026 AI Business. Built for African entrepreneurs. 🌍</div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(e=>{
+  e.forEach(el=>{if(el.isIntersecting) el.target.classList.add("on")});
+},{threshold:0.1});
+document.querySelectorAll(".fade").forEach(el=>obs.observe(el));
+</script>
 </body>
 </html>
