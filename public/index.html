@@ -1,164 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>AI Business SaaS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Business Dashboard</title>
 
-  <style>
-    body {
-      margin:0;
-      font-family: Arial;
-      background:#0b1220;
-      color:white;
-    }
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0f172a;
+  color:white;
+}
 
-    .hero {
-      text-align:center;
-      padding:80px 20px;
-      background: radial-gradient(circle at top, #1e3a8a, #0b1220);
-    }
+/* TOP BAR */
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  background:#111827;
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:1000;
+}
 
-    .hero h1 {
-      font-size:42px;
-      margin-bottom:10px;
-    }
+.menu-btn{
+  font-size:26px;
+  cursor:pointer;
+}
 
-    .hero p {
-      font-size:18px;
-      color:#cbd5e1;
-      max-width:600px;
-      margin:auto;
-    }
+/* MENU */
+.menu{
+  position:fixed;
+  top:60px;
+  right:15px;
+  background:#1e293b;
+  width:180px;
+  border-radius:10px;
+  display:none;
+  z-index:2000;
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
+}
 
-    .btn {
-      margin-top:20px;
-      padding:12px 20px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:bold;
-    }
+.menu div{
+  padding:12px;
+  cursor:pointer;
+}
 
-    .primary {
-      background:#38bdf8;
-      color:black;
-    }
+.menu div:hover{
+  background:#334155;
+}
 
-    .section {
-      padding:50px 20px;
-      text-align:center;
-    }
+/* CONTENT */
+.container{
+  padding:80px 15px 15px 15px;
+}
 
-    .grid {
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap:15px;
-      max-width:1000px;
-      margin:auto;
-    }
-
-    .card {
-      background:#111827;
-      padding:20px;
-      border-radius:12px;
-      border:1px solid #1f2937;
-    }
-
-    .pricing {
-      display:flex;
-      flex-wrap:wrap;
-      justify-content:center;
-      gap:20px;
-      margin-top:20px;
-    }
-
-    .price-card {
-      background:#111827;
-      padding:20px;
-      width:250px;
-      border-radius:12px;
-      border:1px solid #1f2937;
-    }
-
-    .highlight {
-      border:2px solid #38bdf8;
-    }
-
-    .cta {
-      background:#38bdf8;
-      color:black;
-      padding:10px;
-      border-radius:8px;
-      display:inline-block;
-      margin-top:10px;
-      cursor:pointer;
-      font-weight:bold;
-    }
-
-    .small {
-      color:#94a3b8;
-      font-size:14px;
-    }
-  </style>
+.card{
+  background:#1e293b;
+  padding:15px;
+  border-radius:10px;
+  margin-top:10px;
+}
+</style>
 </head>
 
 <body>
 
-<div class="hero">
-  <h1>🚀 AI Business CRM</h1>
-  <p>
-    Automate your business with AI. Capture leads, reply instantly, and increase sales without stress.
-  </p>
-
-  <button class="btn primary" onclick="location.href='/auth'">
-    Start Free Now
-  </button>
-
-  <p class="small">No credit card required • Setup in 2 minutes</p>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>📊 AI Business</div>
+  <div class="menu-btn" onclick="toggleMenu()">☰</div>
 </div>
 
-<div class="section">
-  <h2>⚡ Why Businesses Love This</h2>
+<!-- MENU -->
+<div class="menu" id="menu">
+  <div onclick="showPage('About', aboutText)">About</div>
+  <div onclick="showPage('Policy', policyText)">Policy</div>
+  <div onclick="showPage('Settings', settingsText)">Settings</div>
+  <div onclick="logout()">Logout</div>
+</div>
 
-  <div class="grid">
-    <div class="card">📩 Auto reply to customers instantly</div>
-    <div class="card">📊 Manage all leads in one dashboard</div>
-    <div class="card">🧠 AI writes sales messages for you</div>
-    <div class="card">💰 Helps you close more deals faster</div>
+<!-- CONTENT -->
+<div class="container">
+
+  <div class="card">
+    <h3>Dashboard Overview</h3>
+    <p>Total Leads: 0</p>
   </div>
+
+  <div class="card" id="pageBox" style="display:none;"></div>
+
 </div>
 
-<div class="section">
-  <h2>💎 Pricing</h2>
-
-  <div class="pricing">
-
-    <div class="price-card">
-      <h3>Free</h3>
-      <p>5 AI replies/day</p>
-      <p>Basic CRM</p>
-      <h2>₦0</h2>
-      <div class="cta" onclick="location.href='/auth'">Get Started</div>
-    </div>
-
-    <div class="price-card highlight">
-      <h3>Pro 🔥</h3>
-      <p>Unlimited AI replies</p>
-      <p>Automation tools</p>
-      <p>Priority support</p>
-      <h2>₦2000/month</h2>
-      <div class="cta" onclick="location.href='/auth'">Upgrade Now</div>
-    </div>
-
-  </div>
-</div>
-
-<div class="section">
-  <h2>🚀 Built for real businesses</h2>
-  <p class="small">
-    Stop replying manually. Let AI handle your customers while you focus on growth.
-  </p>
-</div>
+<script src="./app.js"></script>
 
 </body>
 </html>
