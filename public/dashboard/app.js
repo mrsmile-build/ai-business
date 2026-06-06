@@ -71,7 +71,8 @@ function loadPage(page){
     aiTools: renderAITools,
     subscription: renderSubscription,
     settings: renderSettings,
-    support: renderSupport
+    support: renderSupport,
+    editProfile: renderEditProfile
   };
 
   (routes[page] || renderDashboard)();
@@ -122,7 +123,44 @@ function avatarHTML(size=60){
   return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.35)}px;font-weight:bold;color:white">${initials}</div>`;
 }
 
-async function renderProfile(){
+/* READ-ONLY PROFILE (menu) */
+function renderProfile(){
+  const email=currentUser?.email||"";
+  const name=currentProfile?.display_name||email.split("@")[0];
+  const phone=currentProfile?.phone||"Not set";
+  const country=currentProfile?.country||"";
+  const plan=currentSub?.plan||"free";
+  const planColor={business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
+
+  setView(`
+    <div class="card">
+      ${header("👤 Profile","settings")}
+
+      <div style="text-align:center;padding:20px 0">
+        ${avatarHTML(90)}
+        <h2 style="margin:12px 0 4px">${name}</h2>
+        <p style="margin:0;color:#64748b;font-size:13px">${email}</p>
+        <span style="display:inline-block;margin-top:8px;padding:4px 12px;background:${planColor};color:white;border-radius:20px;font-size:12px;font-weight:bold">${plan.toUpperCase()}</span>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;overflow:hidden;margin-bottom:12px">
+        <div style="padding:12px 15px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
+          <span style="color:#64748b;font-size:13px">Phone</span>
+          <span style="font-size:13px">${phone}</span>
+        </div>
+        <div style="padding:12px 15px;display:flex;justify-content:space-between">
+          <span style="color:#64748b;font-size:13px">Country</span>
+          <span style="font-size:13px">${country||"Not set"}</span>
+        </div>
+      </div>
+
+      <button onclick="loadPage('editProfile')" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">✏️ Edit Profile</button>
+    </div>
+  `);
+}
+
+/* EDITABLE PROFILE (settings) */
+async function renderEditProfile(){
   const email=currentUser?.email||"";
   const name=currentProfile?.display_name||email.split("@")[0];
   const phone=currentProfile?.phone||"";
@@ -133,31 +171,19 @@ async function renderProfile(){
 
   setView(`
     <div class="card">
-      ${header("👤 Profile","settings")}
+      ${header("✏️ Edit Profile","profile")}
 
-      <div style="display:flex;align-items:center;gap:15px;margin-bottom:20px">
-        ${avatarHTML(65)}
-        <div>
-          <p style="margin:0;font-size:16px;font-weight:bold">${name}</p>
-          <p style="margin:3px 0 0;font-size:12px;color:#64748b">${email}</p>
-        </div>
+      <div style="text-align:center;margin-bottom:20px">
+        ${avatarHTML(70)}
+        <p style="margin:6px 0 0;font-size:12px;color:#475569">Avatar auto-generated from name</p>
       </div>
 
       <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Display Name ${canChange?"":"("+daysLeft+" days until you can change)"}</p>
+        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Display Name ${canChange?"":"("+daysLeft+"d to change)"}</p>
         <div style="display:flex;gap:8px">
           <input id="p_name" value="${name}" ${canChange?"":"disabled"} style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:${canChange?"#0b1220":"#1e293b"};color:${canChange?"white":"#64748b"};font-size:13px">
           ${canChange?`<button onclick="saveName()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>`:""}
         </div>
-      </div>
-
-      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Profile Picture URL</p>
-        <div style="display:flex;gap:8px">
-          <input id="p_avatar" placeholder="Paste image URL..." value="${currentProfile?.avatar_url||""}" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
-          <button onclick="saveAvatar()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>
-        </div>
-        <p style="margin:5px 0 0;font-size:11px;color:#475569">Upload to Imgur or Google Drive and paste the public link</p>
       </div>
 
       <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
@@ -199,14 +225,8 @@ async function saveName(){
   const name=document.getElementById("p_name")?.value.trim();
   if(!name) return alert("Name cannot be empty.");
   const data=await patchProfile({display_name:name});
-  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Display name updated!");renderProfile();}
-  else alert(data.error||"Failed to update.");
-}
-async function saveAvatar(){
-  const url=document.getElementById("p_avatar")?.value.trim();
-  const data=await patchProfile({avatar_url:url});
-  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Avatar updated!");renderProfile();}
-  else alert("Failed to update avatar.");
+  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Display name updated!");renderEditProfile();}
+  else alert(data.error||"Failed.");
 }
 async function savePhone(){
   const phone=document.getElementById("p_phone")?.value.trim();
@@ -224,8 +244,8 @@ async function changePassword(){
   const cur=document.getElementById("p_current")?.value;
   const p1=document.getElementById("p_pass1")?.value;
   const p2=document.getElementById("p_pass2")?.value;
-  if(!cur) return alert("Please enter your current password.");
-  if(!p1||!p2) return alert("Please fill the new password fields.");
+  if(!cur) return alert("Enter your current password.");
+  if(!p1||!p2) return alert("Fill new password fields.");
   if(p1!==p2) return alert("Passwords do not match.");
   if(p1.length<6) return alert("Password must be at least 6 characters.");
   const res=await fetch("/api/change-password",{
@@ -234,13 +254,11 @@ async function changePassword(){
     body:JSON.stringify({current_password:cur,password:p1})
   });
   const data=await res.json();
-  if(data.success){alert("Password updated!");document.getElementById("p_pass1").value="";document.getElementById("p_pass2").value="";}
+  if(data.success){alert("Password updated successfully!");document.getElementById("p_current").value="";document.getElementById("p_pass1").value="";document.getElementById("p_pass2").value="";}
   else alert(data.error||"Failed.");
 }
 
-/* =========================
-   ANALYTICS
-========================= */
+
 async function renderAnalytics(){
   setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try{
@@ -716,7 +734,8 @@ function renderSettings(){
       ${header("⚙️ Settings","dashboard")}
 
       <div style="margin-top:15px">
-        <p onclick="loadPage('profile')" style="cursor:pointer">👤 Profile</p>
+        <p onclick="loadPage('profile')" style="cursor:pointer">👤 View Profile</p>
+        <p onclick="loadPage('editProfile')" style="cursor:pointer">✏️ Edit Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>

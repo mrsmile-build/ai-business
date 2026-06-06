@@ -145,3 +145,14 @@ window.signup = async () => {
     alert(getErrorMessage(err));
   }
 };
+
+window.forgotPassword = async () => {
+  const email = document.getElementById("email").value.trim();
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if(error) throw error;
+    alert("Password reset link sent to " + email + ". Check your inbox.");
+  } catch(err) {
+    alert("Error: " + (err.message||"Could not send reset email."));
+  }
+};
