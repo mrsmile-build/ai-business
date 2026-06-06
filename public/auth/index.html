@@ -96,6 +96,11 @@ button{background:#2563eb;color:white;font-weight:bold}
 </div>
 
 <script type="module" src="./auth.js"></script>
-
+<script>
+if(window.location.search.includes("signup=true")){
+  document.getElementById("loginBox").style.display="none";
+  document.getElementById("signupBox").style.display="block";
+}
+</script>
 </body>
 </html>
