@@ -121,6 +121,8 @@ window.signup = async () => {
   const password = document.getElementById("s_password").value;
   const confirm = document.getElementById("s_confirm").value;
   const usage = document.getElementById("usage").value;
+  const phone = document.getElementById("s_phone")?.value||"";
+  const country = document.getElementById("s_country")?.value||"Nigeria";
 
   if(!document.getElementById("signup_terms")?.checked) return alert("Please agree to the Terms and Conditions to continue.");
   const check = validateSignup(username, email, password, confirm);
@@ -131,7 +133,7 @@ window.signup = async () => {
       email,
       password,
       options: {
-        data: { username, usage }
+        data: { username, usage, phone, country }
       }
     });
 

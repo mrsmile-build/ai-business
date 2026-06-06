@@ -114,6 +114,29 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
   }
 });
 
+/* ---------------- LEADS UPDATE ---------------- */
+app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
+  try {
+    const { status, notes, name, phone, email, business } = req.body;
+    const updates = {};
+    if(status !== undefined) updates.status = status;
+    if(notes !== undefined) updates.notes = notes;
+    if(name !== undefined) updates.name = name;
+    if(phone !== undefined) updates.phone = phone;
+    if(email !== undefined) updates.email = email;
+    if(business !== undefined) updates.business = business;
+    updates.updated_at = new Date();
+    const { data, error } = await supabase
+      .from("leads")
+      .update(updates)
+      .eq("id", req.params.id)
+      .eq("user_id", req.user.id)
+      .select().single();
+    if(error) throw error;
+    res.json({ success: true, lead: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- LEADS DELETE ---------------- */
 app.delete("/api/leads/:id", authMiddleware, async (req, res) => {
   try {
@@ -222,6 +245,52 @@ app.post("/api/refresh", async (req, res) => {
     const { data, error } = await supabase.auth.refreshSession({ refresh_token });
     if(error) return res.status(401).json({ error: "Session expired" });
     res.json({ token: data.session.access_token, refresh_token: data.session.refresh_token });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- PROFILE ---------------- */
+app.get("/api/profile", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("profiles").select("*").eq("user_id", req.user.id).single();
+    res.json({ success: true, profile: data || {} });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch("/api/profile", authMiddleware, async (req, res) => {
+  try {
+    const { display_name, avatar_url, phone, country } = req.body;
+    const updates = { user_id: req.user.id };
+    if(phone !== undefined) updates.phone = phone;
+    if(country !== undefined) updates.country = country;
+    if(avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if(display_name !== undefined){
+      const { data: existing } = await supabase.from("profiles").select("username_updated_at").eq("user_id", req.user.id).single();
+      if(existing?.username_updated_at){
+        const days = (Date.now() - new Date(existing.username_updated_at).getTime())/(1000*60*60*24);
+        if(days < 30) return res.json({ success: false, error: "Username can only be changed every 30 days. "+Math.ceil(30-days)+" days remaining." });
+      }
+      updates.display_name = display_name;
+      updates.username_updated_at = new Date();
+    }
+    const { data, error } = await supabase.from("profiles").upsert(updates, { onConflict: "user_id" }).select().single();
+    if(error) throw error;
+    res.json({ success: true, profile: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/change-password", authMiddleware, async (req, res) => {
+  try {
+    const { current_password, password } = req.body;
+    // Verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: req.user.email,
+      password: current_password
+    });
+    if(signInError) return res.json({ success: false, error: "Current password is incorrect." });
+    // Change password
+    const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password });
+    if(error) throw error;
+    res.json({ success: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
