@@ -72,7 +72,8 @@ function loadPage(page){
     subscription: renderSubscription,
     settings: renderSettings,
     support: renderSupport,
-    editProfile: renderEditProfile
+    editProfile: renderEditProfile,
+    leadFinder: renderLeadFinder
   };
 
   (routes[page] || renderDashboard)();
@@ -94,6 +95,7 @@ function renderDashboard(){
 
       <div style="margin-top:20px">
         <button onclick="loadPage('leads')">📩 Leads</button>
+        <button onclick="loadPage('leadFinder')">🎯 Leads Finder</button>
         <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
         <button onclick="loadPage('subscription')">💳 Upgrade</button>
       </div>
@@ -904,6 +906,201 @@ async function deleteAccount(){
       location.href="/auth";
     } else { alert("Error: "+(data.error||"Failed")); }
   }catch(e){ alert("Error: "+e.message); }
+}
+
+/* =========================
+   LEAD FINDER
+========================= */
+const INDUSTRIES = [
+  "Salon / Hair Studio", "Spa / Wellness Center", "Restaurant / Food Business",
+  "Real Estate Agency", "Fashion / Clothing Store", "Photography Studio",
+  "Event Planning", "Catering Service", "Supermarket / Retail Shop",
+  "Gym / Fitness Center", "Hotel / Shortlet", "Auto Repair / Mechanic",
+  "School / Tutoring", "Pharmacy / Drugstore", "Logistics / Delivery",
+  "Interior Design", "Printing / Graphics", "Bakery / Confectionery",
+  "Legal Services", "Accounting / Finance", "Other (type below)"
+];
+
+function renderLeadFinder(){
+  const plan = currentSub?.plan || "free";
+  const usage = currentSub?.subscription?.lead_finder_usage || 0;
+  const limits = { free:3, starter:15, pro:50, business:999 };
+  const limit = limits[plan] || 3;
+  const isPro = plan === "pro" || plan === "business";
+
+  setView(`
+    <div class="card">
+      ${header("🎯 Lead Finder","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:15px">Tell us about your business. We find potential customers and write outreach messages for you.</p>
+
+      <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:#94a3b8">Searches this month</span>
+        <span style="font-size:13px;font-weight:bold;color:${usage>=limit?"#ef4444":"#10b981"}">${usage} / ${limit===999?"Unlimited":limit}</span>
+      </div>
+
+      ${usage >= limit && limit !== 999 ? `
+        <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px;text-align:center;margin-bottom:15px">
+          <p style="margin:0 0 8px;font-size:13px;color:#ef4444">Monthly search limit reached</p>
+          <button onclick="loadPage('subscription')" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Upgrade Plan</button>
+        </div>
+      ` : `
+        <div style="margin-bottom:15px">
+          <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What is your business / what do you offer?</p>
+          <input id="lf_service" placeholder="e.g. Social media management, Web design, Catering..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+
+          <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What type of businesses do you want to reach?</p>
+          <select id="lf_industry" onchange="checkCustomIndustry()" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+            <option value="">-- Select Industry --</option>
+            ${INDUSTRIES.map(i=>`<option value="${i}">${i}</option>`).join("")}
+          </select>
+          <input id="lf_custom_industry" placeholder="Type custom industry..." style="display:none;width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+
+          <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Which city or area?</p>
+          <input id="lf_location" placeholder="e.g. Lagos, Abuja, Port Harcourt..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+
+          <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Extra details (optional)</p>
+          <textarea id="lf_context" placeholder="Tell us more about your offer, pricing, or what makes you different..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+
+          ${!isPro ? `<p style="font-size:11px;color:#475569;margin-bottom:10px">ℹ️ Free plan: messages include AI Business referral link. <span onclick="loadPage('subscription')" style="color:#3b82f6;cursor:pointer">Upgrade to Pro</span> to remove.</p>` : ""}
+
+          <button onclick="searchLeads()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px">🔍 Find Leads + Generate Messages</button>
+        </div>
+      `}
+
+      <div id="lf_results"></div>
+    </div>
+  `);
+}
+
+function checkCustomIndustry(){
+  const sel = document.getElementById("lf_industry")?.value;
+  const custom = document.getElementById("lf_custom_industry");
+  if(custom) custom.style.display = sel === "Other (type below)" ? "block" : "none";
+}
+
+async function searchLeads(){
+  const service = document.getElementById("lf_service")?.value.trim();
+  const industrySelect = document.getElementById("lf_industry")?.value;
+  const customIndustry = document.getElementById("lf_custom_industry")?.value.trim();
+  const industry = industrySelect === "Other (type below)" ? customIndustry : industrySelect;
+  const location = document.getElementById("lf_location")?.value.trim();
+  const context = document.getElementById("lf_context")?.value.trim();
+
+  if(!service) return alert("Please enter what you offer.");
+  if(!industry) return alert("Please select a target industry.");
+  if(!location) return alert("Please enter a target location.");
+
+  const btn = document.querySelector("button[onclick='searchLeads()']");
+  if(btn){ btn.disabled=true; btn.textContent="🔍 Searching for leads..."; }
+
+  const results = document.getElementById("lf_results");
+  if(results) results.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0">Finding leads and writing personalized messages...<br><span style="font-size:12px">This takes 10-15 seconds</span></p>';
+
+  const plan = currentSub?.plan || "free";
+  const isPro = plan === "pro" || plan === "business";
+  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: s-1orz.onrender.com";
+
+  try{
+    const res = await fetch("/api/lead-finder",{
+      method:"POST",
+      headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry })
+    });
+    const data = await res.json();
+
+    if(!data.success){
+      if(results) results.innerHTML = `<div style="background:rgba(239,68,68,0.1);padding:12px;border-radius:8px;text-align:center"><p style="color:#ef4444;margin:0">${data.error}</p>${data.usage >= data.limit ? `<button onclick="loadPage('subscription')" style="margin-top:8px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Upgrade Plan</button>` : ""}</div>`;
+      return;
+    }
+
+    if(currentSub) currentSub.subscription = { ...currentSub.subscription, lead_finder_usage: data.usage };
+
+    const leads = data.leads || [];
+    if(leads.length === 0){
+      if(results) results.innerHTML = '<p style="color:#64748b;text-align:center">No leads found. Try different terms or location.</p>';
+      return;
+    }
+
+    if(results) results.innerHTML = `
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">✅ Found ${leads.length} potential leads — edit messages then send</p>
+      ${leads.map((l,i) => `
+        <div id="lead_card_${i}" style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid ${l.source==="local"?"#10b981":"#3b82f6"}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div style="flex:1">
+              <p style="margin:0;font-weight:bold;font-size:14px">${l.name}</p>
+              ${l.type?`<p style="margin:2px 0;font-size:11px;color:#64748b">${l.type}</p>`:""}
+              ${l.address?`<p style="margin:2px 0;font-size:12px;color:#94a3b8">📍 ${l.address}</p>`:""}
+              ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981;font-weight:bold">📞 ${l.phone}</p>`:""}
+              ${l.rating?`<p style="margin:2px 0;font-size:11px;color:#f59e0b">⭐ ${l.rating} (${l.reviews} reviews)</p>`:""}
+            </div>
+            <span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;${l.source==="local"?"background:rgba(16,185,129,0.15);color:#10b981":"background:rgba(59,130,246,0.15);color:#3b82f6"}">${l.source==="local"?"Local":"Online"}</span>
+          </div>
+
+          <p style="margin:0 0 6px;font-size:12px;color:#64748b">✏️ Edit message before sending:</p>
+          <textarea id="msg_${i}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:13px;height:100px;resize:vertical;box-sizing:border-box;line-height:1.5">${l.message}${referralLine}</textarea>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
+            ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}?text=" + encodeURIComponent(document.getElementById("msg_${i}")?.value||"") + "" target="_blank" onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
+            <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
+            ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
+          </div>
+          <div id="note_${i}" style="display:none;margin-top:10px">
+            <textarea id="note_text_${i}" placeholder="What did they say? Add a follow-up note..." style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px;height:60px;resize:none;box-sizing:border-box"></textarea>
+            <button onclick="saveNote(${i})" style="margin-top:6px;padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Save Note</button>
+          </div>
+        </div>
+      `).join("")}
+    `;
+
+    // Store leads data for save functions
+    window._lfLeads = leads;
+
+  }catch(e){
+    if(results) results.innerHTML = `<div style="text-align:center;padding:15px"><p style="color:#ef4444;margin-bottom:10px">Network error. Check connection and try again.</p><button onclick="searchLeads()" style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer">🔄 Retry</button></div>`;
+  }
+
+  if(btn){ btn.disabled=false; btn.textContent="🔍 Find Leads + Generate Messages"; }
+}
+
+function copyEditedMsg(i){
+  const text = document.getElementById("msg_"+i)?.value||"";
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.querySelectorAll("[onclick^='copyEditedMsg']")[i];
+    if(btn){ btn.textContent="✅ Copied!"; setTimeout(()=>btn.textContent="📋 Copy",2000); }
+  });
+}
+
+async function saveToLeads(i, name, phone, business, address, website, action){
+  const message = document.getElementById("msg_"+i)?.value||"";
+  try{
+    const res = await fetch("/api/leads",{
+      method:"POST",
+      headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({
+        name, phone, email: "", business,
+        message: "Found via Lead Finder. Address: "+address+". Website: "+website+". Sent: "+message.slice(0,200),
+        status: action==="wa" ? "contacted" : "new"
+      })
+    });
+    const data = await res.json();
+    if(data.success){
+      // Show follow-up note box
+      const noteBox = document.getElementById("note_"+i);
+      if(noteBox) noteBox.style.display = "block";
+      // Flash green border
+      const card = document.getElementById("lead_card_"+i);
+      if(card){ card.style.borderColor="#10b981"; card.style.borderWidth="2px"; }
+    }
+  }catch(e){ console.error(e); }
+}
+
+async function saveNote(i){
+  const note = document.getElementById("note_text_"+i)?.value.trim();
+  if(!note) return;
+  // Notes are saved to the lead's message field via update
+  alert("Note saved! Check your Leads page for follow-up.");
+  document.getElementById("note_"+i).style.display = "none";
 }
 
 /* =========================

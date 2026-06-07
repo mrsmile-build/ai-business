@@ -306,6 +306,100 @@ app.delete("/api/account", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- LEAD FINDER ---------------- */
+app.post("/api/lead-finder", authMiddleware, async (req, res) => {
+  try {
+    const sub = await getSubscription(req.user);
+    const plan = sub.plan || "free";
+    const limits = { free: 3, starter: 15, pro: 50, business: 999 };
+    const monthlyLimit = limits[plan] || 3;
+
+    // Monthly reset
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    let usage = sub.lead_finder_usage || 0;
+    if(sub.lead_finder_reset_date !== thisMonth){
+      usage = 0;
+      await supabase.from("subscriptions")
+        .update({ lead_finder_usage: 0, lead_finder_reset_date: thisMonth })
+        .eq("user_id", req.user.id);
+    }
+
+    if(usage >= monthlyLimit){
+      return res.json({ success: false, error: `Monthly limit reached (${monthlyLimit} searches). Upgrade your plan.`, usage, limit: monthlyLimit });
+    }
+
+    const { service, location, context } = req.body;
+    if(!service || !location) return res.status(400).json({ error: "Service and location required" });
+
+    // Search HasData
+    const searchQuery = (req.body.industry && req.body.industry !== req.body.service) ? req.body.industry + " " + location : service + " " + location;
+    const searchRes = await fetch(
+      `https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=ng&hl=en`,
+      { headers: { "x-api-key": process.env.HASDATA_KEY } }
+    );
+    const searchData = await searchRes.json();
+
+    // Extract local leads (have phone numbers — gold)
+    const localLeads = (searchData.localResults?.places || []).slice(0, 8).map(p => ({
+      name: p.title, phone: p.phone||null, address: p.address||null,
+      website: p.links?.website||null, rating: p.rating||null,
+      reviews: p.reviews||null, type: p.type||null, source: "local"
+    }));
+
+    // Extract organic leads (websites)
+    const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube"];
+    const organicLeads = (searchData.organicResults || [])
+      .filter(r => !skipDomains.some(d => r.link.includes(d)))
+      .slice(0, 5).map(r => ({
+        name: r.source||r.title, phone: null, website: r.link,
+        snippet: r.snippet?.slice(0,100), source: "organic"
+      }));
+
+    const allLeads = [...localLeads, ...organicLeads].slice(0, 10);
+
+    // Generate AI messages for all leads at once
+    const userOffer = context || service;
+    const prompt = `You help Nigerian entrepreneurs reach potential clients via WhatsApp.
+The entrepreneur offers: ${userOffer} in ${location}.
+
+Write a short friendly WhatsApp outreach message for each business below.
+- Under 80 words each
+- Mention the business name
+- Focus on value, not selling
+- End with a clear question
+
+Businesses:
+${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " ("+l.type+")" : ""}${l.snippet ? " - "+l.snippet : ""}`).join("\n")}
+
+Return ONLY a JSON array of strings in the same order. No markdown, no explanation.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+    });
+    const groqData = await groqRes.json();
+    let messages = [];
+    try {
+      const raw = groqData.choices[0].message.content.replace(/```json|```/g,"").trim();
+      messages = JSON.parse(raw);
+    } catch(e) {
+      messages = allLeads.map(l => `Hi ${l.name}, I offer ${userOffer} and would love to help your business grow. Can we talk?`);
+    }
+
+    const leads = allLeads.map((l,i) => ({
+      ...l,
+      message: messages[i] || `Hi ${l.name}, I offer ${userOffer} and would love to connect.`
+    }));
+
+    await supabase.from("subscriptions")
+      .update({ lead_finder_usage: usage + 1 })
+      .eq("user_id", req.user.id);
+
+    res.json({ success: true, leads, usage: usage + 1, limit: monthlyLimit });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });
