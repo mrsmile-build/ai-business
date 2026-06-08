@@ -117,7 +117,7 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
 /* ---------------- LEADS UPDATE ---------------- */
 app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
   try {
-    const { status, notes, name, phone, email, business } = req.body;
+    const { status, notes, name, phone, email, business, follow_up_date, sale_amount } = req.body;
     const updates = {};
     if(status !== undefined) updates.status = status;
     if(notes !== undefined) updates.notes = notes;
@@ -125,6 +125,8 @@ app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
     if(phone !== undefined) updates.phone = phone;
     if(email !== undefined) updates.email = email;
     if(business !== undefined) updates.business = business;
+    if(follow_up_date !== undefined) updates.follow_up_date = follow_up_date;
+    if(sale_amount !== undefined) updates.sale_amount = sale_amount;
     updates.updated_at = new Date();
     const { data, error } = await supabase
       .from("leads")
@@ -397,6 +399,76 @@ Return ONLY a JSON array of strings in the same order. No markdown, no explanati
       .eq("user_id", req.user.id);
 
     res.json({ success: true, leads, usage: usage + 1, limit: monthlyLimit });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- FOLLOW-UP ALERTS ---------------- */
+app.get("/api/leads/followups", authMiddleware, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const { data } = await supabase
+      .from("leads").select("*")
+      .eq("user_id", req.user.id)
+      .lte("follow_up_date", today)
+      .not("follow_up_date", "is", null)
+      .not("status", "in", '("won","lost")')
+      .order("follow_up_date", { ascending: true });
+    res.json({ success: true, followups: data || [] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- REVENUE SUMMARY ---------------- */
+app.get("/api/revenue", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase
+      .from("leads").select("sale_amount, created_at, status, name")
+      .eq("user_id", req.user.id)
+      .eq("status", "won");
+    const total = (data||[]).reduce((sum, l) => sum + (parseFloat(l.sale_amount)||0), 0);
+    const thisMonth = new Date().toISOString().slice(0,7);
+    const monthly = (data||[])
+      .filter(l => l.created_at?.startsWith(thisMonth))
+      .reduce((sum, l) => sum + (parseFloat(l.sale_amount)||0), 0);
+    res.json({ success: true, total, monthly, count: (data||[]).length, deals: data||[] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- PROPOSAL GENERATOR ---------------- */
+app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
+  try {
+    const { client_name, service, price, details, your_name, your_business } = req.body;
+    const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
+
+Write a complete, professional business proposal with these details:
+- From: ${your_name || "AI Business User"} / ${your_business || "Our Company"}
+- To: ${client_name}
+- Service: ${service}
+- Price: ${price || "To be discussed"}
+- Details: ${details || "Standard service delivery"}
+
+Write a complete proposal with these sections:
+1. Cover/Header
+2. Executive Summary (2-3 sentences)
+3. Understanding Your Needs (what problem they have)
+4. Our Proposed Solution (what we will do)
+5. Deliverables (bullet list of exactly what they get)
+6. Timeline (realistic timeline)
+7. Investment (price breakdown)
+8. Why Choose Us (2-3 points)
+9. Next Steps
+10. Terms & Validity (valid 30 days)
+
+Make it professional, persuasive, and specific to Nigerian business context.
+Format with clear sections using headers. Be detailed but concise.`;
+
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+    });
+    const data = await response.json();
+    const proposal = data.choices?.[0]?.message?.content;
+    res.json({ success: true, proposal });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -73,7 +73,9 @@ function loadPage(page){
     settings: renderSettings,
     support: renderSupport,
     editProfile: renderEditProfile,
-    leadFinder: renderLeadFinder
+    leadFinder: renderLeadFinder,
+    proposal: renderProposal,
+    revenue: renderRevenue
   };
 
   (routes[page] || renderDashboard)();
@@ -83,6 +85,7 @@ function loadPage(page){
    DASHBOARD (CORE SAAS)
 ========================= */
 function renderDashboard(){
+  setTimeout(loadFollowUps, 500);
   setView(`
     <div class="card">
       <h2>📊 AI Business Control Center</h2>
@@ -1041,6 +1044,7 @@ async function searchLeads(){
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
+            <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
             ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}?text=" + encodeURIComponent(document.getElementById("msg_${i}")?.value||"") + "" target="_blank" onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
             <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
@@ -1061,6 +1065,15 @@ async function searchLeads(){
   }
 
   if(btn){ btn.disabled=false; btn.textContent="🔍 Find Leads + Generate Messages"; }
+}
+
+function shareMsg(i){
+  const text = document.getElementById("msg_"+i)?.value||"";
+  if(navigator.share){
+    navigator.share({ text }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(()=>alert("Copied! Paste anywhere to share."));
+  }
 }
 
 function copyEditedMsg(i){
@@ -1101,6 +1114,167 @@ async function saveNote(i){
   // Notes are saved to the lead's message field via update
   alert("Note saved! Check your Leads page for follow-up.");
   document.getElementById("note_"+i).style.display = "none";
+}
+
+/* =========================
+   FOLLOW-UP ALERTS (in dashboard)
+========================= */
+async function loadFollowUps(){
+  try{
+    const res = await fetch("/api/leads/followups",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const data = await res.json();
+    const followups = data.followups || [];
+    const box = document.getElementById("followup_box");
+    if(!box) return;
+    if(followups.length === 0){ box.style.display="none"; return; }
+    box.style.display = "block";
+    box.innerHTML = `
+      <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px;margin-bottom:15px">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:bold;color:#f59e0b">⏰ ${followups.length} lead${followups.length>1?"s":""} need follow-up today</p>
+        ${followups.map(l=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05)">
+            <div>
+              <span style="font-size:13px">${l.name}</span>
+              <span style="font-size:11px;color:#64748b;margin-left:8px">${l.follow_up_date}</span>
+            </div>
+            <button onclick="loadPage('leads')" style="padding:4px 10px;background:#f59e0b;color:black;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">View</button>
+          </div>
+        `).join("")}
+      </div>`;
+  }catch(e){}
+}
+
+/* =========================
+   REVENUE TRACKER
+========================= */
+async function renderRevenue(){
+  setView(`<div class="card">${header("💰 Revenue","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try{
+    const res = await fetch("/api/revenue",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const data = await res.json();
+    const total = data.total || 0;
+    const monthly = data.monthly || 0;
+    const count = data.count || 0;
+    const deals = data.deals || [];
+
+    setView(`
+      <div class="card">
+        ${header("💰 Revenue","dashboard")}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px">
+          <div style="background:#0f172a;padding:15px;border-radius:10px;text-align:center;border-top:3px solid #10b981">
+            <p style="margin:0;font-size:11px;color:#64748b">TOTAL REVENUE</p>
+            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#10b981">₦${total.toLocaleString()}</p>
+          </div>
+          <div style="background:#0f172a;padding:15px;border-radius:10px;text-align:center;border-top:3px solid #3b82f6">
+            <p style="margin:0;font-size:11px;color:#64748b">THIS MONTH</p>
+            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#3b82f6">₦${monthly.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;padding:12px;border-radius:10px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;color:#94a3b8">Deals closed</span>
+          <span style="font-size:20px;font-weight:bold;color:#f59e0b">${count}</span>
+        </div>
+
+        ${deals.length > 0 ? `
+          <p style="font-size:13px;color:#94a3b8;margin-bottom:10px">Won Deals</p>
+          ${deals.map(d=>`
+            <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <p style="margin:0;font-size:13px;font-weight:bold">${d.name}</p>
+                <p style="margin:2px 0;font-size:11px;color:#64748b">${new Date(d.created_at).toLocaleDateString()}</p>
+              </div>
+              <span style="color:#10b981;font-weight:bold">₦${parseFloat(d.sale_amount||0).toLocaleString()}</span>
+            </div>
+          `).join("")}
+        ` : `<p style="color:#64748b;text-align:center;padding:20px">No won deals yet. Mark leads as Won to track revenue.</p>`}
+
+        <button onclick="loadPage('leads')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-top:10px">📩 Go to Leads</button>
+      </div>
+    `);
+  }catch(e){
+    setView(`<div class="card">${header("💰 Revenue","dashboard")}<p style="color:red">Error loading revenue.</p></div>`);
+  }
+}
+
+/* =========================
+   PROPOSAL GENERATOR
+========================= */
+function renderProposal(){
+  setView(`
+    <div class="card">
+      ${header("📄 Proposal Generator","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:15px">Generate a professional business proposal in seconds.</p>
+
+      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+        <input id="pr_your_name" placeholder="Your name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="pr_your_biz" placeholder="Your business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="pr_client" placeholder="Client / Business name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="pr_service" placeholder="Service you are offering *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="pr_price" placeholder="Price / Budget (e.g. ₦150,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <textarea id="pr_details" placeholder="Any specific details, requirements, or scope of work..." style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box"></textarea>
+      </div>
+
+      <button onclick="generateProposal()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;margin-bottom:15px">📄 Generate Proposal</button>
+
+      <div id="proposal_result"></div>
+    </div>
+  `);
+}
+
+async function generateProposal(){
+  const client = document.getElementById("pr_client")?.value.trim();
+  const service = document.getElementById("pr_service")?.value.trim();
+  if(!client || !service) return alert("Client name and service are required.");
+
+  const btn = document.querySelector("button[onclick='generateProposal()']");
+  if(btn){ btn.disabled=true; btn.textContent="Generating proposal..."; }
+
+  const result = document.getElementById("proposal_result");
+  if(result) result.innerHTML = "<p style='color:#64748b;text-align:center'>Writing your proposal... (15-20 seconds)</p>";
+
+  try{
+    const res = await fetch("/api/generate-proposal",{
+      method:"POST",
+      headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({
+        client_name: client,
+        service,
+        price: document.getElementById("pr_price")?.value,
+        details: document.getElementById("pr_details")?.value,
+        your_name: document.getElementById("pr_your_name")?.value,
+        your_business: document.getElementById("pr_your_biz")?.value
+      })
+    });
+    const data = await res.json();
+    if(data.success && data.proposal){
+      if(result) result.innerHTML = `
+        <div style="background:#0f172a;padding:15px;border-radius:10px;border:1px solid #334155">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <p style="margin:0;font-size:13px;color:#94a3b8">Your proposal is ready</p>
+            <button onclick="copyProposal()" style="padding:6px 12px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy All</button>
+          </div>
+          <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${data.proposal.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+          <button onclick="shareProposal()" style="width:100%;margin-top:10px;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📤 Share Proposal</button>
+        </div>`;
+    } else {
+      if(result) result.innerHTML = "<p style='color:red'>Failed to generate. Try again.</p>";
+    }
+  }catch(e){
+    if(result) result.innerHTML = `<div style="text-align:center"><p style="color:red">Network error.</p><button onclick="generateProposal()" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer">🔄 Retry</button></div>`;
+  }
+  if(btn){ btn.disabled=false; btn.textContent="📄 Generate Proposal"; }
+}
+
+function copyProposal(){
+  const text = document.getElementById("proposal_text")?.value||"";
+  navigator.clipboard.writeText(text).then(()=>alert("Proposal copied!"));
+}
+function shareProposal(){
+  const text = document.getElementById("proposal_text")?.value||"";
+  if(navigator.share){ navigator.share({title:"Business Proposal", text}).catch(()=>{}); }
+  else { copyProposal(); }
 }
 
 /* =========================
