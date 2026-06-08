@@ -1,3 +1,22 @@
+// PWA Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('install_btn');
+  if(btn) btn.style.display = 'flex';
+});
+
+window.installApp = async () => {
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if(outcome === 'accepted') {
+    const btn = document.getElementById('install_btn');
+    if(btn) btn.style.display = 'none';
+  }
+  deferredPrompt = null;
+};
+
 const app = document.getElementById("app");
 
 let currentUser = null;

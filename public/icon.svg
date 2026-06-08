@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b1220"/>
+      <stop offset="100%" style="stop-color:#0f1e35"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="glow2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+
+  <!-- Glow effect -->
+  <circle cx="256" cy="256" r="140" fill="url(#glow)" opacity="0.12" filter="url(#blur)"/>
+
+  <!-- Chart bars (bottom) -->
+  <rect x="100" y="340" width="52" height="80" rx="8" fill="url(#glow)" opacity="0.5"/>
+  <rect x="170" y="300" width="52" height="120" rx="8" fill="url(#glow)" opacity="0.65"/>
+  <rect x="240" y="260" width="52" height="160" rx="8" fill="url(#glow)" opacity="0.8"/>
+  <rect x="310" y="220" width="52" height="200" rx="8" fill="url(#glow2)"/>
+  <rect x="380" y="270" width="52" height="150" rx="8" fill="url(#glow)" opacity="0.75"/>
+
+  <!-- Trend line -->
+  <polyline points="126,320 196,275 266,235 336,195 406,225"
+    fill="none" stroke="url(#glow2)" stroke-width="6"
+    stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Dots on trend -->
+  <circle cx="126" cy="320" r="7" fill="#3b82f6"/>
+  <circle cx="266" cy="235" r="7" fill="#7c3aed"/>
+  <circle cx="406" cy="225" r="9" fill="#8b5cf6" stroke="white" stroke-width="3"/>
+
+  <!-- AI text top -->
+  <text x="256" y="165" text-anchor="middle"
+    font-family="Arial Black, sans-serif" font-weight="900"
+    font-size="88" fill="url(#glow2)" letter-spacing="-4">AI</text>
+
+  <!-- Subtle tagline -->
+  <text x="256" y="195" text-anchor="middle"
+    font-family="Arial, sans-serif" font-weight="400"
+    font-size="22" fill="rgba(148,163,184,0.6)" letter-spacing="6">BUSINESS</text>
+</svg>
