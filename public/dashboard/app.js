@@ -35,7 +35,7 @@ async function init(){
     currentProfile = pd.profile || {};
   }catch(e){}
   loadConversations();
-  loadPage("dashboard");
+  if(currentUser && currentProfile && !currentProfile.business_type){ renderNicheSelect(); } else { loadPage("dashboard"); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -64,21 +64,24 @@ function loadPage(page){
   closeMenu();
 
   const routes = {
-    dashboard: renderDashboard,
-    profile: renderProfile,
-    analytics: renderAnalytics,
-    leads: renderLeads,
-    aiTools: renderAITools,
-    subscription: renderSubscription,
-    settings: renderSettings,
-    support: renderSupport,
-    editProfile: renderEditProfile,
-    leadFinder: renderLeadFinder,
-    proposal: renderProposal,
-    revenue: renderRevenue
+    dashboard: 'renderDashboard',
+    profile: 'renderProfile',
+    analytics: 'renderAnalytics',
+    leads: 'renderLeads',
+    aiTools: 'renderAITools',
+    subscription: 'renderSubscription',
+    settings: 'renderSettings',
+    support: 'renderSupport',
+    editProfile: 'renderEditProfile',
+    leadFinder: 'renderLeadFinder',
+    proposal: 'renderProposal',
+    revenue: 'renderRevenue',
+    agents: 'renderAgents'
   };
 
-  (routes[page] || renderDashboard)();
+  var fnName = routes[page];
+  var fn = (fnName && typeof window[fnName] === 'function') ? window[fnName] : null;
+  if(fn){ fn(); } else { renderDashboard(); }
 }
 
 /* =========================
@@ -86,244 +89,92 @@ function loadPage(page){
 ========================= */
 function renderDashboard(){
   setTimeout(loadFollowUps, 500);
-  setView(`
-    <div class="card">
-      <h2>📊 AI Business Control Center</h2>
+  var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
+  var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
+  var planColor = pc[plan] || "#64748b";
+  var pl = {business:"Business",pro:"Pro",starter:"Starter",free:"Free"};
+  var planLabel = pl[plan] || "Free";
+  var leadsCount = (currentSub && currentSub.leads_count) ? currentSub.leads_count : 0;
+  var leadsLimit = (currentSub && currentSub.limits && currentSub.limits.leads) ? currentSub.limits.leads : 10;
+  var aiUsage = (currentSub && currentSub.ai_usage) ? currentSub.ai_usage : 0;
+  var aiLimitRaw = (currentSub && currentSub.limits) ? currentSub.limits.ai_per_day : 3;
+  var aiLimit = (!aiLimitRaw || aiLimitRaw > 1000) ? "Unlimited" : aiLimitRaw;
+  var email = currentUser ? (currentUser.email || "") : "";
+  var name = (currentProfile && currentProfile.display_name) ? currentProfile.display_name : (email.split("@")[0] || "Welcome");
+  var initials = name.substring(0,2).toUpperCase();
 
-      <div style="margin-top:15px">
-        <p><strong>Email:</strong> ${currentUser?.email || "Loading..."}</p>
-        <p><strong>Plan:</strong> Free</p>
-        <p><strong>Total Leads:</strong> ${currentSub?.leads_count || 0}</p>
+  setView(`
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#0f172a,#1a2540);padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.06)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:38px;height:38px;border-radius:50%;background:${planColor};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:white">${initials}</div>
+            <div>
+              <p style="margin:0;font-size:14px;font-weight:700">${name}</p>
+              <p style="margin:0;font-size:11px;color:#64748b">${email}</p>
+            </div>
+          </div>
+          <span style="padding:4px 10px;background:${planColor}22;border:1px solid ${planColor}55;border-radius:20px;font-size:11px;font-weight:600;color:${planColor}">${planLabel}</span>
+        </div>
       </div>
 
-      <div style="margin-top:20px">
-        <button onclick="loadPage('leads')">📩 Leads</button>
-        <button onclick="loadPage('leadFinder')">🎯 Leads Finder</button>
-        <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
-        <button onclick="loadPage('subscription')">💳 Upgrade</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:#0f172a">
+        <div style="padding:14px 8px;text-align:center;border-right:1px solid #1e293b" onclick="loadPage(\'leads\')" style="cursor:pointer">
+          <p style="margin:0;font-size:20px;font-weight:800;color:#3b82f6">${leadsCount}</p>
+          <p style="margin:2px 0 0;font-size:10px;color:#475569;text-transform:uppercase">Leads</p>
+        </div>
+        <div style="padding:14px 8px;text-align:center;border-right:1px solid #1e293b">
+          <p style="margin:0;font-size:20px;font-weight:800;color:#10b981">${aiUsage}</p>
+          <p style="margin:2px 0 0;font-size:10px;color:#475569;text-transform:uppercase">AI Uses</p>
+        </div>
+        <div style="padding:14px 8px;text-align:center;cursor:pointer" onclick="loadPage('revenue')">
+          <p style="margin:0;font-size:20px;font-weight:800;color:#f59e0b">0</p>
+          <p style="margin:2px 0 0;font-size:10px;color:#475569;text-transform:uppercase">Revenue</p>
+        </div>
+      </div>
+
+      <div id="followup_box" style="display:none"></div>
+
+      <div style="padding:14px">
+        <p style="margin:0 0 10px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:1px">Quick Actions</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="loadPage(\'leads\')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">📩</div>
+            <div style="font-size:12px;font-weight:600">Leads</div>
+            <div style="font-size:10px;color:#475569">${leadsCount}/${leadsLimit > 1000 ? "Unlimited" : leadsLimit}</div>
+          </button>
+          <button onclick="loadPage('leadFinder')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🎯</div>
+            <div style="font-size:12px;font-weight:600">Lead Finder</div>
+            <div style="font-size:10px;color:#475569">Find customers</div>
+          </button>
+          <button onclick="loadPage('aiTools')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🧠</div>
+            <div style="font-size:12px;font-weight:600">AI Tools</div>
+            <div style="font-size:10px;color:#475569">${aiUsage}/${aiLimit} today</div>
+          </button>
+          <button onclick="loadPage('agents')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🤖</div>
+            <div style="font-size:12px;font-weight:600">AI Agents</div>
+            <div style="font-size:10px;color:#475569">Auto-tasks</div>
+          </button>
+          <button onclick="loadPage('proposal')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">📄</div>
+            <div style="font-size:12px;font-weight:600">Proposals</div>
+            <div style="font-size:10px;color:#475569">Generate fast</div>
+          </button>
+          <button onclick="loadPage('subscription')" style="padding:13px 10px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">💳</div>
+            <div style="font-size:12px;font-weight:600">Upgrade</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.6)">Unlock more</div>
+          </button>
+        </div>
       </div>
     </div>
   `);
 }
 
-/* =========================
-   PROFILE
-========================= */
-function getInitials(email, name){
-  if(name) return name.substring(0,2).toUpperCase();
-  return (email||"?").substring(0,2).toUpperCase();
-}
-function getAvatarColor(email){
-  const colors=["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ef4444","#06b6d4"];
-  let h=0; for(let c of (email||"")) h=(h<<5)-h+c.charCodeAt(0);
-  return colors[Math.abs(h)%colors.length];
-}
-function avatarHTML(size=60){
-  const name=currentProfile?.display_name;
-  const email=currentUser?.email||"";
-  const url=currentProfile?.avatar_url;
-  const initials=getInitials(email,name);
-  const color=getAvatarColor(email);
-  if(url) return `<img src="${url}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">`;
-  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.35)}px;font-weight:bold;color:white">${initials}</div>`;
-}
 
-/* READ-ONLY PROFILE (menu) */
-function renderProfile(){
-  const email=currentUser?.email||"";
-  const name=currentProfile?.display_name||email.split("@")[0];
-  const phone=currentProfile?.phone||"Not set";
-  const country=currentProfile?.country||"";
-  const plan=currentSub?.plan||"free";
-  const planColor={business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
-
-  setView(`
-    <div class="card">
-      ${header("👤 Profile","settings")}
-
-      <div style="text-align:center;padding:20px 0">
-        ${avatarHTML(90)}
-        <h2 style="margin:12px 0 4px">${name}</h2>
-        <p style="margin:0;color:#64748b;font-size:13px">${email}</p>
-        <span style="display:inline-block;margin-top:8px;padding:4px 12px;background:${planColor};color:white;border-radius:20px;font-size:12px;font-weight:bold">${plan.toUpperCase()}</span>
-      </div>
-
-      <div style="background:#0f172a;border-radius:10px;overflow:hidden;margin-bottom:12px">
-        <div style="padding:12px 15px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
-          <span style="color:#64748b;font-size:13px">Phone</span>
-          <span style="font-size:13px">${phone}</span>
-        </div>
-        <div style="padding:12px 15px;display:flex;justify-content:space-between">
-          <span style="color:#64748b;font-size:13px">Country</span>
-          <span style="font-size:13px">${country||"Not set"}</span>
-        </div>
-      </div>
-
-      <button onclick="loadPage('editProfile')" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">✏️ Edit Profile</button>
-    </div>
-  `);
-}
-
-/* EDITABLE PROFILE (settings) */
-async function renderEditProfile(){
-  const email=currentUser?.email||"";
-  const name=currentProfile?.display_name||email.split("@")[0];
-  const phone=currentProfile?.phone||"";
-  const country=currentProfile?.country||"";
-  const lastChanged=currentProfile?.username_updated_at;
-  const daysLeft=lastChanged?Math.ceil(30-(Date.now()-new Date(lastChanged).getTime())/(1000*60*60*24)):0;
-  const canChange=daysLeft<=0;
-
-  setView(`
-    <div class="card">
-      ${header("✏️ Edit Profile","profile")}
-
-      <div style="text-align:center;margin-bottom:20px">
-        ${avatarHTML(70)}
-        <p style="margin:6px 0 0;font-size:12px;color:#475569">Avatar auto-generated from name</p>
-      </div>
-
-      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Display Name ${canChange?"":"("+daysLeft+"d to change)"}</p>
-        <div style="display:flex;gap:8px">
-          <input id="p_name" value="${name}" ${canChange?"":"disabled"} style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:${canChange?"#0b1220":"#1e293b"};color:${canChange?"white":"#64748b"};font-size:13px">
-          ${canChange?`<button onclick="saveName()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>`:""}
-        </div>
-      </div>
-
-      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Phone Number</p>
-        <div style="display:flex;gap:8px">
-          <input id="p_phone" value="${phone}" placeholder="+2348..." style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
-          <button onclick="savePhone()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>
-        </div>
-      </div>
-
-      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Country</p>
-        <div style="display:flex;gap:8px">
-          <input id="p_country" value="${country}" placeholder="Nigeria" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
-          <button onclick="saveCountry()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>
-        </div>
-      </div>
-
-      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Change Password</p>
-        <input id="p_current" type="password" placeholder="Current password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="p_pass1" type="password" placeholder="New password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="p_pass2" type="password" placeholder="Confirm new password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <button onclick="changePassword()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Update Password</button>
-      </div>
-    </div>
-  `);
-}
-
-async function patchProfile(updates){
-  const res=await fetch("/api/profile",{
-    method:"PATCH",
-    headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-    body:JSON.stringify(updates)
-  });
-  return await res.json();
-}
-async function saveName(){
-  const name=document.getElementById("p_name")?.value.trim();
-  if(!name) return alert("Name cannot be empty.");
-  const data=await patchProfile({display_name:name});
-  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Display name updated!");renderEditProfile();}
-  else alert(data.error||"Failed.");
-}
-async function savePhone(){
-  const phone=document.getElementById("p_phone")?.value.trim();
-  const data=await patchProfile({phone});
-  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Phone saved!");}
-  else alert("Failed.");
-}
-async function saveCountry(){
-  const country=document.getElementById("p_country")?.value.trim();
-  const data=await patchProfile({country});
-  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Country saved!");}
-  else alert("Failed.");
-}
-async function changePassword(){
-  const cur=document.getElementById("p_current")?.value;
-  const p1=document.getElementById("p_pass1")?.value;
-  const p2=document.getElementById("p_pass2")?.value;
-  if(!cur) return alert("Enter your current password.");
-  if(!p1||!p2) return alert("Fill new password fields.");
-  if(p1!==p2) return alert("Passwords do not match.");
-  if(p1.length<6) return alert("Password must be at least 6 characters.");
-  const res=await fetch("/api/change-password",{
-    method:"POST",
-    headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-    body:JSON.stringify({current_password:cur,password:p1})
-  });
-  const data=await res.json();
-  if(data.success){alert("Password updated successfully!");document.getElementById("p_current").value="";document.getElementById("p_pass1").value="";document.getElementById("p_pass2").value="";}
-  else alert(data.error||"Failed.");
-}
-
-
-async function renderAnalytics(){
-  setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
-  try{
-    const res = await fetch("/api/me",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
-    const data = await res.json();
-    const sub = data.subscription;
-    const leadsCount = sub?.leads_count||0;
-    const leadsLimit = sub?.limits?.leads;
-    const aiUsage = sub?.ai_usage||0;
-    const aiLimit = sub?.limits?.ai_per_day;
-    const plan = sub?.plan||"free";
-    const planColor = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
-    const lPct = leadsLimit===Infinity?5:Math.min(100,Math.round(leadsCount/(leadsLimit||10)*100));
-    const aPct = aiLimit===Infinity?5:Math.min(100,Math.round(aiUsage/(aiLimit||3)*100));
-
-    setView(`
-      <div class="card">
-        ${header("📊 Analytics","dashboard")}
-
-        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">📩 Leads Used</p>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:26px;font-weight:bold">${leadsCount}</span>
-            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${leadsLimit===Infinity?"Unlimited":leadsLimit}</span>
-          </div>
-          <div style="background:#1e293b;border-radius:6px;height:8px">
-            <div style="background:#3b82f6;width:${lPct}%;height:8px;border-radius:6px"></div>
-          </div>
-        </div>
-
-        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
-          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">🧠 AI Uses Today</p>
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:26px;font-weight:bold">${aiUsage}</span>
-            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${aiLimit===Infinity?"Unlimited":aiLimit} per day</span>
-          </div>
-          <div style="background:#1e293b;border-radius:6px;height:8px">
-            <div style="background:${aPct>80?"#ef4444":"#10b981"};width:${aPct}%;height:8px;border-radius:6px"></div>
-          </div>
-          ${aPct>80?'<p style="margin:6px 0 0;font-size:11px;color:#ef4444">Running low — consider upgrading</p>':""}
-        </div>
-
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
-            <p style="margin:0;font-size:12px;color:#94a3b8">Plan</p>
-            <p style="margin:5px 0 0;font-size:16px;font-weight:bold;color:${planColor}">${plan.toUpperCase()}</p>
-          </div>
-          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
-            <p style="margin:0;font-size:12px;color:#94a3b8">Account</p>
-            <p style="margin:5px 0 0;font-size:12px;color:#cbd5e1;word-break:break-all">${currentUser?.email||"..."}</p>
-          </div>
-        </div>
-
-        <button onclick="loadPage('subscription')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">💳 Upgrade Plan</button>
-      </div>
-    `);
-  }catch(e){
-    setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error loading analytics.</p></div>`);
-  }
-}
 
 /* =========================
    LEADS
@@ -912,6 +763,143 @@ async function deleteAccount(){
 }
 
 /* =========================
+   AI AGENTS
+========================= */
+function renderAgents(){
+  setView(`
+    <div class="card">
+      ${header("🤖 AI Agents","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Setup once. Each agent handles a task for your business.</p>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #3b82f6">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <p style="margin:0;font-weight:bold;font-size:14px">📞 Follow-Up Agent</p>
+            <p style="margin:2px 0 0;font-size:12px;color:#64748b">Checks which leads need follow-up today</p>
+          </div>
+          <button onclick="runFollowUpAgent()" style="padding:7px 14px;background:#3b82f6;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Run</button>
+        </div>
+        <div id="followup_agent_result"></div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #10b981">
+        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">💰 Quote Agent</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Generate instant professional quotes</p>
+        <input id="qa_service" placeholder="Service (e.g. Website design)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="qa_client" placeholder="Client name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="qa_price" placeholder="Your price (e.g. 80,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="runQuoteAgent()" style="width:100%;padding:10px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Quote</button>
+        <div id="quote_result" style="margin-top:10px"></div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #f59e0b">
+        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">⭐ Review Agent</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Ask customers to leave Google reviews</p>
+        <input id="ra_customer" placeholder="Customer name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="ra_service" placeholder="Service you provided" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="runReviewAgent()" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Generate Review Request</button>
+        <div id="review_result" style="margin-top:10px"></div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #8b5cf6">
+        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">🤝 Receptionist Agent</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Replies to common customer questions</p>
+        <input id="rec_biz" placeholder="Your business (e.g. Web design agency)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="rec_question" placeholder="Customer question" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="runReceptionistAgent()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Reply</button>
+        <div id="receptionist_result" style="margin-top:10px"></div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;border-left:3px solid #ef4444">
+        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">🌙 Off-Hours Agent</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Auto-reply when you are unavailable</p>
+        <input id="oh_biz" placeholder="Your business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="oh_hours" placeholder="Working hours (e.g. 9am-6pm Mon-Fri)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="runOffHoursAgent()" style="width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Auto-Reply</button>
+        <div id="offhours_result" style="margin-top:10px"></div>
+      </div>
+    </div>
+  `);
+}
+
+
+async function runFollowUpAgent(){
+  var el = document.getElementById("followup_agent_result");
+  if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Checking...</p>';
+  try{
+    var res = await fetch("/api/leads/followups",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    var leads = data.followups || [];
+    if(leads.length === 0){
+      if(el) el.innerHTML = '<p style="color:#10b981;font-size:12px">All leads up to date!</p>';
+    } else {
+      if(el) el.innerHTML = '<p style="color:#f59e0b;font-size:12px">'+leads.length+' lead(s) need follow-up: '+leads.map(function(l){return l.name;}).join(", ")+'</p><button onclick="loadPage(\'leads\')" style="margin-top:6px;padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">View Leads</button>';
+    }
+  } catch(e){ if(el) el.innerHTML = '<p style="color:red;font-size:12px">Error checking leads.</p>'; }
+}
+
+async function agentAI(prompt, resultId, btnEl, btnLabel){
+  if(btnEl){ btnEl.disabled=true; btnEl.textContent="Generating..."; }
+  var el = document.getElementById(resultId);
+  if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Writing...</p>';
+  try{
+    var res = await fetch("/api/ai-reply",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({message: prompt})
+    });
+    var data = await res.json();
+    if(data.success){
+if(el) el.innerHTML = `<textarea id="${resultId}_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:12px;height:100px;resize:vertical;box-sizing:border-box;line-height:1.5;margin-top:6px">${data.reply}</textarea><div style="display:flex;gap:8px;margin-top:6px"><button onclick="copyAgentResult('${resultId}_text')" style="padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Copy</button><button onclick="shareAgentResult('${resultId}_text')" style="padding:6px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Share</button></div>`;    } else {
+      if(el) el.innerHTML = '<p style="color:#ef4444;font-size:12px">'+(data.reply||"Limit reached. Upgrade plan.")+'</p>';
+    }
+  } catch(e){
+    if(el) el.innerHTML = '<p style="color:red;font-size:12px">Network error. Check connection.</p>';
+  }
+  if(btnEl){ btnEl.disabled=false; btnEl.textContent=btnLabel||"Generate"; }
+}
+
+function copyAgentResult(id){
+  var text = document.getElementById(id)?.value||"";
+  navigator.clipboard.writeText(text).then(function(){ alert("Copied!"); });
+}
+function shareAgentResult(id){
+  var text = document.getElementById(id)?.value||"";
+  if(navigator.share){ navigator.share({text:text}).catch(function(){}); }
+  else { navigator.clipboard.writeText(text).then(function(){ alert("Copied! Paste to share."); }); }
+}
+function runQuoteAgent(){
+  var service = document.getElementById("qa_service")?.value.trim();
+  var client = document.getElementById("qa_client")?.value.trim();
+  var price = document.getElementById("qa_price")?.value.trim();
+  if(!service||!client) return alert("Fill service and client name.");
+  var btn = document.querySelector("button[onclick='runQuoteAgent()']");
+  agentAI("Write a short professional WhatsApp quote for: Client: "+client+", Service: "+service+", Price: "+(price||"to discuss")+". Professional, clear, call to action. Under 100 words. Nigeria context.", "quote_result", btn, "Generate Quote");
+}
+function runReviewAgent(){
+  var customer = document.getElementById("ra_customer")?.value.trim();
+  var service = document.getElementById("ra_service")?.value.trim();
+  if(!customer||!service) return alert("Fill customer name and service.");
+  var btn = document.querySelector("button[onclick='runReviewAgent()']");
+  agentAI("Write a friendly WhatsApp message asking "+customer+" to leave a Google review for "+service+" they received. Natural, grateful, include 'please leave us a Google review'. Under 80 words.", "review_result", btn, "Generate Review Request");
+}
+function runReceptionistAgent(){
+  var biz = document.getElementById("rec_biz")?.value.trim();
+  var q = document.getElementById("rec_question")?.value.trim();
+  if(!biz||!q) return alert("Fill business and question.");
+  var btn = document.querySelector("button[onclick='runReceptionistAgent()']");
+  agentAI("You are the receptionist for "+biz+". Customer asked: "+q+". Write a professional friendly WhatsApp reply. Helpful, clear, offer to help further. Under 80 words.", "receptionist_result", btn, "Generate Reply");
+}
+function runOffHoursAgent(){
+  var biz = document.getElementById("oh_biz")?.value.trim();
+  var hours = document.getElementById("oh_hours")?.value.trim();
+  if(!biz) return alert("Enter business name.");
+  var btn = document.querySelector("button[onclick='runOffHoursAgent()']");
+  agentAI("Write a WhatsApp auto-reply for "+biz+" when unavailable. Hours: "+(hours||"weekdays")+" . Friendly, acknowledge customer, state hours, say will reply soon. Under 60 words.", "offhours_result", btn, "Generate Auto-Reply");
+}
+
+
+/* =========================
    LEAD FINDER
 ========================= */
 const INDUSTRIES = [
@@ -1076,6 +1064,16 @@ function shareMsg(i){
   }
 }
 
+function sendLfWhatsApp(i, phone){
+  var msg = document.getElementById("msg_"+i)?.value || "";
+  if(!msg){ alert("Message is empty"); return; }
+  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
+}
+function shareLfMsg(i){
+  var text = document.getElementById("msg_"+i)?.value || "";
+  if(navigator.share){ navigator.share({text}).catch(function(){}); }
+  else { navigator.clipboard.writeText(text).then(function(){ alert("Copied!"); }); }
+}
 function copyEditedMsg(i){
   const text = document.getElementById("msg_"+i)?.value||"";
   navigator.clipboard.writeText(text).then(()=>{
@@ -1137,7 +1135,7 @@ async function loadFollowUps(){
               <span style="font-size:13px">${l.name}</span>
               <span style="font-size:11px;color:#64748b;margin-left:8px">${l.follow_up_date}</span>
             </div>
-            <button onclick="loadPage('leads')" style="padding:4px 10px;background:#f59e0b;color:black;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">View</button>
+            <button onclick="loadPage(\'leads\')" style="padding:4px 10px;background:#f59e0b;color:black;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">View</button>
           </div>
         `).join("")}
       </div>`;
@@ -1190,7 +1188,7 @@ async function renderRevenue(){
           `).join("")}
         ` : `<p style="color:#64748b;text-align:center;padding:20px">No won deals yet. Mark leads as Won to track revenue.</p>`}
 
-        <button onclick="loadPage('leads')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-top:10px">📩 Go to Leads</button>
+        <button onclick="loadPage(\'leads\')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-top:10px">📩 Go to Leads</button>
       </div>
     `);
   }catch(e){
@@ -1275,6 +1273,42 @@ function shareProposal(){
   const text = document.getElementById("proposal_text")?.value||"";
   if(navigator.share){ navigator.share({title:"Business Proposal", text}).catch(()=>{}); }
   else { copyProposal(); }
+}
+
+/* =========================
+   NICHE SELECT
+========================= */
+function renderNicheSelect(){
+  setView(`
+    <div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:48px;margin-bottom:16px">👋</div>
+      <h2 style="margin:0 0 8px;font-size:22px">Welcome to AI Business</h2>
+      <p style="color:#64748b;font-size:14px;margin-bottom:24px">What type of business do you run?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
+        <button onclick="selectNiche('agency')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💼 Agency/Freelancer</button>
+        <button onclick="selectNiche('salon')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💇 Salon/Beauty</button>
+        <button onclick="selectNiche('restaurant')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🍽️ Restaurant/Food</button>
+        <button onclick="selectNiche('realestate')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🏠 Real Estate</button>
+        <button onclick="selectNiche('retail')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🛍️ Retail/Fashion</button>
+        <button onclick="selectNiche('tech')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💻 Tech/IT</button>
+        <button onclick="selectNiche('education')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">📚 Education</button>
+        <button onclick="selectNiche('other')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🏢 Other</button>
+      </div>
+    </div>
+  `);
+}
+
+async function selectNiche(niche){
+  if(currentProfile) currentProfile.business_type = niche;
+  else currentProfile = { business_type: niche };
+  try {
+    await fetch("/api/profile",{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({business_type: niche})
+    });
+  } catch(e){}
+  loadPage("dashboard");
 }
 
 /* =========================
