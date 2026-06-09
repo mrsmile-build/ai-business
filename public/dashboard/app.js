@@ -1,22 +1,3 @@
-// PWA Install prompt
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  const btn = document.getElementById('install_btn');
-  if(btn) btn.style.display = 'flex';
-});
-
-window.installApp = async () => {
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if(outcome === 'accepted') {
-    const btn = document.getElementById('install_btn');
-    if(btn) btn.style.display = 'none';
-  }
-  deferredPrompt = null;
-};
-
 const app = document.getElementById("app");
 
 let currentUser = null;
@@ -105,89 +86,244 @@ function loadPage(page){
 ========================= */
 function renderDashboard(){
   setTimeout(loadFollowUps, 500);
-  const plan = currentSub?.plan || "free";
-  const planColor = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
-  const planLabel = {business:"🚀 Business",pro:"⭐ Pro",starter:"🌟 Starter",free:"Free"}[plan]||"Free";
-  const leadsCount = currentSub?.leads_count || 0;
-  const leadsLimit = currentSub?.limits?.leads || 10;
-  const aiUsage = currentSub?.ai_usage || 0;
-  const aiLimit = currentSub?.limits?.ai_per_day === Infinity ? "∞" : (currentSub?.limits?.ai_per_day || 3);
-
   setView(`
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card">
+      <h2>📊 AI Business Control Center</h2>
 
-      <!-- Hero bar -->
-      <div style="background:linear-gradient(135deg,#0f172a,#1e293b);padding:20px;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-          ${avatarHTML(36)}
-          <div>
-            <p style="margin:0;font-size:15px;font-weight:700">${currentProfile?.display_name || currentUser?.email?.split("@")[0] || "Welcome"}</p>
-            <p style="margin:0;font-size:11px;color:#64748b">${currentUser?.email||""}</p>
-          </div>
-          <span style="margin-left:auto;padding:4px 10px;background:${planColor}22;border:1px solid ${planColor}55;border-radius:20px;font-size:11px;font-weight:600;color:${planColor}">${planLabel}</span>
-        </div>
+      <div style="margin-top:15px">
+        <p><strong>Email:</strong> ${currentUser?.email || "Loading..."}</p>
+        <p><strong>Plan:</strong> Free</p>
+        <p><strong>Total Leads:</strong> ${currentSub?.leads_count || 0}</p>
       </div>
 
-      <!-- Stats row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.05)">
-        <div style="background:#1e293b;padding:14px;text-align:center">
-          <p style="margin:0;font-size:22px;font-weight:800;color:#3b82f6">${leadsCount}</p>
-          <p style="margin:2px 0 0;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Leads</p>
-        </div>
-        <div style="background:#1e293b;padding:14px;text-align:center">
-          <p style="margin:0;font-size:22px;font-weight:800;color:#10b981">${aiUsage}</p>
-          <p style="margin:2px 0 0;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">AI Uses</p>
-        </div>
-        <div style="background:#1e293b;padding:14px;text-align:center" onclick="loadPage('revenue')" style="cursor:pointer">
-          <p style="margin:0;font-size:22px;font-weight:800;color:#f59e0b">0</p>
-          <p style="margin:2px 0 0;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:0.5px">Revenue</p>
-        </div>
-      </div>
-
-      <!-- Follow-up alert -->
-      <div id="followup_box" style="display:none;padding:0 16px"></div>
-
-      <!-- Action grid -->
-      <div style="padding:16px">
-        <p style="margin:0 0 12px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:0.8px">Quick Actions</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <button onclick="loadPage('leads')" style="padding:14px 12px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">📩</div>
-            <div style="font-size:13px;font-weight:600">Leads</div>
-            <div style="font-size:11px;color:#64748b">${leadsCount} / ${leadsLimit===Infinity?"∞":leadsLimit}</div>
-          </button>
-          <button onclick="loadPage('leadFinder')" style="padding:14px 12px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">🎯</div>
-            <div style="font-size:13px;font-weight:600">Lead Finder</div>
-            <div style="font-size:11px;color:#64748b">Find customers</div>
-          </button>
-          <button onclick="loadPage('aiTools')" style="padding:14px 12px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">🧠</div>
-            <div style="font-size:13px;font-weight:600">AI Tools</div>
-            <div style="font-size:11px;color:#64748b">${aiUsage}/${aiLimit} today</div>
-          </button>
-          <button onclick="loadPage('proposal')" style="padding:14px 12px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">📄</div>
-            <div style="font-size:13px;font-weight:600">Proposals</div>
-            <div style="font-size:11px;color:#64748b">Generate instantly</div>
-          </button>
-          <button onclick="loadPage('revenue')" style="padding:14px 12px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">💰</div>
-            <div style="font-size:13px;font-weight:600">Revenue</div>
-            <div style="font-size:11px;color:#64748b">Track earnings</div>
-          </button>
-          <button onclick="loadPage('subscription')" style="padding:14px 12px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;color:white;border-radius:10px;cursor:pointer;text-align:left">
-            <div style="font-size:20px;margin-bottom:4px">💳</div>
-            <div style="font-size:13px;font-weight:600">Upgrade</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.7)">Unlock more</div>
-          </button>
-        </div>
+      <div style="margin-top:20px">
+        <button onclick="loadPage('leads')">📩 Leads</button>
+        <button onclick="loadPage('leadFinder')">🎯 Leads Finder</button>
+        <button onclick="loadPage('aiTools')">🧠 AI Tools</button>
+        <button onclick="loadPage('subscription')">💳 Upgrade</button>
       </div>
     </div>
   `);
 }
 
+/* =========================
+   PROFILE
+========================= */
+function getInitials(email, name){
+  if(name) return name.substring(0,2).toUpperCase();
+  return (email||"?").substring(0,2).toUpperCase();
+}
+function getAvatarColor(email){
+  const colors=["#3b82f6","#8b5cf6","#10b981","#f59e0b","#ef4444","#06b6d4"];
+  let h=0; for(let c of (email||"")) h=(h<<5)-h+c.charCodeAt(0);
+  return colors[Math.abs(h)%colors.length];
+}
+function avatarHTML(size=60){
+  const name=currentProfile?.display_name;
+  const email=currentUser?.email||"";
+  const url=currentProfile?.avatar_url;
+  const initials=getInitials(email,name);
+  const color=getAvatarColor(email);
+  if(url) return `<img src="${url}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'">`;
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.35)}px;font-weight:bold;color:white">${initials}</div>`;
+}
 
+/* READ-ONLY PROFILE (menu) */
+function renderProfile(){
+  const email=currentUser?.email||"";
+  const name=currentProfile?.display_name||email.split("@")[0];
+  const phone=currentProfile?.phone||"Not set";
+  const country=currentProfile?.country||"";
+  const plan=currentSub?.plan||"free";
+  const planColor={business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
+
+  setView(`
+    <div class="card">
+      ${header("👤 Profile","settings")}
+
+      <div style="text-align:center;padding:20px 0">
+        ${avatarHTML(90)}
+        <h2 style="margin:12px 0 4px">${name}</h2>
+        <p style="margin:0;color:#64748b;font-size:13px">${email}</p>
+        <span style="display:inline-block;margin-top:8px;padding:4px 12px;background:${planColor};color:white;border-radius:20px;font-size:12px;font-weight:bold">${plan.toUpperCase()}</span>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;overflow:hidden;margin-bottom:12px">
+        <div style="padding:12px 15px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
+          <span style="color:#64748b;font-size:13px">Phone</span>
+          <span style="font-size:13px">${phone}</span>
+        </div>
+        <div style="padding:12px 15px;display:flex;justify-content:space-between">
+          <span style="color:#64748b;font-size:13px">Country</span>
+          <span style="font-size:13px">${country||"Not set"}</span>
+        </div>
+      </div>
+
+      <button onclick="loadPage('editProfile')" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">✏️ Edit Profile</button>
+    </div>
+  `);
+}
+
+/* EDITABLE PROFILE (settings) */
+async function renderEditProfile(){
+  const email=currentUser?.email||"";
+  const name=currentProfile?.display_name||email.split("@")[0];
+  const phone=currentProfile?.phone||"";
+  const country=currentProfile?.country||"";
+  const lastChanged=currentProfile?.username_updated_at;
+  const daysLeft=lastChanged?Math.ceil(30-(Date.now()-new Date(lastChanged).getTime())/(1000*60*60*24)):0;
+  const canChange=daysLeft<=0;
+
+  setView(`
+    <div class="card">
+      ${header("✏️ Edit Profile","profile")}
+
+      <div style="text-align:center;margin-bottom:20px">
+        ${avatarHTML(70)}
+        <p style="margin:6px 0 0;font-size:12px;color:#475569">Avatar auto-generated from name</p>
+      </div>
+
+      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Display Name ${canChange?"":"("+daysLeft+"d to change)"}</p>
+        <div style="display:flex;gap:8px">
+          <input id="p_name" value="${name}" ${canChange?"":"disabled"} style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:${canChange?"#0b1220":"#1e293b"};color:${canChange?"white":"#64748b"};font-size:13px">
+          ${canChange?`<button onclick="saveName()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>`:""}
+        </div>
+      </div>
+
+      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Phone Number</p>
+        <div style="display:flex;gap:8px">
+          <input id="p_phone" value="${phone}" placeholder="+2348..." style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+          <button onclick="savePhone()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>
+        </div>
+      </div>
+
+      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Country</p>
+        <div style="display:flex;gap:8px">
+          <input id="p_country" value="${country}" placeholder="Nigeria" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+          <button onclick="saveCountry()" style="padding:9px 14px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save</button>
+        </div>
+      </div>
+
+      <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">Change Password</p>
+        <input id="p_current" type="password" placeholder="Current password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="p_pass1" type="password" placeholder="New password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="p_pass2" type="password" placeholder="Confirm new password" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="changePassword()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Update Password</button>
+      </div>
+    </div>
+  `);
+}
+
+async function patchProfile(updates){
+  const res=await fetch("/api/profile",{
+    method:"PATCH",
+    headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+    body:JSON.stringify(updates)
+  });
+  return await res.json();
+}
+async function saveName(){
+  const name=document.getElementById("p_name")?.value.trim();
+  if(!name) return alert("Name cannot be empty.");
+  const data=await patchProfile({display_name:name});
+  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Display name updated!");renderEditProfile();}
+  else alert(data.error||"Failed.");
+}
+async function savePhone(){
+  const phone=document.getElementById("p_phone")?.value.trim();
+  const data=await patchProfile({phone});
+  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Phone saved!");}
+  else alert("Failed.");
+}
+async function saveCountry(){
+  const country=document.getElementById("p_country")?.value.trim();
+  const data=await patchProfile({country});
+  if(data.success){currentProfile={...currentProfile,...data.profile};alert("Country saved!");}
+  else alert("Failed.");
+}
+async function changePassword(){
+  const cur=document.getElementById("p_current")?.value;
+  const p1=document.getElementById("p_pass1")?.value;
+  const p2=document.getElementById("p_pass2")?.value;
+  if(!cur) return alert("Enter your current password.");
+  if(!p1||!p2) return alert("Fill new password fields.");
+  if(p1!==p2) return alert("Passwords do not match.");
+  if(p1.length<6) return alert("Password must be at least 6 characters.");
+  const res=await fetch("/api/change-password",{
+    method:"POST",
+    headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+    body:JSON.stringify({current_password:cur,password:p1})
+  });
+  const data=await res.json();
+  if(data.success){alert("Password updated successfully!");document.getElementById("p_current").value="";document.getElementById("p_pass1").value="";document.getElementById("p_pass2").value="";}
+  else alert(data.error||"Failed.");
+}
+
+
+async function renderAnalytics(){
+  setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try{
+    const res = await fetch("/api/me",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const data = await res.json();
+    const sub = data.subscription;
+    const leadsCount = sub?.leads_count||0;
+    const leadsLimit = sub?.limits?.leads;
+    const aiUsage = sub?.ai_usage||0;
+    const aiLimit = sub?.limits?.ai_per_day;
+    const plan = sub?.plan||"free";
+    const planColor = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
+    const lPct = leadsLimit===Infinity?5:Math.min(100,Math.round(leadsCount/(leadsLimit||10)*100));
+    const aPct = aiLimit===Infinity?5:Math.min(100,Math.round(aiUsage/(aiLimit||3)*100));
+
+    setView(`
+      <div class="card">
+        ${header("📊 Analytics","dashboard")}
+
+        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">📩 Leads Used</p>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:26px;font-weight:bold">${leadsCount}</span>
+            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${leadsLimit===Infinity?"Unlimited":leadsLimit}</span>
+          </div>
+          <div style="background:#1e293b;border-radius:6px;height:8px">
+            <div style="background:#3b82f6;width:${lPct}%;height:8px;border-radius:6px"></div>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">
+          <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">🧠 AI Uses Today</p>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:26px;font-weight:bold">${aiUsage}</span>
+            <span style="font-size:13px;color:#64748b;align-self:flex-end">/ ${aiLimit===Infinity?"Unlimited":aiLimit} per day</span>
+          </div>
+          <div style="background:#1e293b;border-radius:6px;height:8px">
+            <div style="background:${aPct>80?"#ef4444":"#10b981"};width:${aPct}%;height:8px;border-radius:6px"></div>
+          </div>
+          ${aPct>80?'<p style="margin:6px 0 0;font-size:11px;color:#ef4444">Running low — consider upgrading</p>':""}
+        </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Plan</p>
+            <p style="margin:5px 0 0;font-size:16px;font-weight:bold;color:${planColor}">${plan.toUpperCase()}</p>
+          </div>
+          <div style="flex:1;background:#0f172a;padding:15px;border-radius:10px;text-align:center">
+            <p style="margin:0;font-size:12px;color:#94a3b8">Account</p>
+            <p style="margin:5px 0 0;font-size:12px;color:#cbd5e1;word-break:break-all">${currentUser?.email||"..."}</p>
+          </div>
+        </div>
+
+        <button onclick="loadPage('subscription')" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">💳 Upgrade Plan</button>
+      </div>
+    `);
+  }catch(e){
+    setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error loading analytics.</p></div>`);
+  }
+}
 
 /* =========================
    LEADS
@@ -906,11 +1042,10 @@ async function searchLeads(){
           <p style="margin:0 0 6px;font-size:12px;color:#64748b">✏️ Edit message before sending:</p>
           <textarea id="msg_${i}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:13px;height:100px;resize:vertical;box-sizing:border-box;line-height:1.5">${l.message}${referralLine}</textarea>
 
-          <p style="margin:8px 0 4px;font-size:11px;color:#475569">💡 Tip: Send the intro message first. Use Proposal Generator after they reply.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
             <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
-            ${l.phone?`<button onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,'').replace(/^0/,'234')}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💬 WhatsApp</button>`:""}
+            ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}?text=" + encodeURIComponent(document.getElementById("msg_${i}")?.value||"") + "" target="_blank" onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
             <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
           </div>
@@ -941,15 +1076,6 @@ function shareMsg(i){
   }
 }
 
-function sendLfWhatsApp(i, phone){
-  const msg = document.getElementById("msg_"+i)?.value || "";
-  window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
-}
-function shareLfMsg(i){
-  const text = document.getElementById("msg_"+i)?.value || "";
-  if(navigator.share){ navigator.share({text}).catch(()=>{}); }
-  else { navigator.clipboard.writeText(text).then(()=>alert("Message copied! Paste anywhere to share.")); }
-}
 function copyEditedMsg(i){
   const text = document.getElementById("msg_"+i)?.value||"";
   navigator.clipboard.writeText(text).then(()=>{
