@@ -136,8 +136,23 @@ function renderDashboard(){
       </div>
 
       <div id="followup_box" style="display:none"></div>
+      <div style="padding:0 14px">${renderOnboarding()}</div>
 
       <div style="padding:14px">
+        <div style="background:#0b1220;border-radius:8px;padding:10px 12px;margin-bottom:12px">
+          <p style="margin:0 0 6px;font-size:11px;color:#3b82f6;font-weight:600">YOUR BUSINESS FLOW</p>
+          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;flex-wrap:wrap">
+            <span onclick="loadPage('leadFinder')" style="cursor:pointer;color:#3b82f6">🎯 Find</span>
+            <span>→</span>
+            <span onclick="loadPage('aiTools')" style="cursor:pointer;color:#8b5cf6">💬 Message</span>
+            <span>→</span>
+            <span onclick="loadPage('leads')" style="cursor:pointer;color:#10b981">📩 Track</span>
+            <span>→</span>
+            <span onclick="loadPage('automation')" style="cursor:pointer;color:#f59e0b">⚡ Follow Up</span>
+            <span>→</span>
+            <span onclick="loadPage('proposal')" style="cursor:pointer;color:#ef4444">📄 Close</span>
+          </div>
+        </div>
         <p style="margin:0 0 10px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:1px">Quick Actions</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <button onclick="loadPage(\'leads\')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
@@ -1321,6 +1336,52 @@ async function selectNiche(niche){
     });
   } catch(e){}
   loadPage("dashboard");
+}
+
+/* =========================
+   ONBOARDING
+========================= */
+function getOnboardingStatus(){
+  try { return JSON.parse(localStorage.getItem("aib_onboard")||"{}"); } catch(e){ return {}; }
+}
+function setOnboardStep(key){
+  var s = getOnboardingStatus();
+  s[key] = true;
+  localStorage.setItem("aib_onboard", JSON.stringify(s));
+}
+function renderOnboarding(){
+  var s = getOnboardingStatus();
+  var steps = [
+    { key:"leads_found", icon:"🎯", title:"Find your first leads", desc:"Use Lead Finder to find 5 businesses to contact", action:"leadFinder", btn:"Go to Lead Finder" },
+    { key:"lead_saved", icon:"📩", title:"Save a lead", desc:"Add a potential customer to your Leads CRM", action:"leads", btn:"Go to Leads" },
+    { key:"message_sent", icon:"💬", title:"Send your first message", desc:"Use AI Tools to write and send a message", action:"aiTools", btn:"Go to AI Tools" },
+    { key:"proposal_made", icon:"📄", title:"Generate a proposal", desc:"Create a professional proposal for a client", action:"proposal", btn:"Go to Proposals" },
+    { key:"automation_set", icon:"⚡", title:"Set up automation", desc:"Let AI Business work for you automatically", action:"automation", btn:"Set Up Automation" }
+  ];
+  var done = steps.filter(st => s[st.key]).length;
+  var all = steps.length;
+  if(done === all) return "";
+
+  return `
+    <div style="background:#0f172a;border-radius:12px;padding:16px;margin-bottom:14px;border:1px solid #1e293b">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <p style="margin:0;font-size:13px;font-weight:bold">🚀 Getting Started</p>
+        <span style="font-size:12px;color:#64748b">${done}/${all} done</span>
+      </div>
+      <div style="background:#1e293b;border-radius:4px;height:6px;margin-bottom:12px">
+        <div style="background:linear-gradient(90deg,#3b82f6,#7c3aed);width:${(done/all)*100}%;height:6px;border-radius:4px;transition:width 0.5s"></div>
+      </div>
+      ${steps.map(st => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1e293b;opacity:${s[st.key]?0.5:1}">
+          <div style="width:28px;height:28px;border-radius:50%;background:${s[st.key]?'#10b981':'#1e293b'};border:2px solid ${s[st.key]?'#10b981':'#334155'};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${s[st.key]?'✓':st.icon}</div>
+          <div style="flex:1">
+            <p style="margin:0;font-size:13px;font-weight:600;${s[st.key]?'text-decoration:line-through;color:#475569':''}">${st.title}</p>
+            <p style="margin:0;font-size:11px;color:#64748b">${st.desc}</p>
+          </div>
+          ${!s[st.key] ? `<button onclick="setOnboardStep('${st.key}');loadPage('${st.action}')" style="padding:6px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0">${st.btn}</button>` : ""}
+        </div>
+      `).join("")}
+    </div>`;
 }
 
 /* =========================
