@@ -76,7 +76,8 @@ function loadPage(page){
     leadFinder: 'renderLeadFinder',
     proposal: 'renderProposal',
     revenue: 'renderRevenue',
-    agents: 'renderAgents'
+    agents: 'renderAgents',
+    referral: 'renderReferral'
   };
 
   var fnName = routes[page];
@@ -162,6 +163,11 @@ function renderDashboard(){
             <div style="font-size:18px;margin-bottom:3px">📄</div>
             <div style="font-size:12px;font-weight:600">Proposals</div>
             <div style="font-size:10px;color:#475569">Generate fast</div>
+          </button>
+          <button onclick="loadPage('referral')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🎁</div>
+            <div style="font-size:12px;font-weight:600">Refer</div>
+            <div style="font-size:10px;color:#475569">Earn free months</div>
           </button>
           <button onclick="loadPage('subscription')" style="padding:13px 10px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">💳</div>
@@ -1309,6 +1315,152 @@ async function selectNiche(niche){
     });
   } catch(e){}
   loadPage("dashboard");
+}
+
+/* =========================
+   REFERRAL PROGRAM
+========================= */
+async function renderReferral(){
+  setView(`<div class="card">${header("🎁 Refer & Earn","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const res = await fetch("/api/referral", { headers: { Authorization: "Bearer " + localStorage.getItem("token") }});
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error);
+    
+    const code = data.code || "loading...";
+    const baseUrl = window.location.origin;
+    const refLink = baseUrl + "/auth?ref=" + code;
+    const stats = data.stats || {};
+    const reward = data.reward;
+    const refs = data.referrals || [];
+    
+    const planPoints = { starter: 1, pro: 2, business: 3 };
+    const totalPoints = refs.filter(r=>!r.redeemed).reduce((sum, r) => sum + (planPoints[r.referred_plan]||0), 0);
+    const proTarget = 10; // 5 pro referrals = 10 points
+    const starterTarget = 5;
+    
+    setView(`
+      <div class="card">
+        ${header("🎁 Refer and Earn","dashboard")}
+        
+        <div style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);border-radius:12px;padding:18px;margin-bottom:16px;text-align:center">
+          <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.7)">Your Referral Link</p>
+          <p style="margin:0 0 12px;font-size:13px;color:white;word-break:break-all">${refLink}</p>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button onclick="copyRefLink('${refLink}')" style="padding:8px 16px;background:white;color:#1d4ed8;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600">📋 Copy Link</button>
+            <button onclick="shareRefLink('${refLink}')" style="padding:8px 16px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:7px;cursor:pointer;font-size:13px">📤 Share</button>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:bold">How it works</p>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:28px;height:28px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0">1</div>
+              <p style="margin:0;font-size:13px;color:#94a3b8">Share your link with friends</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:28px;height:28px;border-radius:50%;background:#10b981;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0">2</div>
+              <p style="margin:0;font-size:13px;color:#94a3b8">They sign up and pay for any plan</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="width:28px;height:28px;border-radius:50%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;flex-shrink:0">3</div>
+              <p style="margin:0;font-size:13px;color:#94a3b8">You earn free months based on their plan</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #10b981">
+            <p style="margin:0;font-size:20px;font-weight:bold;color:#10b981">${stats.starters||0}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Starter Refs</p>
+          </div>
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #3b82f6">
+            <p style="margin:0;font-size:20px;font-weight:bold;color:#3b82f6">${stats.pros||0}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Pro Refs</p>
+          </div>
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #8b5cf6">
+            <p style="margin:0;font-size:20px;font-weight:bold;color:#8b5cf6">${stats.businesses||0}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Business Refs</p>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 8px;font-size:13px;font-weight:bold">Rewards</p>
+          <div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;color:#94a3b8">5 Starter refs → 1 free Starter month</span>
+              <span style="font-size:12px;color:${(stats.starters||0)>=5?'#10b981':'#475569'}">${stats.starters||0}/5</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px"><div style="background:#10b981;width:${Math.min(100,((stats.starters||0)/5)*100)}%;height:6px;border-radius:4px"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;color:#94a3b8">5 Pro refs → 1 free Pro month</span>
+              <span style="font-size:12px;color:${(stats.pros||0)>=5?'#3b82f6':'#475569'}">${stats.pros||0}/5</span>
+            </div>
+            <div style="background:#1e293b;border-radius:4px;height:6px"><div style="background:#3b82f6;width:${Math.min(100,((stats.pros||0)/5)*100)}%;height:6px;border-radius:4px"></div></div>
+          </div>
+        </div>
+
+        ${reward ? `
+          <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:15px;text-align:center;margin-bottom:14px">
+            <p style="margin:0 0 8px;font-size:14px;font-weight:bold;color:#10b981">🎉 You have a reward ready!</p>
+            <p style="margin:0 0 12px;font-size:13px;color:#94a3b8">Claim 1 free month of ${reward.toUpperCase()} plan</p>
+            <button onclick="redeemReferral()" style="padding:10px 24px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold">🎁 Redeem Now</button>
+          </div>
+        ` : ""}
+
+        <div style="background:#0f172a;border-radius:10px;padding:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Share this message</p>
+          <textarea id="ref_msg" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:12px;height:90px;resize:none;box-sizing:border-box;line-height:1.5">Hey! I use AI Business to find customers, manage leads and grow my business with AI. Try it free — it helped me a lot. Sign up here: ${refLink}</textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button onclick="copyRefMsg()" style="flex:1;padding:9px;background:#334155;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">📋 Copy Message</button>
+            <button onclick="shareRefMsg()" style="flex:1;padding:9px;background:#25d366;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">💬 WhatsApp</button>
+          </div>
+        </div>
+
+        ${refs.length > 0 ? `
+          <p style="margin:14px 0 8px;font-size:13px;font-weight:bold;color:#94a3b8">Your Referrals (${refs.length})</p>
+          ${refs.slice(0,5).map(r => `
+            <div style="background:#0f172a;padding:10px 12px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:13px">${r.referred_email || "Anonymous"}</span>
+              <span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${{pro:'rgba(59,130,246,0.15)',starter:'rgba(16,185,129,0.15)',business:'rgba(139,92,246,0.15)',free:'rgba(100,116,139,0.1)'}[r.referred_plan]||'rgba(100,116,139,0.1)'};color:${{pro:'#3b82f6',starter:'#10b981',business:'#8b5cf6',free:'#64748b'}[r.referred_plan]||'#64748b'}">${r.referred_plan||'free'}</span>
+            </div>
+          `).join("")}
+        ` : ""}
+      </div>
+    `);
+  } catch(e) {
+    setView(`<div class="card">${header("🎁 Refer and Earn","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`);
+  }
+}
+
+function copyRefLink(link){
+  navigator.clipboard.writeText(link).then(()=>alert("Referral link copied!"));
+}
+function shareRefLink(link){
+  if(navigator.share){ navigator.share({title:"AI Business",text:"Try AI Business free:",url:link}).catch(()=>{}); }
+  else copyRefLink(link);
+}
+function copyRefMsg(){
+  var text = document.getElementById("ref_msg")?.value||"";
+  navigator.clipboard.writeText(text).then(()=>alert("Message copied!"));
+}
+function shareRefMsg(){
+  var text = document.getElementById("ref_msg")?.value||"";
+  if(navigator.share){ navigator.share({text}).catch(()=>{}); }
+  else { window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank"); }
+}
+async function redeemReferral(){
+  var btn = document.querySelector("button[onclick='redeemReferral()']");
+  if(btn){btn.disabled=true;btn.textContent="Redeeming...";}
+  try {
+    var res = await fetch("/api/referral/redeem",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    if(data.success){ alert(data.message); renderReferral(); }
+    else { alert(data.error||"Cannot redeem yet."); if(btn){btn.disabled=false;btn.textContent="Redeem Now";} }
+  } catch(e){ alert("Error. Try again."); if(btn){btn.disabled=false;btn.textContent="Redeem Now";} }
 }
 
 /* =========================

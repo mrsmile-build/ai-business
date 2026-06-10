@@ -139,6 +139,11 @@ window.signup = async () => {
 
     if (error) throw error;
 
+    // Track referral
+    const refCode = new URLSearchParams(window.location.search).get('ref');
+    if(refCode){
+      fetch('/api/referral/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referral_code:refCode,email})}).catch(()=>{});
+    }
     alert("Account created. Please login.");
     toggleForm();
   } catch (err) {

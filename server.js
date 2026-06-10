@@ -472,6 +472,75 @@ Format with clear sections using headers. Be detailed but concise.`;
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- REFERRAL ---------------- */
+app.get("/api/referral", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    let { data: profile } = await supabase.from("profiles").select("*").eq("user_id", uid).single();
+    
+    // Generate code if missing
+    if(!profile?.referral_code) {
+      const code = "aib-" + uid.substring(0,8);
+      await supabase.from("profiles").upsert({ user_id: uid, referral_code: code });
+      if(profile) profile.referral_code = code;
+      else profile = { referral_code: code };
+    }
+    
+    // Get referrals
+    const { data: refs } = await supabase.from("referrals")
+      .select("*").eq("referrer_id", uid).order("created_at", { ascending: false });
+    
+    const list = refs || [];
+    const starters = list.filter(r => r.referred_plan === "starter" && !r.redeemed).length;
+    const pros = list.filter(r => r.referred_plan === "pro" && !r.redeemed).length;
+    const businesses = list.filter(r => r.referred_plan === "business" && !r.redeemed).length;
+    
+    // Calculate reward
+    let reward = null;
+    if(pros >= 5 || businesses >= 3) reward = "pro";
+    else if(starters >= 5 || pros >= 3) reward = "starter";
+    
+    res.json({ success: true, code: profile.referral_code, referrals: list, reward, stats: { starters, pros, businesses, total: list.length } });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/referral/track", async (req, res) => {
+  try {
+    const { referral_code, email } = req.body;
+    if(!referral_code || !email) return res.json({ success: false });
+    const { data: profile } = await supabase.from("profiles").select("user_id").eq("referral_code", referral_code).single();
+    if(!profile) return res.json({ success: false, error: "Invalid referral code" });
+    await supabase.from("referrals").upsert({ referrer_id: profile.user_id, referred_email: email, status: "registered" });
+    res.json({ success: true });
+  } catch(err) { res.json({ success: false }); }
+});
+
+app.post("/api/referral/redeem", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { data: refs } = await supabase.from("referrals").select("*").eq("referrer_id", uid).eq("redeemed", false);
+    const list = refs || [];
+    const pros = list.filter(r => r.referred_plan === "pro" || r.referred_plan === "business").length;
+    const starters = list.filter(r => r.referred_plan === "starter").length;
+    
+    let plan = null;
+    if(pros >= 5) plan = "pro";
+    else if(starters >= 5 || pros >= 3) plan = "starter";
+    
+    if(!plan) return res.json({ success: false, error: "Not enough referrals to redeem yet." });
+    
+    // Mark all as redeemed
+    await supabase.from("referrals").update({ redeemed: true }).eq("referrer_id", uid).eq("redeemed", false);
+    
+    // Upgrade subscription temporarily
+    const expiry = new Date();
+    expiry.setMonth(expiry.getMonth() + 1);
+    await supabase.from("subscriptions").upsert({ user_id: uid, plan, status: "referral", ai_usage: 0, last_payment_date: new Date() });
+    
+    res.json({ success: true, plan, message: "You earned 1 free month of " + plan + " plan!" });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });
