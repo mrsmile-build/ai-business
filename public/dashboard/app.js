@@ -77,7 +77,8 @@ function loadPage(page){
     proposal: 'renderProposal',
     revenue: 'renderRevenue',
     agents: 'renderAgents',
-    referral: 'renderReferral'
+    referral: 'renderReferral',
+    automation: 'renderAutomation'
   };
 
   var fnName = routes[page];
@@ -163,6 +164,11 @@ function renderDashboard(){
             <div style="font-size:18px;margin-bottom:3px">📄</div>
             <div style="font-size:12px;font-weight:600">Proposals</div>
             <div style="font-size:10px;color:#475569">Generate fast</div>
+          </button>
+          <button onclick="loadPage('automation')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">⚡</div>
+            <div style="font-size:12px;font-weight:600">Automation</div>
+            <div style="font-size:10px;color:#475569">Set once</div>
           </button>
           <button onclick="loadPage('referral')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">🎁</div>
@@ -1315,6 +1321,190 @@ async function selectNiche(niche){
     });
   } catch(e){}
   loadPage("dashboard");
+}
+
+/* =========================
+   AUTOMATION CENTER
+========================= */
+async function renderAutomation(){
+  setView(`<div class="card">${header("⚡ Automation","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const [settingsRes, campaignsRes] = await Promise.all([
+      fetch("/api/automation/settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      fetch("/api/campaigns",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+    ]);
+    const { settings } = await settingsRes.json();
+    const { campaigns } = await campaignsRes.json();
+    const s = settings || {};
+    const camps = campaigns || [];
+
+    setView(`
+      <div class="card">
+        ${header("⚡ Automation Center","dashboard")}
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Setup once. AI Business does the work for you.</p>
+
+        <!-- AUTO RULES -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 12px;font-size:14px;font-weight:bold">🤖 Auto Rules</p>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1e293b">
+            <div>
+              <p style="margin:0;font-size:13px;font-weight:600">Follow-up Reminder</p>
+              <p style="margin:2px 0 0;font-size:11px;color:#64748b">Remind me to follow up after
+                <select id="auto_days" style="background:#1e293b;color:white;border:none;border-radius:4px;padding:2px 6px;font-size:11px">
+                  <option value="1" ${s.followup_days==1?'selected':''}>1 day</option>
+                  <option value="2" ${s.followup_days==2?'selected':''}>2 days</option>
+                  <option value="3" ${!s.followup_days||s.followup_days==3?'selected':''}>3 days</option>
+                  <option value="7" ${s.followup_days==7?'selected':''}>1 week</option>
+                </select>
+              </p>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px">
+              <input type="checkbox" id="auto_followup" ${s.followup_days?'checked':''} style="opacity:0;width:0;height:0" onchange="saveAutoSettings()">
+              <span onclick="document.getElementById('auto_followup').click()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${s.followup_days?'#3b82f6':'#334155'};border-radius:24px;transition:0.3s">
+                <span style="position:absolute;height:18px;width:18px;left:${s.followup_days?'23px':'3px'};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
+              </span>
+            </label>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1e293b">
+            <div>
+              <p style="margin:0;font-size:13px;font-weight:600">Auto Review Request</p>
+              <p style="margin:2px 0 0;font-size:11px;color:#64748b">Generate review message when lead is Won</p>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px">
+              <input type="checkbox" id="auto_review" ${s.auto_review!==false?'checked':''} style="opacity:0;width:0;height:0" onchange="saveAutoSettings()">
+              <span onclick="document.getElementById('auto_review').click()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${s.auto_review!==false?'#3b82f6':'#334155'};border-radius:24px;transition:0.3s">
+                <span style="position:absolute;height:18px;width:18px;left:${s.auto_review!==false?'23px':'3px'};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
+              </span>
+            </label>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0">
+            <div>
+              <p style="margin:0;font-size:13px;font-weight:600">Weekly Lead Discovery</p>
+              <p style="margin:2px 0 0;font-size:11px;color:#64748b">Auto-find new leads every week</p>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px">
+              <input type="checkbox" id="auto_weekly" ${s.weekly_leads?'checked':''} style="opacity:0;width:0;height:0" onchange="saveAutoSettings()">
+              <span onclick="document.getElementById('auto_weekly').click()" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:${s.weekly_leads?'#3b82f6':'#334155'};border-radius:24px;transition:0.3s">
+                <span style="position:absolute;height:18px;width:18px;left:${s.weekly_leads?'23px':'3px'};bottom:3px;background:white;border-radius:50%;transition:0.3s"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- BROADCAST CAMPAIGN -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 12px;font-size:14px;font-weight:bold">📢 Broadcast Message</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#64748b">Write one message → AI personalizes it for all your leads → you send with one tap</p>
+
+          <input id="camp_name" placeholder="Campaign name (e.g. January Promo)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+
+          <textarea id="camp_msg" placeholder="Your message template (e.g. Hi {name}, we have a special offer this week...)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;line-height:1.5"></textarea>
+
+          <select id="camp_status" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+            <option value="all">Send to ALL leads</option>
+            <option value="new">New leads only</option>
+            <option value="contacted">Contacted leads only</option>
+            <option value="interested">Interested leads only</option>
+            <option value="won">Won customers only</option>
+          </select>
+
+          <button onclick="createCampaign()" style="width:100%;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">📢 Create Campaign</button>
+        </div>
+
+        <!-- EXISTING CAMPAIGNS -->
+        ${camps.length > 0 ? `
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#94a3b8">Your Campaigns (${camps.length})</p>
+          ${camps.map(camp => `
+            <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <p style="margin:0;font-size:14px;font-weight:bold">${camp.name}</p>
+                <span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${camp.status==='ready'?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)'};color:${camp.status==='ready'?'#10b981':'#f59e0b'}">${camp.status}</span>
+              </div>
+              <p style="margin:0 0 10px;font-size:12px;color:#64748b;line-height:1.4">${camp.message_template?.slice(0,80)}...</p>
+              <p style="margin:0 0 10px;font-size:11px;color:#475569">Targets: ${camp.target_status} leads</p>
+              <div style="display:flex;gap:8px">
+                <button onclick="prepareCampaign('${camp.id}')" style="flex:1;padding:8px;background:#10b981;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">⚡ Prepare Messages</button>
+                <button onclick="deleteCampaign('${camp.id}')" style="padding:8px 12px;background:#1e293b;color:#ef4444;border:1px solid #ef4444;border-radius:7px;cursor:pointer;font-size:12px">🗑️</button>
+              </div>
+              <div id="camp_result_${camp.id}" style="margin-top:10px"></div>
+            </div>
+          `).join("")}
+        ` : '<p style="color:#475569;text-align:center;font-size:13px;padding:10px">No campaigns yet. Create your first one above.</p>'}
+      </div>
+    `);
+  } catch(e) {
+    setView(`<div class="card">${header("⚡ Automation","dashboard")}<p style="color:red">${e.message}</p></div>`);
+  }
+}
+
+async function saveAutoSettings(){
+  const days = parseInt(document.getElementById("auto_days")?.value)||3;
+  const followup = document.getElementById("auto_followup")?.checked;
+  const review = document.getElementById("auto_review")?.checked;
+  const weekly = document.getElementById("auto_weekly")?.checked;
+  try {
+    await fetch("/api/automation/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({ followup_days: followup?days:null, auto_review: review, weekly_leads: weekly })
+    });
+  } catch(e){}
+}
+
+async function createCampaign(){
+  const name = document.getElementById("camp_name")?.value.trim();
+  const msg = document.getElementById("camp_msg")?.value.trim();
+  const status = document.getElementById("camp_status")?.value;
+  if(!name||!msg) return alert("Fill campaign name and message.");
+  const btn = document.querySelector("button[onclick='createCampaign()']");
+  if(btn){btn.disabled=true;btn.textContent="Creating...";}
+  try {
+    const res = await fetch("/api/campaigns",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({name, message_template: msg, target_status: status})
+    });
+    const data = await res.json();
+    if(data.success){ alert("Campaign created!"); renderAutomation(); }
+  } catch(e){ alert("Error. Try again."); }
+  if(btn){btn.disabled=false;btn.textContent="📢 Create Campaign";}
+}
+
+async function prepareCampaign(id){
+  const el = document.getElementById("camp_result_"+id);
+  if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Preparing personalized messages... (15 seconds)</p>';
+  try {
+    const res = await fetch("/api/campaigns/"+id+"/prepare",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+localStorage.getItem("token")}
+    });
+    const data = await res.json();
+    if(!data.success){ if(el) el.innerHTML = '<p style="color:red;font-size:12px">Error preparing.</p>'; return; }
+    const msgs = data.messages || [];
+    if(msgs.length === 0){ if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">No leads found for this campaign.</p>'; return; }
+
+    if(el) el.innerHTML = `
+      <p style="font-size:12px;color:#10b981;margin-bottom:8px">✅ ${msgs.length} messages ready. Tap each to send:</p>
+      ${msgs.map((m,i) => `
+        <div style="background:#162032;padding:10px;border-radius:8px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <p style="margin:0;font-size:13px;font-weight:600">${m.name}</p>
+            ${m.phone ? `<a href="https://wa.me/${m.phone.replace(/[^0-9]/g,'').replace(/^0/,'234')}?text=${encodeURIComponent(m.message)}" target="_blank" style="padding:5px 10px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:11px">💬 Send</a>` : '<span style="font-size:11px;color:#475569">No phone</span>'}
+          </div>
+          <p style="margin:0;font-size:11px;color:#64748b;line-height:1.4">${m.message.slice(0,80)}...</p>
+        </div>
+      `).join("")}
+    `;
+  } catch(e){ if(el) el.innerHTML = '<p style="color:red;font-size:12px">Network error. Retry.</p>'; }
+}
+
+async function deleteCampaign(id){
+  if(!confirm("Delete this campaign?")) return;
+  await fetch("/api/campaigns/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+  renderAutomation();
 }
 
 /* =========================

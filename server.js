@@ -541,6 +541,94 @@ app.post("/api/referral/redeem", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- AUTOMATION ---------------- */
+app.get("/api/automation/settings", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("automation_settings").select("*").eq("user_id", req.user.id).single();
+    res.json({ success: true, settings: data || {} });
+  } catch(err) { res.json({ success: true, settings: {} }); }
+});
+
+app.post("/api/automation/settings", authMiddleware, async (req, res) => {
+  try {
+    const settings = { ...req.body, user_id: req.user.id, updated_at: new Date() };
+    await supabase.from("automation_settings").upsert(settings);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/campaigns", authMiddleware, async (req, res) => {
+  try {
+    const { name, message_template, target_status, scheduled_time } = req.body;
+    const { data } = await supabase.from("campaigns").insert({
+      user_id: req.user.id, name, message_template, target_status,
+      scheduled_time: scheduled_time || new Date(), status: "pending"
+    }).select().single();
+    res.json({ success: true, campaign: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/campaigns", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("campaigns").select("*")
+      .eq("user_id", req.user.id).order("created_at", { ascending: false });
+    res.json({ success: true, campaigns: data || [] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/campaigns/:id/prepare", authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data: campaign } = await supabase.from("campaigns").select("*").eq("id", id).eq("user_id", req.user.id).single();
+    if(!campaign) return res.status(404).json({ error: "Not found" });
+
+    // Get target leads
+    let query = supabase.from("leads").select("*").eq("user_id", req.user.id);
+    if(campaign.target_status !== "all") query = query.eq("status", campaign.target_status);
+    const { data: leads } = await query;
+
+    if(!leads || leads.length === 0) return res.json({ success: true, messages: [] });
+
+    // Generate personalized messages using AI
+    const prompt = `You are personalizing a WhatsApp message template for different contacts.
+Template: "${campaign.message_template}"
+
+Personalize this for each contact below. Keep the core message but add their name naturally.
+Contacts: ${leads.map((l,i) => `${i+1}. ${l.name}${l.business ? " ("+l.business+")" : ""}`).join(", ")}
+
+Return ONLY a JSON array of personalized messages in same order. No markdown.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+    });
+    const groqData = await groqRes.json();
+    let messages = [];
+    try {
+      const raw = groqData.choices[0].message.content.replace(/```json|```/g,"").trim();
+      messages = JSON.parse(raw);
+    } catch(e) {
+      messages = leads.map(l => campaign.message_template.replace("{name}", l.name));
+    }
+
+    const prepared = leads.map((l, i) => ({
+      lead_id: l.id, name: l.name, phone: l.phone,
+      message: messages[i] || campaign.message_template
+    }));
+
+    await supabase.from("campaigns").update({ status: "ready" }).eq("id", id);
+    res.json({ success: true, messages: prepared, count: prepared.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/api/campaigns/:id", authMiddleware, async (req, res) => {
+  try {
+    await supabase.from("campaigns").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });
