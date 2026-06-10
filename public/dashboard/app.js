@@ -35,7 +35,9 @@ async function init(){
     currentProfile = pd.profile || {};
   }catch(e){}
   loadConversations();
-  if(currentUser && currentProfile && !currentProfile.business_type){ renderNicheSelect(); } else { loadPage("dashboard"); }
+  var storedNiche = localStorage.getItem("aib_niche");
+  if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadPage("dashboard"); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -1303,6 +1305,230 @@ function shareProposal(){
 }
 
 /* =========================
+   PROFILE
+========================= */
+function renderProfile(){
+  const email = currentUser?.email || "";
+  const name = currentProfile?.display_name || email.split("@")[0] || "";
+  const phone = currentProfile?.phone || "Not set";
+  const country = currentProfile?.country || "Not set";
+  const biz = currentProfile?.business_type || "Not set";
+  const plan = currentSub?.plan || "free";
+  const planLabel = {business:"Business",pro:"Pro",starter:"Starter",free:"Free"}[plan]||"Free";
+  const planColor = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"}[plan]||"#64748b";
+
+  setView(`
+    <div class="card">
+      ${header("👤 Profile","dashboard")}
+
+      <div style="text-align:center;padding:20px 0 16px">
+        <div style="width:70px;height:70px;border-radius:50%;background:${planColor};display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;color:white;margin:0 auto 10px">${name.substring(0,2).toUpperCase()}</div>
+        <p style="margin:0;font-size:18px;font-weight:700">${name}</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#64748b">${email}</p>
+        <span style="display:inline-block;margin-top:8px;padding:4px 12px;background:${planColor}22;border:1px solid ${planColor}55;border-radius:20px;font-size:12px;color:${planColor};font-weight:600">${planLabel} Plan</span>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <div style="padding:10px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
+          <span style="font-size:13px;color:#64748b">Phone</span>
+          <span style="font-size:13px">${phone}</span>
+        </div>
+        <div style="padding:10px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between">
+          <span style="font-size:13px;color:#64748b">Country</span>
+          <span style="font-size:13px">${country}</span>
+        </div>
+        <div style="padding:10px 0;display:flex;justify-content:space-between">
+          <span style="font-size:13px;color:#64748b">Business Type</span>
+          <span style="font-size:13px;text-transform:capitalize">${biz}</span>
+        </div>
+      </div>
+
+      <button onclick="loadPage('editProfile')" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:10px">✏️ Edit Profile</button>
+      <button onclick="loadPage('subscription')" style="width:100%;padding:12px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:14px">💳 Manage Plan</button>
+    </div>
+  `);
+}
+
+/* =========================
+   EDIT PROFILE
+========================= */
+function renderEditProfile(){
+  const name = currentProfile?.display_name || "";
+  const phone = currentProfile?.phone || "";
+  const country = currentProfile?.country || "";
+  const biz = currentProfile?.business_type || "";
+
+  setView(`
+    <div class="card">
+      ${header("✏️ Edit Profile","profile")}
+
+      <div style="margin-bottom:14px">
+        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Display Name</p>
+        <input id="ep_name" value="${name}" placeholder="Your name" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Phone Number</p>
+        <input id="ep_phone" value="${phone}" placeholder="e.g. 08012345678" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:14px">
+        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Country</p>
+        <input id="ep_country" value="${country}" placeholder="e.g. Nigeria" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      </div>
+      <div style="margin-bottom:20px">
+        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Business Type</p>
+        <select id="ep_biz" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <option value="">-- Select --</option>
+          <option value="agency" ${biz==="agency"?"selected":""}>Agency/Freelancer</option>
+          <option value="salon" ${biz==="salon"?"selected":""}>Salon/Beauty</option>
+          <option value="restaurant" ${biz==="restaurant"?"selected":""}>Restaurant/Food</option>
+          <option value="realestate" ${biz==="realestate"?"selected":""}>Real Estate</option>
+          <option value="retail" ${biz==="retail"?"selected":""}>Retail/Fashion</option>
+          <option value="tech" ${biz==="tech"?"selected":""}>Tech/IT</option>
+          <option value="education" ${biz==="education"?"selected":""}>Education</option>
+          <option value="other" ${biz==="other"?"selected":""}>Other</option>
+        </select>
+      </div>
+
+      <button onclick="saveProfile()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:10px">💾 Save Changes</button>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-top:10px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#ef4444">Change Password</p>
+        <input id="ep_old_pw" type="password" placeholder="Current password" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="ep_new_pw" type="password" placeholder="New password" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <button onclick="changePassword()" style="width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Update Password</button>
+        <div id="pw_result" style="margin-top:8px"></div>
+      </div>
+    </div>
+  `);
+}
+
+async function saveProfile(){
+  const btn = document.querySelector("button[onclick='saveProfile()']");
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  const name = document.getElementById("ep_name")?.value.trim();
+  const phone = document.getElementById("ep_phone")?.value.trim();
+  const country = document.getElementById("ep_country")?.value.trim();
+  const biz = document.getElementById("ep_biz")?.value;
+  try {
+    const res = await fetch("/api/profile",{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({display_name:name, phone, country, business_type:biz})
+    });
+    const data = await res.json();
+    if(data.success){
+      if(currentProfile){ currentProfile.display_name=name; currentProfile.phone=phone; currentProfile.country=country; currentProfile.business_type=biz; }
+      if(biz) localStorage.setItem("aib_niche", biz);
+      alert("Profile saved!");
+      loadPage("profile");
+    } else { alert(data.error||"Error saving."); }
+  } catch(e){ alert("Network error."); }
+  if(btn){btn.disabled=false;btn.textContent="Save Changes";}
+}
+
+async function changePassword(){
+  const oldPw = document.getElementById("ep_old_pw")?.value;
+  const newPw = document.getElementById("ep_new_pw")?.value;
+  const result = document.getElementById("pw_result");
+  if(!oldPw||!newPw){ if(result) result.innerHTML="<p style='color:red;font-size:12px'>Fill both fields.</p>"; return; }
+  if(newPw.length < 6){ if(result) result.innerHTML="<p style='color:red;font-size:12px'>Password must be 6+ characters.</p>"; return; }
+  try {
+    const res = await fetch("/api/change-password",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({current_password:oldPw, new_password:newPw})
+    });
+    const data = await res.json();
+    if(result) result.innerHTML = `<p style='color:${data.success?"#10b981":"#ef4444"};font-size:12px'>${data.message||data.error}</p>`;
+  } catch(e){ if(result) result.innerHTML="<p style='color:red;font-size:12px'>Network error.</p>"; }
+}
+
+/* =========================
+   ANALYTICS
+========================= */
+async function renderAnalytics(){
+  setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const [leadsRes, revenueRes] = await Promise.all([
+      fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      fetch("/api/revenue",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+    ]);
+    const leadsData = await leadsRes.json();
+    const revenueData = await revenueRes.json();
+
+    const leads = leadsData.leads || [];
+    const total = leads.length;
+    const byStatus = {new:0,contacted:0,interested:0,negotiation:0,won:0,lost:0};
+    leads.forEach(l => { if(byStatus[l.status]!==undefined) byStatus[l.status]++; });
+
+    const revenue = revenueData.total || 0;
+    const monthly = revenueData.monthly || 0;
+    const aiUsage = currentSub?.ai_usage || 0;
+    const plan = currentSub?.plan || "free";
+
+    setView(`
+      <div class="card">
+        ${header("📊 Analytics","dashboard")}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #3b82f6">
+            <p style="margin:0;font-size:22px;font-weight:800;color:#3b82f6">${total}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">Total Leads</p>
+          </div>
+          <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #10b981">
+            <p style="margin:0;font-size:22px;font-weight:800;color:#10b981">${byStatus.won}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">Deals Won</p>
+          </div>
+          <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #f59e0b">
+            <p style="margin:0;font-size:22px;font-weight:800;color:#f59e0b">₦${revenue.toLocaleString()}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">Total Revenue</p>
+          </div>
+          <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #8b5cf6">
+            <p style="margin:0;font-size:22px;font-weight:800;color:#8b5cf6">${aiUsage}</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">AI Uses Today</p>
+          </div>
+        </div>
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:bold">Pipeline Breakdown</p>
+          ${Object.entries(byStatus).map(([status, count]) => {
+            const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
+            const pct = total > 0 ? Math.round((count/total)*100) : 0;
+            return `<div style="margin-bottom:10px">
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                <span style="font-size:12px;text-transform:capitalize;color:#94a3b8">${status}</span>
+                <span style="font-size:12px;color:${colors[status]}">${count} (${pct}%)</span>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;height:6px">
+                <div style="background:${colors[status]};width:${pct}%;height:6px;border-radius:4px;transition:width 0.5s"></div>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">This Month</p>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b">
+            <span style="font-size:13px;color:#64748b">Revenue</span>
+            <span style="font-size:13px;color:#10b981;font-weight:bold">₦${monthly.toLocaleString()}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b">
+            <span style="font-size:13px;color:#64748b">Conversion Rate</span>
+            <span style="font-size:13px;font-weight:bold">${total > 0 ? Math.round((byStatus.won/total)*100) : 0}%</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0">
+            <span style="font-size:13px;color:#64748b">Plan</span>
+            <span style="font-size:13px;font-weight:bold;text-transform:capitalize">${plan}</span>
+          </div>
+        </div>
+      </div>
+    `);
+  } catch(e){
+    setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`);
+  }
+}
+
+/* =========================
    NICHE SELECT
 ========================= */
 function renderNicheSelect(){
@@ -1328,6 +1554,7 @@ function renderNicheSelect(){
 async function selectNiche(niche){
   if(currentProfile) currentProfile.business_type = niche;
   else currentProfile = { business_type: niche };
+  localStorage.setItem("aib_niche", niche);
   try {
     await fetch("/api/profile",{
       method:"PATCH",
