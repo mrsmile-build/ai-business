@@ -725,6 +725,264 @@ Reply helpfully in under 80 words.`;
   } catch(err) { res.status(500).json({ reply: "Thank you for your message. We will get back to you shortly." }); }
 });
 
+/* ---------------- SERVICES / BOOKING ---------------- */
+app.get("/api/services", authMiddleware, async (req, res) => {
+  const { data } = await supabase.from("services").select("*").eq("user_id", req.user.id).eq("is_active", true);
+  res.json({ success: true, services: data || [] });
+});
+
+app.post("/api/services", authMiddleware, async (req, res) => {
+  try {
+    const { name, duration_minutes, price, description } = req.body;
+    const { data } = await supabase.from("services").insert({ user_id: req.user.id, name, duration_minutes, price, description }).select().single();
+    res.json({ success: true, service: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/api/services/:id", authMiddleware, async (req, res) => {
+  await supabase.from("services").update({ is_active: false }).eq("id", req.params.id).eq("user_id", req.user.id);
+  res.json({ success: true });
+});
+
+app.get("/api/bookings", authMiddleware, async (req, res) => {
+  const { data } = await supabase.from("bookings").select("*, services(name, price, duration_minutes)")
+    .eq("user_id", req.user.id).order("booking_date", { ascending: true });
+  res.json({ success: true, bookings: data || [] });
+});
+
+app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
+  const { status } = req.body;
+  await supabase.from("bookings").update({ status }).eq("id", req.params.id).eq("user_id", req.user.id);
+  res.json({ success: true });
+});
+
+// Public booking endpoint - no auth needed
+app.get("/api/book/:userId/services", async (req, res) => {
+  const { data } = await supabase.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true);
+  const { data: biz } = await supabase.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single();
+  res.json({ success: true, services: data || [], biz: biz || {} });
+});
+
+app.post("/api/book/:userId", async (req, res) => {
+  try {
+    const { service_id, customer_name, customer_phone, customer_email, booking_date, booking_time, notes } = req.body;
+    const { data } = await supabase.from("bookings").insert({
+      user_id: req.params.userId, service_id, customer_name,
+      customer_phone, customer_email, booking_date, booking_time, notes, status: "pending"
+    }).select("*, services(name, price)").single();
+    res.json({ success: true, booking: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- BUSINESS PAGE ---------------- */
+app.get("/api/biz-settings", authMiddleware, async (req, res) => {
+  const { data } = await supabase.from("biz_pages").select("*").eq("user_id", req.user.id).single();
+  res.json({ success: true, page: data || {} });
+});
+
+app.post("/api/biz-settings", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const slug = req.body.slug || uid.substring(0,8);
+    const settings = { ...req.body, user_id: uid, slug, updated_at: new Date() };
+    await supabase.from("biz_pages").upsert(settings);
+    res.json({ success: true, slug });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// Public biz page
+app.get("/biz/:slug", async (req, res) => {
+  try {
+    const { data: page } = await supabase.from("biz_pages").select("*, profiles!inner(user_id)").eq("slug", req.params.slug).single();
+    if(!page) return res.status(404).send("Business page not found");
+    const uid = page.user_id || page.profiles?.user_id;
+    const { data: services } = await supabase.from("services").select("*").eq("user_id", uid).eq("is_active", true);
+    const color = page.theme_color || "#3b82f6";
+    const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
+
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${page.business_name || "Business"}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#080c14;color:white;min-height:100vh}
+.hero{background:linear-gradient(135deg,#0f172a,#1a2540);padding:40px 20px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)}
+.logo{width:80px;height:80px;border-radius:50%;background:${color};display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;margin:0 auto 16px}
+h1{font-size:26px;font-weight:800;margin-bottom:6px}
+.tagline{color:#94a3b8;font-size:15px;margin-bottom:20px}
+.cta{display:inline-block;padding:12px 28px;background:${color};color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:15px;margin:6px}
+section{padding:28px 20px;max-width:500px;margin:0 auto}
+h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+.service-card{background:#1e293b;border-radius:10px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.service-name{font-size:14px;font-weight:600}
+.service-detail{font-size:12px;color:#64748b;margin-top:2px}
+.service-price{font-size:16px;font-weight:800;color:${color}}
+.info-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #1e293b;font-size:14px}
+.book-btn{display:block;text-align:center;padding:14px;background:${color};color:white;border-radius:10px;text-decoration:none;font-weight:600;font-size:16px;margin-top:16px}
+.footer{text-align:center;padding:20px;color:#334155;font-size:11px;border-top:1px solid #1e293b}
+.footer a{color:#3b82f6;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="logo">${(page.business_name||"B").substring(0,2).toUpperCase()}</div>
+  <h1>${page.business_name||""}</h1>
+  <p class="tagline">${page.tagline||""}</p>
+  ${waLink ? `<a href="${waLink}" class="cta">💬 WhatsApp Us</a>` : ""}
+  <a href="/book/${uid}" class="cta" style="background:transparent;border:1px solid ${color};color:${color}">📅 Book Appointment</a>
+</div>
+
+${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${page.description}</p></section>` : ""}
+
+${services && services.length > 0 ? `
+<section>
+  <h2>Our Services</h2>
+  ${services.map(s => `
+    <div class="service-card">
+      <div>
+        <div class="service-name">${s.name}</div>
+        <div class="service-detail">${s.duration_minutes} mins</div>
+      </div>
+      <div class="service-price">₦${parseFloat(s.price||0).toLocaleString()}</div>
+    </div>
+  `).join("")}
+</section>` : ""}
+
+<section>
+  <h2>Find Us</h2>
+  ${page.hours ? `<div class="info-item">🕐 <span>${page.hours}</span></div>` : ""}
+  ${page.location ? `<div class="info-item">📍 <span>${page.location}</span></div>` : ""}
+  ${page.whatsapp ? `<div class="info-item">📱 <span>${page.whatsapp}</span></div>` : ""}
+  ${page.instagram ? `<div class="info-item">📸 <a href="${page.instagram}" style="color:#e1306c">Instagram</a></div>` : ""}
+  <a href="/book/${uid}" class="book-btn">📅 Book an Appointment</a>
+</section>
+
+<div class="footer">Powered by <a href="${process.env.BASE_URL||"/"}">AI Business</a> — The AI Operating System for African Businesses</div>
+</body>
+</html>`);
+  } catch(err) { res.status(500).send("Error loading page"); }
+});
+
+// Public booking page
+app.get("/book/:userId", async (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Book Appointment</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#080c14;color:white;padding:20px;min-height:100vh}
+.card{background:#1e293b;border-radius:14px;padding:20px;max-width:440px;margin:0 auto;border:1px solid rgba(255,255,255,0.05)}
+h1{font-size:20px;font-weight:800;margin-bottom:6px;text-align:center}
+p.sub{color:#64748b;font-size:13px;text-align:center;margin-bottom:20px}
+label{font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;margin-top:10px}
+input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px}
+.btn{width:100%;padding:13px;background:#3b82f6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600;margin-top:16px}
+.service-card{background:#0f172a;border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;border:2px solid transparent;display:flex;justify-content:space-between;align-items:center}
+.service-card.selected{border-color:#3b82f6}
+#success{display:none;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📅 Book Appointment</h1>
+  <p class="sub" id="biz_name">Loading...</p>
+
+  <div id="booking_form">
+    <label>Select Service</label>
+    <div id="services_list"><p style="color:#64748b;font-size:13px">Loading services...</p></div>
+
+    <label>Your Name *</label>
+    <input id="b_name" placeholder="Full name">
+
+    <label>Phone Number *</label>
+    <input id="b_phone" placeholder="e.g. 08012345678" type="tel">
+
+    <label>Email (optional)</label>
+    <input id="b_email" placeholder="your@email.com" type="email">
+
+    <label>Preferred Date *</label>
+    <input id="b_date" type="date" min="${new Date().toISOString().split('T')[0]}">
+
+    <label>Preferred Time *</label>
+    <select id="b_time">
+      ${["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"].map(t=>`<option value="${t}">${t}</option>`).join("")}
+    </select>
+
+    <label>Additional Notes</label>
+    <input id="b_notes" placeholder="Any special requests?">
+
+    <button class="btn" onclick="submitBooking()">Confirm Booking</button>
+  </div>
+
+  <div id="success">
+    <div style="font-size:48px;margin-bottom:12px">✅</div>
+    <h2 style="margin-bottom:8px">Booking Confirmed!</h2>
+    <p style="color:#64748b;font-size:14px">We will contact you shortly to confirm your appointment.</p>
+  </div>
+</div>
+
+<script>
+var uid = location.pathname.split("/book/")[1];
+var selectedService = null;
+
+fetch("/api/book/"+uid+"/services")
+  .then(r=>r.json())
+  .then(data=>{
+    if(data.biz) document.getElementById("biz_name").textContent = data.biz.business_name || "Book your appointment";
+    var list = document.getElementById("services_list");
+    if(!data.services || !data.services.length){
+      list.innerHTML = "<p style='color:#64748b;font-size:13px'>No services listed yet.</p>";
+      return;
+    }
+    list.innerHTML = data.services.map(s=>
+      "<div class='service-card' id='svc_"+s.id+"' onclick='selectService(""+s.id+"",this)'>"+
+        "<div><div style='font-size:14px;font-weight:600'>"+s.name+"</div>"+
+        "<div style='font-size:11px;color:#64748b'>"+s.duration_minutes+" mins</div></div>"+
+        "<div style='font-size:16px;font-weight:800;color:#3b82f6'>₦"+parseFloat(s.price||0).toLocaleString()+"</div>"+
+      "</div>"
+    ).join("");
+  });
+
+function selectService(id, el){
+  selectedService = id;
+  document.querySelectorAll(".service-card").forEach(function(c){ c.classList.remove("selected"); });
+  el.classList.add("selected");
+}
+
+async function submitBooking(){
+  var name = document.getElementById("b_name").value.trim();
+  var phone = document.getElementById("b_phone").value.trim();
+  var date = document.getElementById("b_date").value;
+  var time = document.getElementById("b_time").value;
+  if(!name||!phone||!date||!time) return alert("Please fill all required fields.");
+  if(!selectedService) return alert("Please select a service.");
+  var btn = document.querySelector(".btn");
+  btn.disabled=true; btn.textContent="Booking...";
+  try {
+    var res = await fetch("/api/book/"+uid,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({service_id:selectedService, customer_name:name, customer_phone:phone,
+        customer_email:document.getElementById("b_email").value,
+        booking_date:date, booking_time:time, notes:document.getElementById("b_notes").value})
+    });
+    var data = await res.json();
+    if(data.success){
+      document.getElementById("booking_form").style.display="none";
+      document.getElementById("success").style.display="block";
+    } else { alert("Booking failed. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
+  } catch(e){ alert("Network error. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
+}
+</script>
+</body>
+</html>`);
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });

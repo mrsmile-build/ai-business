@@ -80,7 +80,11 @@ function loadPage(page){
     revenue: 'renderRevenue',
     agents: 'renderAgents',
     referral: 'renderReferral',
-    automation: 'renderAutomation'
+    automation: 'renderAutomation',
+    appointments: 'renderAppointments',
+    invoice: 'renderInvoice',
+    bizpage: 'renderBizPage',
+    b2cgrowth: 'renderB2CGrowth'
   };
 
   var fnName = routes[page];
@@ -191,6 +195,21 @@ function renderDashboard(){
             <div style="font-size:18px;margin-bottom:3px">🎁</div>
             <div style="font-size:12px;font-weight:600">Refer</div>
             <div style="font-size:10px;color:#475569">Earn free months</div>
+          </button>
+          <button onclick="loadPage('appointments')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">📅</div>
+            <div style="font-size:12px;font-weight:600">Bookings</div>
+            <div style="font-size:10px;color:#475569">Appointments</div>
+          </button>
+          <button onclick="loadPage('invoice')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🧾</div>
+            <div style="font-size:12px;font-weight:600">Invoice</div>
+            <div style="font-size:10px;color:#475569">Get paid fast</div>
+          </button>
+          <button onclick="loadPage('bizpage')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
+            <div style="font-size:18px;margin-bottom:3px">🌐</div>
+            <div style="font-size:12px;font-weight:600">My Page</div>
+            <div style="font-size:10px;color:#475569">Free website</div>
           </button>
           <button onclick="loadPage('subscription')" style="padding:13px 10px;background:linear-gradient(135deg,#1d4ed8,#7c3aed);border:none;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">💳</div>
@@ -1058,6 +1077,27 @@ const INDUSTRIES = [
 ];
 
 function renderLeadFinder(){
+  setView(`
+    <div class="card">
+      ${header("🎯 Lead Finder","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Who are you trying to reach?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0">
+        <button onclick="renderLeadFinderB2B()" style="padding:16px 12px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;text-align:center">
+          <div style="font-size:24px;margin-bottom:6px">🏢</div>
+          <div style="font-size:13px;font-weight:700">Businesses (B2B)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px">Find companies to offer your services</div>
+        </button>
+        <button onclick="renderB2CGrowth()" style="padding:16px 12px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;text-align:center">
+          <div style="font-size:24px;margin-bottom:6px">👥</div>
+          <div style="font-size:13px;font-weight:700">Customers (B2C)</div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px">Get more individual customers</div>
+        </button>
+      </div>
+    </div>
+  `);
+}
+
+function renderLeadFinderB2B(){
   const plan = currentSub?.plan || "free";
   const usage = currentSub?.subscription?.lead_finder_usage || 0;
   const limits = { free:3, starter:15, pro:50, business:999 };
@@ -1642,6 +1682,447 @@ async function renderAnalytics(){
   } catch(e){
     setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`);
   }
+}
+
+/* =========================
+   APPOINTMENTS
+========================= */
+async function renderAppointments(){
+  setView(`<div class="card">${header("📅 Appointments","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const [svcRes, bookRes] = await Promise.all([
+      fetch("/api/services",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      fetch("/api/bookings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+    ]);
+    const { services } = await svcRes.json();
+    const { bookings } = await bookRes.json();
+    const uid = currentUser?.id || "";
+    const bookLink = window.location.origin + "/book/" + uid;
+
+    const today = new Date().toISOString().split("T")[0];
+    const upcoming = (bookings||[]).filter(b => b.booking_date >= today && b.status !== "cancelled");
+    const past = (bookings||[]).filter(b => b.booking_date < today);
+
+    setView(`
+      <div class="card">
+        ${header("📅 Appointments","dashboard")}
+
+        <div style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center">
+          <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.7)">Your Booking Link</p>
+          <p style="margin:0 0 10px;font-size:13px;color:white;word-break:break-all">${bookLink}</p>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button onclick="navigator.clipboard.writeText('${bookLink}').then(()=>alert('Copied!'))" style="padding:7px 14px;background:white;color:#1d4ed8;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600">📋 Copy Link</button>
+            <button onclick="navigator.share&&navigator.share({url:'${bookLink}',title:'Book with us'})" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:7px;cursor:pointer;font-size:12px">📤 Share</button>
+            <a href="${bookLink}" target="_blank" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:7px;font-size:12px;text-decoration:none">👁️ Preview</a>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button onclick="showAddService()" style="flex:1;padding:10px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:13px">+ Add Service</button>
+          <button onclick="toggleServiceList()" style="flex:1;padding:10px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:13px">⚙️ Services (${(services||[]).length})</button>
+        </div>
+
+        <div id="add_service_form" style="display:none;background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Add New Service</p>
+          <input id="svc_name" placeholder="Service name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="svc_duration" placeholder="Duration (mins)" type="number" value="60" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+            <input id="svc_price" placeholder="Price (₦)" type="number" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+          </div>
+          <input id="svc_desc" placeholder="Description (optional)" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <button onclick="addService()" style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save Service</button>
+        </div>
+
+        <div id="service_list_box" style="display:none;margin-bottom:14px">
+          ${(services||[]).length === 0 ? "<p style='color:#64748b;font-size:13px;text-align:center;padding:10px'>No services yet. Add your first service.</p>" :
+            (services||[]).map(s=>`
+              <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <p style="margin:0;font-size:13px;font-weight:600">${s.name}</p>
+                  <p style="margin:2px 0 0;font-size:11px;color:#64748b">${s.duration_minutes}min · ₦${parseFloat(s.price||0).toLocaleString()}</p>
+                </div>
+                <button onclick="deleteService('${s.id}')" style="padding:5px 10px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:11px">Remove</button>
+              </div>`).join("")}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #f59e0b">
+            <p style="margin:0;font-size:18px;font-weight:800;color:#f59e0b">${upcoming.filter(b=>b.status==="pending").length}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Pending</p>
+          </div>
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #10b981">
+            <p style="margin:0;font-size:18px;font-weight:800;color:#10b981">${upcoming.filter(b=>b.status==="confirmed").length}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Confirmed</p>
+          </div>
+          <div style="background:#0f172a;padding:12px;border-radius:9px;text-align:center;border-top:2px solid #3b82f6">
+            <p style="margin:0;font-size:18px;font-weight:800;color:#3b82f6">${past.length}</p>
+            <p style="margin:2px 0 0;font-size:10px;color:#64748b">Completed</p>
+          </div>
+        </div>
+
+        ${upcoming.length > 0 ? `
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Upcoming (${upcoming.length})</p>
+          ${upcoming.map(b=>`
+            <div style="background:#0f172a;padding:14px;border-radius:10px;margin-bottom:10px;border-left:3px solid ${b.status==='confirmed'?'#10b981':'#f59e0b'}">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                <div>
+                  <p style="margin:0;font-size:14px;font-weight:bold">${b.customer_name}</p>
+                  <p style="margin:2px 0;font-size:12px;color:#94a3b8">${b.services?.name||"Service"}</p>
+                  <p style="margin:2px 0;font-size:12px;color:#64748b">📅 ${b.booking_date} at ${b.booking_time}</p>
+                  ${b.customer_phone?`<p style="margin:2px 0;font-size:12px;color:#10b981">📞 ${b.customer_phone}</p>`:""}
+                </div>
+                <span style="font-size:11px;padding:3px 8px;border-radius:6px;background:${b.status==='confirmed'?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)'};color:${b.status==='confirmed'?'#10b981':'#f59e0b'}">${b.status}</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${b.status==="pending"?`<button onclick="updateBooking('${b.id}','confirmed')" style="padding:6px 12px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Confirm</button>`:""}
+                ${b.customer_phone?`<a href="https://wa.me/${b.customer_phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}" target="_blank" style="padding:6px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px">WhatsApp</a>`:""}
+                <button onclick="updateBooking('${b.id}','cancelled')" style="padding:6px 12px;background:#1e293b;color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:12px">Cancel</button>
+              </div>
+            </div>
+          `).join("")}
+        ` : `<div style="text-align:center;padding:20px"><p style="color:#64748b;font-size:13px">No upcoming bookings.</p><p style="color:#475569;font-size:12px;margin-top:4px">Share your booking link to get started.</p></div>`}
+      </div>
+    `);
+  } catch(e){ setView(`<div class="card">${header("📅 Appointments","dashboard")}<p style="color:red">${e.message}</p></div>`); }
+}
+
+function showAddService(){ var f=document.getElementById("add_service_form"); if(f) f.style.display=f.style.display==="none"?"block":"none"; }
+function toggleServiceList(){ var f=document.getElementById("service_list_box"); if(f) f.style.display=f.style.display==="none"?"block":"none"; }
+
+async function addService(){
+  var name=document.getElementById("svc_name")?.value.trim();
+  var dur=document.getElementById("svc_duration")?.value;
+  var price=document.getElementById("svc_price")?.value;
+  var desc=document.getElementById("svc_desc")?.value.trim();
+  if(!name) return alert("Service name required.");
+  var btn=document.querySelector("button[onclick='addService()']");
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  try{
+    var res=await fetch("/api/services",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,duration_minutes:parseInt(dur)||60,price:parseFloat(price)||0,description:desc})});
+    var data=await res.json();
+    if(data.success){renderAppointments();}
+  }catch(e){alert("Error. Try again.");}
+  if(btn){btn.disabled=false;btn.textContent="Save Service";}
+}
+
+async function deleteService(id){
+  if(!confirm("Remove this service?")) return;
+  await fetch("/api/services/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+  renderAppointments();
+}
+
+async function updateBooking(id, status){
+  await fetch("/api/bookings/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+  renderAppointments();
+}
+/* =========================
+   INVOICE GENERATOR
+========================= */
+function renderInvoice(){
+  setView(`
+    <div class="card">
+      ${header("🧾 Invoice Generator","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Create professional invoices to send clients.</p>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Your Details</p>
+        <input id="inv_from_name" placeholder="Your name / Business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${currentProfile?.display_name||""}">
+        <input id="inv_from_phone" placeholder="Your phone / WhatsApp" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${currentProfile?.phone||""}">
+        <input id="inv_from_bank" placeholder="Bank account details (optional)" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Client Details</p>
+        <input id="inv_to_name" placeholder="Client name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="inv_to_phone" placeholder="Client phone" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px" id="inv_items_box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <p style="margin:0;font-size:13px;font-weight:bold">Items / Services</p>
+          <button onclick="addInvoiceItem()" style="padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">+ Add Item</button>
+        </div>
+        <div id="inv_items">
+          <div class="inv-item" style="display:flex;gap:6px;margin-bottom:6px">
+            <input placeholder="Description *" style="flex:2;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px">
+            <input placeholder="Amount (₦)" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()">
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid #1e293b">
+          <p style="font-size:15px;font-weight:bold">Total: ₦<span id="inv_total">0</span></p>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:6px">
+        <input id="inv_date" type="date" value="${new Date().toISOString().split("T")[0]}" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+        <input id="inv_due" placeholder="Due date" type="date" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+      </div>
+      <input id="inv_notes" placeholder="Payment notes (e.g. Pay via bank transfer)" style="width:100%;padding:9px;margin-top:8px;margin-bottom:14px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+
+      <button onclick="generateInvoice()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🧾 Generate Invoice</button>
+    </div>
+  `);
+}
+
+function addInvoiceItem(){
+  var div = document.createElement("div");
+  div.className = "inv-item";
+  div.style = "display:flex;gap:6px;margin-bottom:6px";
+  div.innerHTML = '<input placeholder="Description" style="flex:2;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px"><input placeholder="Amount (₦)" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()"><button onclick="this.parentElement.remove();updateInvoiceTotal()" style="padding:8px 10px;background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:7px;cursor:pointer;font-size:12px">×</button>';
+  document.getElementById("inv_items").appendChild(div);
+}
+
+function updateInvoiceTotal(){
+  var items = document.querySelectorAll("#inv_items .inv-item");
+  var total = 0;
+  items.forEach(function(row){
+    var amt = parseFloat(row.querySelectorAll("input")[1]?.value)||0;
+    total += amt;
+  });
+  var el = document.getElementById("inv_total");
+  if(el) el.textContent = total.toLocaleString();
+}
+
+function generateInvoice(){
+  var fromName = document.getElementById("inv_from_name")?.value.trim();
+  var fromPhone = document.getElementById("inv_from_phone")?.value.trim();
+  var fromBank = document.getElementById("inv_from_bank")?.value.trim();
+  var toName = document.getElementById("inv_to_name")?.value.trim();
+  var toPhone = document.getElementById("inv_to_phone")?.value.trim();
+  var date = document.getElementById("inv_date")?.value;
+  var due = document.getElementById("inv_due")?.value;
+  var notes = document.getElementById("inv_notes")?.value.trim();
+  if(!fromName||!toName) return alert("Fill your name and client name.");
+
+  var items = [];
+  var total = 0;
+  document.querySelectorAll("#inv_items .inv-item").forEach(function(row){
+    var inputs = row.querySelectorAll("input");
+    var desc = inputs[0]?.value.trim();
+    var amt = parseFloat(inputs[1]?.value)||0;
+    if(desc) { items.push({desc, amt}); total += amt; }
+  });
+  if(!items.length) return alert("Add at least one item.");
+
+  var invNo = "INV-" + Date.now().toString().slice(-6);
+  var html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${invNo}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;background:white;color:#1e293b;padding:30px;max-width:600px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px;padding-bottom:20px;border-bottom:2px solid #3b82f6}
+h1{color:#3b82f6;font-size:28px;font-weight:900}.inv-num{font-size:13px;color:#64748b;margin-top:4px}
+.parties{display:flex;justify-content:space-between;margin-bottom:24px;gap:20px}
+.party{flex:1}.party-label{font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:1px;margin-bottom:6px}
+.party-name{font-size:15px;font-weight:700;margin-bottom:3px}.party-detail{font-size:13px;color:#64748b}
+table{width:100%;border-collapse:collapse;margin-bottom:16px}
+th{background:#f8fafc;padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0}
+td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:14px}
+.total-row td{font-weight:800;font-size:16px;color:#3b82f6;border-bottom:none;border-top:2px solid #3b82f6;padding-top:14px}
+.notes{background:#f8fafc;border-radius:8px;padding:14px;margin-bottom:20px;font-size:13px;color:#64748b}
+.footer{text-align:center;color:#94a3b8;font-size:11px;margin-top:20px}
+.date-row{display:flex;gap:20px;margin-bottom:20px}
+.date-item{font-size:13px;color:#64748b}
+.date-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.date-value{font-weight:600;color:#1e293b}
+@media print{button{display:none!important}body{padding:15px}}</style></head>
+<body>
+<div class="header"><div><h1>INVOICE</h1><div class="inv-num">${invNo}</div></div>
+<div style="text-align:right"><div style="font-size:20px;font-weight:800;color:#3b82f6">AI Business</div><div style="font-size:11px;color:#94a3b8">Powered by AI Business Platform</div></div></div>
+<div class="parties">
+<div class="party"><div class="party-label">From</div><div class="party-name">${fromName}</div>${fromPhone?`<div class="party-detail">${fromPhone}</div>`:""}${fromBank?`<div class="party-detail" style="margin-top:6px;font-size:12px">${fromBank}</div>`:""}</div>
+<div class="party" style="text-align:right"><div class="party-label">Billed To</div><div class="party-name">${toName}</div>${toPhone?`<div class="party-detail">${toPhone}</div>`:""}</div>
+</div>
+<div class="date-row">
+<div class="date-item"><div class="date-label">Invoice Date</div><div class="date-value">${date}</div></div>
+${due?`<div class="date-item"><div class="date-label">Due Date</div><div class="date-value">${due}</div></div>`:""}
+</div>
+<table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>
+${items.map(i=>`<tr><td>${i.desc}</td><td style="text-align:right">₦${i.amt.toLocaleString()}</td></tr>`).join("")}
+<tr class="total-row"><td>Total</td><td style="text-align:right">₦${total.toLocaleString()}</td></tr>
+</tbody></table>
+${notes?`<div class="notes"><strong>Payment Info:</strong> ${notes}</div>`:""}
+<div style="text-align:center;margin-bottom:16px"><button onclick="window.print()" style="padding:10px 24px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-right:8px">🖨️ Print / Save as PDF</button></div>
+<div class="footer">Generated by AI Business · The AI-powered business platform for African entrepreneurs</div>
+</body></html>`;
+
+  var win = window.open("","_blank");
+  win.document.write(html);
+  win.document.close();
+}
+/* =========================
+   BUSINESS PAGE BUILDER
+========================= */
+async function renderBizPage(){
+  setView(`<div class="card">${header("🌐 Business Page","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const res = await fetch("/api/biz-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const { page } = await res.json();
+    const p = page || {};
+    const slug = p.slug || currentUser?.id?.substring(0,8) || "";
+    const bizUrl = window.location.origin + "/biz/" + slug;
+
+    setView(`
+      <div class="card">
+        ${header("🌐 Business Page","dashboard")}
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Create a free business page to share online. No website needed.</p>
+
+        ${p.business_name ? `
+          <div style="background:linear-gradient(135deg,#1d4ed8,#7c3aed);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center">
+            <p style="margin:0 0 4px;font-size:12px;color:rgba(255,255,255,0.7)">Your Business Page</p>
+            <p style="margin:0 0 10px;font-size:13px;color:white;word-break:break-all">${bizUrl}</p>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button onclick="navigator.clipboard.writeText('${bizUrl}').then(()=>alert('Copied!'))" style="padding:7px 14px;background:white;color:#1d4ed8;border:none;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600">📋 Copy</button>
+              <a href="${bizUrl}" target="_blank" style="padding:7px 14px;background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);border-radius:7px;text-decoration:none;font-size:12px">👁️ Preview</a>
+            </div>
+          </div>
+        ` : ""}
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Page Details</p>
+          <input id="bp_name" placeholder="Business name *" value="${p.business_name||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_tagline" placeholder="Tagline (e.g. Lagos's best hair salon)" value="${p.tagline||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_slug" placeholder="Page link name (e.g. glamour-salon)" value="${p.slug||slug}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <textarea id="bp_desc" placeholder="About your business..." style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box">${p.description||""}</textarea>
+          <input id="bp_hours" placeholder="Opening hours" value="${p.hours||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_location" placeholder="Location / Address" value="${p.location||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_wa" placeholder="WhatsApp number" value="${p.whatsapp||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_ig" placeholder="Instagram link (optional)" value="${p.instagram||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <div style="margin-bottom:8px">
+            <p style="font-size:12px;color:#94a3b8;margin-bottom:6px">Theme Color</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              ${["#3b82f6","#8b5cf6","#10b981","#ef4444","#f59e0b","#ec4899","#0ea5e9","#14b8a6"].map(col=>`<div onclick="document.getElementById('bp_color').value='${col}';this.parentElement.querySelectorAll('div').forEach(d=>d.style.border='none');this.style.border='3px solid white'" style="width:28px;height:28px;border-radius:50%;background:${col};cursor:pointer;${p.theme_color===col?'border:3px solid white':''}"></div>`).join("")}
+              <input id="bp_color" type="color" value="${p.theme_color||'#3b82f6'}" style="width:28px;height:28px;border:none;border-radius:50%;cursor:pointer;padding:0;background:none">
+            </div>
+          </div>
+        </div>
+
+        <button onclick="saveBizPage()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🌐 Save and Publish Page</button>
+      </div>
+    `);
+  } catch(e){ setView(`<div class="card">${header("🌐 Business Page","dashboard")}<p style="color:red">${e.message}</p></div>`); }
+}
+
+async function saveBizPage(){
+  var btn = document.querySelector("button[onclick='saveBizPage()']");
+  if(btn){btn.disabled=true;btn.textContent="Publishing...";}
+  try {
+    var res = await fetch("/api/biz-settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({
+        business_name: document.getElementById("bp_name")?.value.trim(),
+        tagline: document.getElementById("bp_tagline")?.value.trim(),
+        slug: document.getElementById("bp_slug")?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"-"),
+        description: document.getElementById("bp_desc")?.value.trim(),
+        hours: document.getElementById("bp_hours")?.value.trim(),
+        location: document.getElementById("bp_location")?.value.trim(),
+        whatsapp: document.getElementById("bp_wa")?.value.trim(),
+        instagram: document.getElementById("bp_ig")?.value.trim(),
+        theme_color: document.getElementById("bp_color")?.value
+      })
+    });
+    var data = await res.json();
+    if(data.success){ alert("Page published!"); renderBizPage(); }
+    else alert("Error. Try again.");
+  } catch(e){ alert("Network error."); }
+  if(btn){btn.disabled=false;btn.textContent="Save and Publish Page";}
+}
+/* =========================
+   B2C CUSTOMER GROWTH
+========================= */
+async function renderB2CGrowth(){
+  setView(`
+    <div class="card">
+      ${header("📣 Customer Growth","leadFinder")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">AI generates marketing content to attract individual customers to your business.</p>
+
+      <select id="b2c_goal" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <option value="">-- What do you want to achieve? --</option>
+        <option value="new_customers">Get new customers</option>
+        <option value="reactivate">Re-engage old customers</option>
+        <option value="promotion">Promote a special offer</option>
+        <option value="loyalty">Build customer loyalty</option>
+        <option value="referral">Get referrals from customers</option>
+      </select>
+
+      <input id="b2c_biz" placeholder="Your business (e.g. Glamour Hair Salon)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${currentProfile?.display_name||""}">
+      <input id="b2c_location" placeholder="Your city (e.g. Lagos, Abuja)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <textarea id="b2c_offer" placeholder="Any specific offer, price, or detail to include?" style="width:100%;padding:10px;margin-bottom:14px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+
+      <button onclick="generateB2CContent()" style="width:100%;padding:12px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">✨ Generate Marketing Content</button>
+      <div id="b2c_result" style="margin-top:14px"></div>
+    </div>
+  `);
+}
+
+async function generateB2CContent(){
+  var goal = document.getElementById("b2c_goal")?.value;
+  var biz = document.getElementById("b2c_biz")?.value.trim();
+  var location = document.getElementById("b2c_location")?.value.trim();
+  var offer = document.getElementById("b2c_offer")?.value.trim();
+  if(!goal) return alert("Select what you want to achieve.");
+  if(!biz) return alert("Enter your business name.");
+
+  var btn = document.querySelector("button[onclick='generateB2CContent()']");
+  if(btn){btn.disabled=true;btn.textContent="Generating...";}
+  var el = document.getElementById("b2c_result");
+  if(el) el.innerHTML = "<p style='color:#64748b;font-size:12px;text-align:center'>Writing content for all platforms...</p>";
+
+  var goalText = {new_customers:"attract new customers",reactivate:"re-engage old customers who haven't visited in a while",promotion:"promote a special offer",loyalty:"build customer loyalty and encourage repeat visits",referral:"encourage existing customers to refer friends"}[goal]||goal;
+
+  try {
+    var res = await fetch("/api/ai-reply",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({message: `Create marketing content for ${biz} in ${location||"Nigeria"} to ${goalText}. ${offer?"Special offer: "+offer:""}
+
+Generate ALL of these in JSON format:
+{
+  "whatsapp_status": "Short WhatsApp status text (under 50 words)",
+  "facebook_post": "Facebook post with emojis (under 100 words)",
+  "instagram_caption": "Instagram caption with hashtags",
+  "tiktok_idea": "TikTok video idea (what to film and say)",
+  "whatsapp_broadcast": "WhatsApp broadcast message to send to customer list",
+  "referral_message": "Message asking happy customers to refer friends",
+  "promo_idea": "One creative promotion idea specific to this business"
+}
+
+Return ONLY the JSON, no markdown.`})
+    });
+    var data = await res.json();
+    var content;
+    try { content = JSON.parse(data.reply.replace(/\`\`\`json|\`\`\`/g,"").trim()); }
+    catch(e) { content = null; }
+
+    if(!content){
+      if(el) el.innerHTML = `<div style="background:#162032;padding:14px;border-radius:10px"><p style="font-size:13px;color:#cbd5e1;line-height:1.6;white-space:pre-wrap">${data.reply}</p></div>`;
+      return;
+    }
+
+    var platforms = [
+      {key:"whatsapp_status", label:"WhatsApp Status", icon:"💬", color:"#25d366"},
+      {key:"facebook_post", label:"Facebook Post", icon:"📘", color:"#1877f2"},
+      {key:"instagram_caption", label:"Instagram Caption", icon:"📸", color:"#e1306c"},
+      {key:"tiktok_idea", label:"TikTok Idea", icon:"🎵", color:"#ff0050"},
+      {key:"whatsapp_broadcast", label:"WhatsApp Broadcast", icon:"📢", color:"#25d366"},
+      {key:"referral_message", label:"Referral Message", icon:"🤝", color:"#8b5cf6"},
+      {key:"promo_idea", label:"Promotion Idea", icon:"💡", color:"#f59e0b"}
+    ];
+
+    if(el) el.innerHTML = platforms.map(function(p){
+      var text = content[p.key] || "";
+      return `<div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${p.color}">
+        <p style="margin:0 0 8px;font-size:13px;font-weight:bold;color:${p.color}">${p.icon} ${p.label}</p>
+        <p style="margin:0 0 10px;font-size:13px;color:#94a3b8;line-height:1.5">${text}</p>
+        <div style="display:flex;gap:8px">
+          <button onclick="navigator.clipboard.writeText('${text.replace(/'/g,"\'")}').then(()=>alert('Copied!'))" style="padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">📋 Copy</button>
+          <button onclick="if(navigator.share){navigator.share({text:'${text.replace(/'/g,"\'")}'})}else{navigator.clipboard.writeText('${text.replace(/'/g,"\'")}').then(()=>alert('Copied!'))}" style="padding:6px 12px;background:${p.color}22;color:${p.color};border:1px solid ${p.color}55;border-radius:6px;cursor:pointer;font-size:11px">📤 Share</button>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e){
+    if(el) el.innerHTML = `<div style="text-align:center"><p style="color:red;font-size:12px">Network error.</p><button onclick="generateB2CContent()" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:8px">🔄 Retry</button></div>`;
+  }
+
+  if(btn){btn.disabled=false;btn.textContent="✨ Generate Marketing Content";}
 }
 
 /* =========================
