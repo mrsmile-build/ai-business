@@ -794,61 +794,177 @@ async function deleteAccount(){
 /* =========================
    AI AGENTS
 ========================= */
-function renderAgents(){
+async function renderAgents(){
+  setView(`<div class="card">${header("🤖 AI Agents","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    const res = await fetch("/api/agent-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const { settings } = await res.json();
+    const s = settings || {};
+    const isSetup = !!s.business_name;
+
+    setView(`
+      <div class="card">
+        ${header("🤖 AI Agents","dashboard")}
+        <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Setup once. Each agent works for your business automatically.</p>
+
+        ${!isSetup ? `
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:14px;margin-bottom:16px;text-align:center">
+            <p style="margin:0 0 8px;font-size:13px;color:#f59e0b;font-weight:bold">⚠️ Setup Required</p>
+            <p style="margin:0;font-size:12px;color:#94a3b8">Fill the Receptionist form first. All agents use this info to work properly.</p>
+          </div>
+        ` : `
+          <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">✅</span>
+            <div>
+              <p style="margin:0;font-size:13px;font-weight:bold;color:#10b981">Agents Active — ${s.business_name}</p>
+              <p style="margin:0;font-size:11px;color:#64748b">All agents are configured and ready</p>
+            </div>
+            <button onclick="renderAgentSetup()" style="margin-left:auto;padding:5px 10px;background:#1e293b;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px">Edit</button>
+          </div>
+        `}
+
+        <!-- RECEPTIONIST -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #8b5cf6">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div>
+              <p style="margin:0;font-weight:bold;font-size:14px">🤝 AI Receptionist</p>
+              <p style="margin:3px 0 0;font-size:12px;color:#64748b">Answers customer questions automatically. Copy the widget code to your website.</p>
+            </div>
+          </div>
+          ${!isSetup ? `<button onclick="renderAgentSetup()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">⚙️ Setup Receptionist First</button>` : `
+            <input id="rec_test_q" placeholder="Test it: type a customer question..." style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+            <button onclick="testReceptionist()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Test Receptionist</button>
+            <div id="rec_test_result" style="margin-top:10px"></div>
+            <button onclick="showWidgetCode()" style="width:100%;padding:9px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:12px;margin-top:8px">📋 Get Website Widget Code</button>
+            <div id="widget_code_box" style="display:none;margin-top:8px"></div>
+          `}
+        </div>
+
+        <!-- FOLLOW-UP AGENT -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #3b82f6">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div>
+              <p style="margin:0;font-weight:bold;font-size:14px">📞 Follow-Up Agent</p>
+              <p style="margin:2px 0 0;font-size:12px;color:#64748b">Checks which leads need follow-up today</p>
+            </div>
+            <button onclick="runFollowUpAgent()" style="padding:7px 14px;background:#3b82f6;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Run</button>
+          </div>
+          <div id="followup_agent_result"></div>
+        </div>
+
+        <!-- REVIEW AGENT -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #f59e0b">
+          <p style="margin:0 0 4px;font-weight:bold;font-size:14px">⭐ Review Agent</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#64748b">Auto-triggered when you mark a lead as Won. Also run manually below.</p>
+          <input id="ra_customer" placeholder="Customer name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="ra_service" placeholder="Service provided" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <button onclick="runReviewAgent()" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Generate Review Request</button>
+          <div id="review_result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- QUOTE AGENT -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #10b981">
+          <p style="margin:0 0 4px;font-weight:bold;font-size:14px">💰 Quote Agent</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#64748b">Generate instant professional quotes</p>
+          <input id="qa_service" placeholder="Service" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="qa_client" placeholder="Client name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="qa_price" placeholder="Your price (e.g. ₦80,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <button onclick="runQuoteAgent()" style="width:100%;padding:10px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Quote</button>
+          <div id="quote_result" style="margin-top:10px"></div>
+        </div>
+
+        <!-- OFF-HOURS AGENT -->
+        <div style="background:#0f172a;border-radius:10px;padding:15px;border-left:3px solid #ef4444">
+          <p style="margin:0 0 4px;font-weight:bold;font-size:14px">🌙 Off-Hours Agent</p>
+          <p style="margin:0 0 10px;font-size:12px;color:#64748b">Auto-reply when you are unavailable</p>
+          <input id="oh_biz" placeholder="Business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${s.business_name||''}">
+          <input id="oh_hours" placeholder="Working hours (e.g. 9am-6pm Mon-Fri)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${s.opening_hours||''}">
+          <button onclick="runOffHoursAgent()" style="width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Auto-Reply</button>
+          <div id="offhours_result" style="margin-top:10px"></div>
+        </div>
+      </div>
+    `);
+  } catch(e){ setView(`<div class="card">${header("🤖 AI Agents","dashboard")}<p style="color:red">${e.message}</p></div>`); }
+}
+
+function renderAgentSetup(){
   setView(`
     <div class="card">
-      ${header("🤖 AI Agents","dashboard")}
-      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Setup once. Each agent handles a task for your business.</p>
+      ${header("⚙️ Receptionist Setup","agents")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Fill this once. Your AI Receptionist will use this to answer customer questions automatically.</p>
 
-      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #3b82f6">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div>
-            <p style="margin:0;font-weight:bold;font-size:14px">📞 Follow-Up Agent</p>
-            <p style="margin:2px 0 0;font-size:12px;color:#64748b">Checks which leads need follow-up today</p>
-          </div>
-          <button onclick="runFollowUpAgent()" style="padding:7px 14px;background:#3b82f6;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Run</button>
-        </div>
-        <div id="followup_agent_result"></div>
-      </div>
+      <input id="as_name" placeholder="Business name *" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <textarea id="as_desc" placeholder="What does your business do? *" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+      <textarea id="as_services" placeholder="List your services (e.g. Hair styling, Braiding, Treatment)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+      <textarea id="as_prices" placeholder="Your prices (e.g. Hair styling - ₦5,000, Braiding - ₦8,000)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+      <input id="as_hours" placeholder="Opening hours (e.g. Mon-Sat 9am-7pm)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <input id="as_location" placeholder="Location / Address" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <input id="as_whatsapp" placeholder="WhatsApp number" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <textarea id="as_booking" placeholder="How do customers book? (e.g. Call us, WhatsApp, Walk-in)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
+      <input id="as_review" placeholder="Your Google Review link (optional)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <textarea id="as_extra" placeholder="Anything else customers often ask?" style="width:100%;padding:10px;margin-bottom:16px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
 
-      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #10b981">
-        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">💰 Quote Agent</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Generate instant professional quotes</p>
-        <input id="qa_service" placeholder="Service (e.g. Website design)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="qa_client" placeholder="Client name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="qa_price" placeholder="Your price (e.g. 80,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <button onclick="runQuoteAgent()" style="width:100%;padding:10px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Quote</button>
-        <div id="quote_result" style="margin-top:10px"></div>
-      </div>
-
-      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #f59e0b">
-        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">⭐ Review Agent</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Ask customers to leave Google reviews</p>
-        <input id="ra_customer" placeholder="Customer name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="ra_service" placeholder="Service you provided" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <button onclick="runReviewAgent()" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Generate Review Request</button>
-        <div id="review_result" style="margin-top:10px"></div>
-      </div>
-
-      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px;border-left:3px solid #8b5cf6">
-        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">🤝 Receptionist Agent</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Replies to common customer questions</p>
-        <input id="rec_biz" placeholder="Your business (e.g. Web design agency)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="rec_question" placeholder="Customer question" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <button onclick="runReceptionistAgent()" style="width:100%;padding:10px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Reply</button>
-        <div id="receptionist_result" style="margin-top:10px"></div>
-      </div>
-
-      <div style="background:#0f172a;border-radius:10px;padding:15px;border-left:3px solid #ef4444">
-        <p style="margin:0 0 4px;font-weight:bold;font-size:14px">🌙 Off-Hours Agent</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#64748b">Auto-reply when you are unavailable</p>
-        <input id="oh_biz" placeholder="Your business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="oh_hours" placeholder="Working hours (e.g. 9am-6pm Mon-Fri)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <button onclick="runOffHoursAgent()" style="width:100%;padding:10px;background:#ef4444;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Auto-Reply</button>
-        <div id="offhours_result" style="margin-top:10px"></div>
-      </div>
+      <button onclick="saveAgentSettings()" style="width:100%;padding:12px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">💾 Save and Activate Agents</button>
     </div>
   `);
+}
+
+async function saveAgentSettings(){
+  const btn = document.querySelector("button[onclick='saveAgentSettings()']");
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  try {
+    const res = await fetch("/api/agent-settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({
+        business_name: document.getElementById("as_name")?.value.trim(),
+        business_description: document.getElementById("as_desc")?.value.trim(),
+        services: document.getElementById("as_services")?.value.trim(),
+        prices: document.getElementById("as_prices")?.value.trim(),
+        opening_hours: document.getElementById("as_hours")?.value.trim(),
+        location: document.getElementById("as_location")?.value.trim(),
+        whatsapp: document.getElementById("as_whatsapp")?.value.trim(),
+        booking_info: document.getElementById("as_booking")?.value.trim(),
+        review_link: document.getElementById("as_review")?.value.trim(),
+        extra_info: document.getElementById("as_extra")?.value.trim()
+      })
+    });
+    const data = await res.json();
+    if(data.success){ alert("Agents activated!"); renderAgents(); }
+    else { alert(data.error||"Error saving."); }
+  } catch(e){ alert("Network error."); }
+  if(btn){btn.disabled=false;btn.textContent="Save and Activate Agents";}
+}
+
+async function testReceptionist(){
+  const q = document.getElementById("rec_test_q")?.value.trim();
+  if(!q) return alert("Type a question first.");
+  const el = document.getElementById("rec_test_result");
+  if(el) el.innerHTML = "<p style='color:#64748b;font-size:12px'>Thinking...</p>";
+  try {
+    const res = await fetch("/api/receptionist",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({question:q})
+    });
+    const data = await res.json();
+    if(el) el.innerHTML = `<div style="background:#162032;padding:10px;border-radius:8px;border-left:3px solid #8b5cf6"><p style="margin:0;font-size:13px;color:#cbd5e1;line-height:1.5">${data.reply}</p></div>`;
+  } catch(e){ if(el) el.innerHTML = "<p style='color:red;font-size:12px'>Error. Try again.</p>"; }
+}
+
+function showWidgetCode(){
+  const box = document.getElementById("widget_code_box");
+  const uid = currentUser?.id || "";
+  const bizUrl = window.location.origin;
+  const code = `<script src="${bizUrl}/widget.js" data-user="${uid}"></script>`;
+  if(box){
+    box.style.display = "block";
+    box.innerHTML = `
+      <p style="font-size:12px;color:#64748b;margin:8px 0 4px">Paste this on your website:</p>
+      <textarea style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#10b981;font-size:11px;height:60px;resize:none;box-sizing:border-box;font-family:monospace">${code}</textarea>
+      <button onclick="navigator.clipboard.writeText(\`${code}\`).then(()=>alert('Copied!'))" style="margin-top:6px;padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Copy Code</button>
+    `;
+  }
 }
 
 
@@ -1939,6 +2055,71 @@ async function redeemReferral(){
     if(data.success){ alert(data.message); renderReferral(); }
     else { alert(data.error||"Cannot redeem yet."); if(btn){btn.disabled=false;btn.textContent="Redeem Now";} }
   } catch(e){ alert("Error. Try again."); if(btn){btn.disabled=false;btn.textContent="Redeem Now";} }
+}
+
+/* =========================
+   FEEDBACK + RATING
+========================= */
+function showFeedbackPopup(){
+  var existing = document.getElementById("aib_feedback_modal");
+  if(existing) existing.remove();
+
+  document.body.insertAdjacentHTML("beforeend",`
+    <div id="aib_feedback_modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:380px;width:100%;border:1px solid #334155">
+        <p style="margin:0 0 6px;font-size:18px;font-weight:bold;text-align:center">How are we doing?</p>
+        <p style="margin:0 0 16px;font-size:13px;color:#64748b;text-align:center">Your feedback helps us improve AI Business</p>
+
+        <div style="display:flex;justify-content:center;gap:10px;margin-bottom:16px" id="aib_stars">
+          ${[1,2,3,4,5].map(n=>`<span onclick="selectStar(${n})" style="font-size:32px;cursor:pointer;filter:grayscale(1);transition:all 0.2s" id="star_${n}">⭐</span>`).join("")}
+        </div>
+
+        <textarea id="aib_feedback_msg" placeholder="Tell us what you love or what we can improve..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
+
+        <div style="display:flex;gap:8px">
+          <button onclick="submitFeedback()" style="flex:1;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Submit</button>
+          <button onclick="document.getElementById('aib_feedback_modal').remove()" style="padding:11px 16px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Skip</button>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+var selectedRating = 0;
+function selectStar(n){
+  selectedRating = n;
+  for(var i=1;i<=5;i++){
+    var el = document.getElementById("star_"+i);
+    if(el) el.style.filter = i<=n ? "grayscale(0)" : "grayscale(1)";
+  }
+}
+
+async function submitFeedback(){
+  const msg = document.getElementById("aib_feedback_msg")?.value.trim();
+  if(!selectedRating) return alert("Please select a star rating.");
+  const btn = document.querySelector("button[onclick='submitFeedback()']");
+  if(btn){btn.disabled=true;btn.textContent="Sending...";}
+
+  try {
+    await fetch("/api/feedback",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({rating:selectedRating, message:msg})
+    });
+  } catch(e){}
+
+  document.getElementById("aib_feedback_modal").remove();
+
+  // If 4-5 stars, prompt Google review
+  if(selectedRating >= 4){
+    setTimeout(()=>{
+      if(confirm("We are so glad you love AI Business! Would you like to leave us a review? It really helps us grow.")){
+        window.open("https://g.page/r/YOUR_GOOGLE_REVIEW_LINK","_blank");
+      }
+    }, 500);
+  } else {
+    alert("Thank you for your feedback! We will work on improving.");
+  }
 }
 
 /* =========================

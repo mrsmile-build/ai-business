@@ -629,6 +629,102 @@ app.delete("/api/campaigns/:id", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- AGENT SETTINGS ---------------- */
+app.get("/api/agent-settings", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("agent_settings").select("*").eq("user_id", req.user.id).single();
+    res.json({ success: true, settings: data || {} });
+  } catch(err) { res.json({ success: true, settings: {} }); }
+});
+
+app.post("/api/agent-settings", authMiddleware, async (req, res) => {
+  try {
+    const settings = { ...req.body, user_id: req.user.id, updated_at: new Date() };
+    await supabase.from("agent_settings").upsert(settings);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/receptionist", authMiddleware, async (req, res) => {
+  try {
+    const { question } = req.body;
+    const { data: settings } = await supabase.from("agent_settings").select("*").eq("user_id", req.user.id).single();
+    if(!settings || !settings.business_name) return res.json({ success: false, error: "Please setup your Receptionist first." });
+
+    const prompt = `You are the AI receptionist for ${settings.business_name}.
+
+Business Info:
+- Description: ${settings.business_description || "Not specified"}
+- Services: ${settings.services || "Not specified"}
+- Prices: ${settings.prices || "Not specified"}
+- Opening Hours: ${settings.opening_hours || "Not specified"}
+- Location: ${settings.location || "Not specified"}
+- WhatsApp: ${settings.whatsapp || "Not specified"}
+- Booking: ${settings.booking_info || "Not specified"}
+- Extra Info: ${settings.extra_info || ""}
+
+A customer asked: "${question}"
+
+Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked about something not in the info above, say you will let the team know and they will respond shortly.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
+    });
+    const data = await groqRes.json();
+    const reply = data.choices?.[0]?.message?.content || "Thank you for your message. Our team will respond shortly.";
+    res.json({ success: true, reply });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- FEEDBACK ---------------- */
+app.post("/api/feedback", authMiddleware, async (req, res) => {
+  try {
+    const { rating, message } = req.body;
+    await supabase.from("feedback").insert({ user_id: req.user.id, rating, message });
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- CHAT WIDGET (public) ---------------- */
+app.post("/api/widget/chat", async (req, res) => {
+  try {
+    const { user_id, question, visitor_name, visitor_phone } = req.body;
+    if(!user_id || !question) return res.status(400).json({ error: "Missing fields" });
+
+    const { data: settings } = await supabase.from("agent_settings").select("*").eq("user_id", user_id).single();
+    if(!settings) return res.json({ reply: "Thank you for your message. We will get back to you shortly." });
+
+    // Save as lead automatically
+    if(visitor_name || visitor_phone){
+      await supabase.from("leads").insert({
+        user_id, name: visitor_name || "Website Visitor",
+        phone: visitor_phone || null,
+        message: question, status: "new",
+        business: "Website Enquiry"
+      }).catch(()=>{});
+    }
+
+    const prompt = `You are the AI receptionist for ${settings.business_name}.
+Services: ${settings.services || "Various services"}
+Prices: ${settings.prices || "Contact us"}
+Hours: ${settings.opening_hours || "Contact us"}
+Location: ${settings.location || "Contact us"}
+Customer asked: "${question}"
+Reply helpfully in under 80 words.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
+    });
+    const data = await groqRes.json();
+    const reply = data.choices?.[0]?.message?.content || "Thank you! We will respond shortly.";
+    res.json({ success: true, reply });
+  } catch(err) { res.status(500).json({ reply: "Thank you for your message. We will get back to you shortly." }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });
