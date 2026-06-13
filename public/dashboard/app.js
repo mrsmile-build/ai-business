@@ -62,7 +62,18 @@ function setView(html){
 /* =========================
    ROUTER
 ========================= */
+
+// Prevent back button from logging out
+window.addEventListener('popstate', function(e){
+  if(localStorage.getItem('token')){
+    var page = (e.state && e.state.page) ? e.state.page : 'dashboard';
+    loadPage(page);
+    window.history.pushState({page:page}, '', '/dashboard');
+  }
+});
+
 function loadPage(page){
+  try { window.history.pushState({page:page},'','/dashboard'); } catch(e){}
   closeMenu();
 
   const routes = {
@@ -80,6 +91,7 @@ function loadPage(page){
     revenue: 'renderRevenue',
     agents: 'renderAgents',
     referral: 'renderReferral',
+    affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
     appointments: 'renderAppointments',
     invoice: 'renderInvoice',
@@ -229,143 +241,287 @@ function renderDashboard(){
 ========================= */
 async function renderLeads(){
   setView(`<div class="card">${header("📩 Leads","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
-  try{
-    const res = await fetch("/api/leads",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+  try {
+    const res = await fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     const data = await res.json();
     const leads = data.leads || [];
-    const limit = currentSub?.limits?.leads || 10;
-    const plan = currentSub?.plan || "free";
-    const isPro = plan==="pro"||plan==="business";
+    const sub = currentSub || {};
+    const limit = (sub.limits && sub.limits.leads) ? sub.limits.leads : 10;
+    const plan = sub.plan || "free";
 
-    const statusColors = { new:"#64748b", contacted:"#3b82f6", interested:"#f59e0b", negotiation:"#8b5cf6", won:"#10b981", lost:"#ef4444" };
-    const statusLabels = { new:"🆕 New", contacted:"📞 Contacted", interested:"🔥 Interested", negotiation:"🤝 Negotiation", won:"✅ Won", lost:"❌ Lost" };
-    const stages = ["new","contacted","interested","negotiation","won","lost"];
-
-    // Pipeline summary
-    const pipelineCounts = {};
-    stages.forEach(s=>pipelineCounts[s]=leads.filter(l=>l.status===s||(!l.status&&s==="new")).length);
+    const counts = {new:0,contacted:0,interested:0,negotiation:0,won:0,lost:0};
+    leads.forEach(l => { if(counts[l.status]!==undefined) counts[l.status]++; });
 
     setView(`
       <div class="card">
         ${header("📩 Leads","dashboard")}
-        <p style="font-size:13px;color:#94a3b8;margin-bottom:10px">${leads.length} / ${limit===Infinity?"Unlimited":limit} leads used</p>
 
-        <!-- Pipeline bar -->
-        <div style="display:flex;gap:4px;margin-bottom:15px;flex-wrap:wrap">
-          ${["new","contacted","interested","won"].map(s=>`
-            <div style="flex:1;min-width:60px;background:#0f172a;padding:8px;border-radius:8px;text-align:center;border-top:3px solid ${statusColors[s]}">
-              <p style="margin:0;font-size:18px;font-weight:bold">${pipelineCounts[s]}</p>
-              <p style="margin:2px 0 0;font-size:10px;color:#64748b">${s.charAt(0).toUpperCase()+s.slice(1)}</p>
+        <p style="font-size:12px;color:#64748b;margin-bottom:12px">${leads.length} / ${limit>1000?"Unlimited":limit} leads used</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:16px">
+          ${[
+            {key:"new",label:"New",color:"#64748b"},
+            {key:"contacted",label:"Contacted",color:"#3b82f6"},
+            {key:"interested",label:"Interested",color:"#f59e0b"},
+            {key:"won",label:"Won",color:"#10b981"},
+            {key:"negotiation",label:"Negotiating",color:"#8b5cf6"},
+            {key:"lost",label:"Lost",color:"#ef4444"}
+          ].map(s=>`
+            <div style="background:#0f172a;padding:10px;border-radius:8px;text-align:center;border-top:2px solid ${s.color}">
+              <p style="margin:0;font-size:18px;font-weight:800;color:${s.color}">${counts[s.key]||0}</p>
+              <p style="margin:2px 0 0;font-size:10px;color:#64748b">${s.label}</p>
             </div>
           `).join("")}
         </div>
 
-        <!-- Add lead form -->
-        <div style="margin-bottom:15px">
-          <input id="l_name" placeholder="Name *" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;box-sizing:border-box">
-          <input id="l_phone" placeholder="Phone" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;box-sizing:border-box">
-          <input id="l_email" placeholder="Email" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;box-sizing:border-box">
-          <input id="l_business" placeholder="Business Type" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;box-sizing:border-box">
-          <input id="l_message" placeholder="Notes" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;box-sizing:border-box">
+        <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Add New Lead</p>
+          <input id="l_name" placeholder="Name *" style="width:100%;padding:9px;margin-bottom:7px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="l_phone" placeholder="Phone" style="width:100%;padding:9px;margin-bottom:7px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="l_email" placeholder="Email" style="width:100%;padding:9px;margin-bottom:7px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="l_business" placeholder="Business type" style="width:100%;padding:9px;margin-bottom:7px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <textarea id="l_message" placeholder="Notes / Initial message" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
           <div style="display:flex;gap:8px">
-            <button onclick="addLead()" style="flex:1;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px">+ Add Lead</button>
-            ${isPro ? `<button onclick="exportCSV()" style="padding:12px 16px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📥 CSV</button>` : `<button onclick="alert('CSV export is a Pro feature. Upgrade your plan!')" style="padding:12px 16px;background:#1e293b;color:#64748b;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:13px">📥 CSV</button>`}
+            <button onclick="addLead()" style="flex:1;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">+ Add Lead</button>
+            ${plan!=="free"?`<button onclick="exportCSV()" style="padding:11px 14px;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px">📥 CSV</button>`:""}
           </div>
         </div>
 
-        <!-- Leads list -->
-        <div id="leads-list">
-          ${leads.length===0
-            ? '<p style="color:#94a3b8;text-align:center;padding:10px">No leads yet. Add your first one above.</p>'
-            : leads.map(l=>{
-              const st = l.status||"new";
-              const col = statusColors[st]||"#64748b";
-              return `<div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;border-left:3px solid ${col}">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                  <div style="flex:1">
-                    <p style="margin:0;font-weight:bold;font-size:14px">${l.name}</p>
-                    <p style="margin:2px 0;font-size:12px;color:#94a3b8">${l.phone||""}${l.business?" · "+l.business:""}</p>
-                    ${l.email?`<p style="margin:2px 0;font-size:12px;color:#64748b">${l.email}</p>`:""}
-                  </div>
-                  <span onclick="deleteLead(${l.id})" style="color:#ef4444;cursor:pointer;font-size:20px;padding-left:10px">🗑</span>
-                </div>
-                <div style="margin-top:8px">
-                  <select onchange="updateLeadStatus(${l.id},this.value)" style="padding:5px 8px;border-radius:6px;border:1px solid ${col};background:#1e293b;color:white;font-size:12px;cursor:pointer">
-                    ${stages.map(s=>`<option value="${s}" ${s===st?"selected":""}>${statusLabels[s]}</option>`).join("")}
-                  </select>
-                </div>
-              </div>`;
-            }).join("")
-          }
+        <div id="leads_filter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button onclick="filterLeads('all')" style="padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px" id="f_all">All</button>
+          ${["new","contacted","interested","won","lost"].map(s=>`<button onclick="filterLeads('${s}')" style="padding:5px 10px;background:#1e293b;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px" id="f_${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join("")}
+        </div>
+
+        <div id="leads_list">
+          ${leads.length === 0 ? `<div style="text-align:center;padding:30px"><p style="color:#64748b;font-size:14px">No leads yet.</p><p style="color:#475569;font-size:12px;margin-top:4px">Add your first lead above.</p></div>` :
+          leads.map(l => leadCard(l)).join("")}
         </div>
       </div>
     `);
-  }catch(e){
-    setView(`<div class="card">${header("📩 Leads","dashboard")}<p style="color:red">Error loading leads.</p></div>`);
+    window._allLeads = leads;
+  window._leadsMap = {};
+  leads.forEach(function(l){ window._leadsMap[l.id] = l; });
+  } catch(e){ setView(`<div class="card">${header("📩 Leads","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`); }
+}
+
+function leadCard(l){
+  const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
+  const c = colors[l.status] || "#64748b";
+  const today = new Date().toISOString().split("T")[0];
+  const isOverdue = l.follow_up_date && l.follow_up_date < today && l.status !== "won" && l.status !== "lost";
+  return `
+    <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ${c};${isOverdue?'border:1px solid rgba(239,68,68,0.4);':''}" id="lead_${l.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px" onclick="window.openLeadDetail('${l.id}')">
+        <div style="flex:1;cursor:pointer">
+          <p style="margin:0;font-size:14px;font-weight:700">${l.name}</p>
+          ${l.business?`<p style="margin:2px 0;font-size:12px;color:#64748b">${l.business}</p>`:""}
+          ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981">📞 ${l.phone}</p>`:""}
+          ${l.follow_up_date?`<p style="margin:2px 0;font-size:11px;color:${isOverdue?'#ef4444':'#f59e0b'}">⏰ Follow-up: ${l.follow_up_date}${isOverdue?' (OVERDUE)':''}</p>`:""}
+        </div>
+        <span style="padding:3px 8px;background:${c}22;border:1px solid ${c}55;border-radius:6px;font-size:11px;color:${c};flex-shrink:0">${l.status}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select onchange="quickStatus('${l.id}',this.value)" style="flex:1;padding:6px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:white;font-size:11px">
+          ${["new","contacted","interested","negotiation","won","lost"].map(s=>`<option value="${s}" ${l.status===s?"selected":""}>${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join("")}
+        </select>
+        ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}" target="_blank" style="padding:6px 10px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:11px">WhatsApp</a>`:""}
+        <button onclick="window.openLeadDetail('${l.id}')" style="padding:6px 10px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:11px">Details →</button>
+      </div>
+    </div>`;
+}
+
+function filterLeads(status){
+  var all = window._allLeads || [];
+  var filtered = status === "all" ? all : all.filter(l => l.status === status);
+  document.getElementById("leads_list").innerHTML = filtered.length === 0 ?
+    "<p style='color:#64748b;text-align:center;padding:20px;font-size:13px'>No leads in this category.</p>" :
+    filtered.map(l => leadCard(l)).join("");
+  document.querySelectorAll("#leads_filter button").forEach(btn => {
+    btn.style.background = "#1e293b"; btn.style.color = "#94a3b8";
+  });
+  var active = document.getElementById("f_"+status);
+  if(active){ active.style.background="#3b82f6"; active.style.color="white"; }
+}
+
+async function quickStatus(id, status){
+  try {
+    await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+    if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l) l.status=status; }
+    // Auto-trigger review agent if won
+    if(status === "won"){
+      var lead = window._allLeads?.find(x=>x.id===id);
+      if(lead){
+        setTimeout(()=>{
+          if(confirm("Lead marked as Won! Generate a review request message for "+lead.name+"?")){
+            loadPage("agents");
+            setTimeout(()=>{
+              var customerInput = document.getElementById("ra_customer");
+              var serviceInput = document.getElementById("ra_service");
+              if(customerInput) customerInput.value = lead.name;
+              if(serviceInput) serviceInput.value = lead.business || "your service";
+            },500);
+          }
+        },300);
+      }
+    }
+  } catch(e){}
+}
+
+async function renderLeadDetail(id){
+  var lead = window._currentOpenLead;
+  if(!lead || lead.id !== id){
+    var leads = window._allLeads || [];
+    for(var i=0;i<leads.length;i++){ if(leads[i].id===id){lead=leads[i];break;} }
   }
+  if(!lead){ loadPage("leads"); return; }
+  renderLeadDetailObj(lead);
+}
+
+async function renderLeadDetailObj(lead){
+
+  const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
+
+  setView(`
+    <div class="card">
+      ${header("Lead Details","leads")}
+
+      <div style="background:#0f172a;border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <p style="margin:0;font-size:18px;font-weight:800">${lead.name}</p>
+            ${lead.business?`<p style="margin:3px 0 0;font-size:13px;color:#64748b">${lead.business}</p>`:""}
+          </div>
+          <span style="padding:4px 10px;background:${colors[lead.status]||"#64748b"}22;border:1px solid ${colors[lead.status]||"#64748b"}55;border-radius:8px;font-size:12px;color:${colors[lead.status]||"#64748b"};font-weight:600">${lead.status}</span>
+        </div>
+
+        ${lead.phone?`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b"><span style="font-size:13px;color:#64748b">Phone</span><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px">${lead.phone}</span><a href="https://wa.me/${lead.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}" target="_blank" style="padding:3px 8px;background:#25d366;color:white;border-radius:5px;text-decoration:none;font-size:11px">WhatsApp</a></div></div>`:""}
+        ${lead.email?`<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><span style="font-size:13px;color:#64748b">Email</span><span style="font-size:13px">${lead.email}</span></div>`:""}
+        ${lead.created_at?`<div style="padding:8px 0;display:flex;justify-content:space-between"><span style="font-size:13px;color:#64748b">Added</span><span style="font-size:13px">${new Date(lead.created_at).toLocaleDateString()}</span></div>`:""}
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Update Status</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          ${["new","contacted","interested","negotiation","won","lost"].map(s=>`
+            <button onclick="updateLeadStatus('${lead.id}','${s}')" style="padding:8px 4px;background:${lead.status===s?colors[s]||"#334155":"#1e293b"};color:${lead.status===s?"white":"#94a3b8"};border:1px solid ${lead.status===s?colors[s]||"#334155":"#334155"};border-radius:7px;cursor:pointer;font-size:11px;font-weight:${lead.status===s?"bold":"normal"}">${s.charAt(0).toUpperCase()+s.slice(1)}</button>
+          `).join("")}
+        </div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">⏰ Follow-up Reminder</p>
+        <p style="margin:0 0 6px;font-size:12px;color:#64748b">Set a date to follow up with this lead</p>
+        <input type="date" id="ld_followup" value="${lead.follow_up_date||""}" min="${new Date().toISOString().split("T")[0]}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <input id="ld_sale" type="number" placeholder="Sale amount ₦ (if won)" value="${lead.sale_amount||""}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <button onclick="saveLeadFollowup('${lead.id}')" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save Follow-up Date</button>
+        <div id="followup_save_result" style="margin-top:6px"></div>
+      </div>
+
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">📝 Notes & History</p>
+        ${lead.message?`<div style="background:#162032;border-radius:8px;padding:10px;margin-bottom:10px;border-left:2px solid #334155"><p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5">${lead.message}</p></div>`:""}
+        <textarea id="ld_note" placeholder="Add a note (e.g. Called today, interested in Pro plan...)" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;margin-bottom:8px"></textarea>
+        <button onclick="saveLeadNote('${lead.id}')" style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save Note</button>
+      </div>
+
+      ${lead.phone?`
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">✉️ Quick Message</p>
+          <textarea id="ld_msg" placeholder="Write a message to send on WhatsApp..." style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;margin-bottom:8px"></textarea>
+          <a id="ld_wa_btn" href="#" target="_blank" onclick="var msg=document.getElementById('ld_msg').value;this.href='https://wa.me/${lead.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}?text='+encodeURIComponent(msg)" style="display:block;text-align:center;padding:10px;background:#25d366;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">💬 Send on WhatsApp</a>
+        </div>
+      `:""}
+
+      <div style="display:flex;gap:8px">
+        <button onclick="loadPage('proposal')" style="flex:1;padding:11px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:12px">📄 Generate Proposal</button>
+        <button onclick="deleteLead('${lead.id}')" style="padding:11px 14px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;font-size:12px">🗑️ Delete</button>
+      </div>
+    </div>
+  `);
 }
 
 async function updateLeadStatus(id, status){
-  try{
-    await fetch("/api/leads/"+id, {
-      method:"PATCH",
-      headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({status})
-    });
-  }catch(e){ alert("Error updating status"); }
+  try {
+    await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+    if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l){ l.status=status; renderLeadDetail(id); } }
+  } catch(e){}
 }
 
-function exportCSV(){
-  fetch("/api/leads",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}})
-  .then(r=>r.json()).then(data=>{
-    const leads = data.leads||[];
-    if(leads.length===0) return alert("No leads to export.");
-    const headers = ["Name","Phone","Email","Business","Status","Notes","Date Added"];
-    const rows = leads.map(l=>[
-      l.name||"", l.phone||"", l.email||"", l.business||"",
-      l.status||"new", l.message||"",
-      new Date(l.created_at).toLocaleDateString()
-    ]);
-    const csv = [headers,...rows].map(r=>r.map(v=>`"${v}"`).join(",")).join("\n");
-    const blob = new Blob([csv],{type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href=url; a.download="leads_"+Date.now()+".csv"; a.click();
-    URL.revokeObjectURL(url);
-  }).catch(e=>alert("Export failed: "+e.message));
+async function saveLeadFollowup(id){
+  var date = document.getElementById("ld_followup")?.value;
+  var amount = document.getElementById("ld_sale")?.value;
+  var result = document.getElementById("followup_save_result");
+  try {
+    var body = {};
+    if(date) body.follow_up_date = date;
+    if(amount) body.sale_amount = parseFloat(amount);
+    var res = await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify(body)});
+    var data = await res.json();
+    if(data.success){
+      if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l && date) l.follow_up_date=date; }
+      if(result) result.innerHTML = "<p style='color:#10b981;font-size:12px'>✅ Follow-up date saved!</p>";
+      setTimeout(()=>{ if(result) result.innerHTML=""; },3000);
+    } else { if(result) result.innerHTML = "<p style='color:red;font-size:12px'>Error saving.</p>"; }
+  } catch(e){ if(result) result.innerHTML = "<p style='color:red;font-size:12px'>Network error.</p>"; }
 }
 
+async function saveLeadNote(id){
+  var note = document.getElementById("ld_note")?.value.trim();
+  if(!note) return alert("Write a note first.");
+  try {
+    var lead = (window._allLeads||[]).find(l=>l.id===id);
+    var existing = lead?.message || "";
+    var stamp = "[" + new Date().toLocaleDateString() + "] "; var updated = existing ? (existing + "\n\n" + stamp + note) : (stamp + note);
+    var res = await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({message:updated})});
+    var data = await res.json();
+    if(data.success){
+      if(lead) lead.message = updated;
+      alert("Note saved!");
+      renderLeadDetail(id);
+    }
+  } catch(e){ alert("Network error."); }
+}
 
 async function addLead(){
-  const btn = document.querySelector("button[onclick='addLead()']");
-  if(btn){ btn.disabled = true; btn.textContent = "Adding..."; }
-  const name = document.getElementById("l_name")?.value.trim();
-  if(!name) return alert("Name is required");
-  const phone = document.getElementById("l_phone")?.value.trim();
-  const email = document.getElementById("l_email")?.value.trim();
-  const business = document.getElementById("l_business")?.value.trim();
-  const message = document.getElementById("l_message")?.value.trim();
+  var name = document.getElementById("l_name")?.value.trim();
+  var phone = document.getElementById("l_phone")?.value.trim();
+  var email = document.getElementById("l_email")?.value.trim();
+  var business = document.getElementById("l_business")?.value.trim();
+  var message = document.getElementById("l_message")?.value.trim();
+  if(!name) return alert("Name is required.");
+  var btn = document.querySelector("button[onclick='addLead()']");
+  if(btn){btn.disabled=true;btn.textContent="Adding...";}
   try {
-    const res = await fetch("/api/leads", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") },
-      body: JSON.stringify({ name, phone, email, business, message })
-    });
-    const data = await res.json();
-    if(data.success){ renderLeads(); } else { alert(data.error || "Failed to add lead"); if(btn){ btn.disabled = false; btn.textContent = "+ Add Lead"; } }
-  } catch(e){ alert("Error adding lead"); }
+    var res = await fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,phone,email,business,message,status:"new"})});
+    var data = await res.json();
+    if(data.success){ setOnboardStep("lead_saved"); renderLeads(); }
+    else { alert(data.error||"Error. Try again."); }
+  } catch(e){ alert("Network error."); }
+  if(btn){btn.disabled=false;btn.textContent="+ Add Lead";}
 }
 
 async function deleteLead(id){
-  if(!confirm("Delete this lead?")) return;
+  if(!confirm("Delete this lead permanently?")) return;
   try {
-    await fetch("/api/leads/" + id, {
-      method: "DELETE",
-      headers: { Authorization: "Bearer " + localStorage.getItem("token") }
-    });
+    await fetch("/api/leads/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     renderLeads();
-  } catch(e){ alert("Error deleting lead"); }
+  } catch(e){ alert("Error deleting."); }
 }
+
+async function exportCSV(){
+  var leads = window._allLeads || [];
+  if(!leads.length) return alert("No leads to export.");
+  var csv = "Name,Phone,Email,Business,Status,Follow-up Date,Notes\n";
+  leads.forEach(l=>{
+    csv += [l.name,l.phone||"",l.email||"",l.business||"",l.status,l.follow_up_date||"",(l.message||"").replace(/,/g," ")].join(",")+"\n";
+  });
+  var blob = new Blob([csv],{type:"text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href=url; a.download="leads.csv"; a.click();
+}
+
+
 
 /* =========================
    AI TOOLS
@@ -2392,6 +2548,131 @@ async function deleteCampaign(id){
   renderAutomation();
 }
 
+
+/* =========================
+   AFFILIATE PROGRAM
+========================= */
+
+async function enrollAffiliate(){
+  var btn = document.querySelector("button[onclick='enrollAffiliate()']");
+  if(btn){btn.disabled=true;btn.textContent="Enrolling...";}
+  try{
+    var res = await fetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    console.log("Enroll result:", JSON.stringify(data));
+    if(data.success || data.affiliate){ renderAffiliate(); }
+    else { alert("Error: " + (data.error||"Could not enroll. Check console.")); if(btn){btn.disabled=false;btn.textContent="Join Affiliate Program";} }
+  }catch(e){ alert("Network error: "+e.message); if(btn){btn.disabled=false;btn.textContent="Join Affiliate Program";} }
+}
+
+async function renderAffiliate(){
+  setView('<div class="card">' + header("💸 Affiliate Program","dashboard") + '<p style="color:#64748b">Loading...</p></div>');
+  try {
+    await fetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await fetch("/api/affiliate/stats",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    if(!data.success){
+      setView('<div class="card">' + header("💸 Affiliate Program","dashboard") +
+        '<div style="text-align:center;padding:20px">' +
+        '<p style="color:#ef4444;margin-bottom:12px">Error: ' + (data.error||"Could not load") + '</p>' +
+        '<button onclick="enrollAffiliate()" style="padding:11px 20px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Join Affiliate Program</button>' +
+        '</div></div>');
+      return;
+    }
+
+    var aff = data.affiliate || {};
+    var convs = data.conversions || [];
+    var code = aff.affiliate_code || "";
+    var refLink = window.location.origin + "/auth?aff=" + code;
+    var balance = parseFloat(aff.balance||0);
+    var pending = convs.filter(function(cv){return cv.status==="pending";}).reduce(function(s,cv){return s+parseFloat(cv.commission||0);},0);
+
+    var html = '<div class="card">' + header("💸 Affiliate Program","dashboard");
+
+    html += '<div style="background:linear-gradient(135deg,#065f46,#047857);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center">';
+    html += '<p style="margin:0 0 2px;font-size:12px;color:rgba(255,255,255,0.7)">Available Balance</p>';
+    html += '<p style="margin:0 0 12px;font-size:32px;font-weight:900;color:white">&#8358;' + balance.toLocaleString() + '</p>';
+    html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
+    html += '<div style="flex:1;background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center"><p style="margin:0;font-size:14px;font-weight:800;color:white">&#8358;' + pending.toLocaleString() + '</p><p style="margin:2px 0 0;font-size:10px;color:rgba(255,255,255,0.7)">Pending 24h</p></div>';
+    html += '<div style="flex:1;background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center"><p style="margin:0;font-size:14px;font-weight:800;color:white">' + (aff.total_conversions||0) + '</p><p style="margin:2px 0 0;font-size:10px;color:rgba(255,255,255,0.7)">Total Sales</p></div>';
+    html += '<div style="flex:1;background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;text-align:center"><p style="margin:0;font-size:14px;font-weight:800;color:white">&#8358;' + parseFloat(aff.total_earned||0).toLocaleString() + '</p><p style="margin:2px 0 0;font-size:10px;color:rgba(255,255,255,0.7)">Total Earned</p></div>';
+    html += '</div>';
+    if(balance >= 1000){
+      html += '<button onclick="showAffWithdraw()" style="width:100%;padding:11px;background:white;color:#065f46;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">Withdraw &#8358;' + balance.toLocaleString() + '</button>';
+    } else {
+      html += '<p style="margin:0;font-size:12px;color:rgba(255,255,255,0.6)">Min withdrawal &#8358;1,000</p>';
+    }
+    html += '</div>';
+
+    html += '<div id="aff_withdraw_box" style="display:none;background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">';
+    html += '<p style="margin:0 0 10px;font-size:13px;font-weight:bold">Withdrawal Details</p>';
+    html += '<input id="wd_bank" placeholder="Bank name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
+    html += '<input id="wd_acc" placeholder="Account number" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
+    html += '<input id="wd_name" placeholder="Account name" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
+    html += '<button onclick="submitAffWithdraw()" style="width:100%;padding:11px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Submit Request</button>';
+    html += '<div id="wd_result" style="margin-top:8px"></div></div>';
+
+    html += '<div style="background:#0f172a;border-radius:12px;padding:16px;margin-bottom:14px">';
+    html += '<p style="margin:0 0 4px;font-size:12px;color:#94a3b8">Your Affiliate Link</p>';
+    html += '<p style="margin:0 0 10px;font-size:12px;color:white;word-break:break-all">' + refLink + '</p>';
+    html += '<div style="display:flex;gap:8px">';
+    html += '<button onclick="navigator.clipboard.writeText(\'' + refLink + '\').then(function(){alert(\'Copied!\');})" style="flex:1;padding:9px;background:#334155;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Copy Link</button>';
+    html += '<button onclick="if(navigator.share){navigator.share({text:\'Join AI Business free for 7 days: ' + refLink + '\'}).catch(function(){});}" style="flex:1;padding:9px;background:#25d366;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Share</button>';
+    html += '</div>';
+    html += '<p style="margin:10px 0 0;font-size:11px;color:#475569">Code: <strong style="color:#10b981">' + code + '</strong></p>';
+    html += '</div>';
+
+    html += '<div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">';
+    html += '<p style="margin:0 0 10px;font-size:13px;font-weight:bold">Commission Structure</p>';
+    html += '<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Starter Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;6,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#10b981">You earn &#8358;3,000</p></div>';
+    html += '<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Pro Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;15,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#3b82f6">You earn &#8358;7,500</p></div>';
+    html += '<div style="padding:8px 0;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Business Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;45,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#8b5cf6">You earn &#8358;22,500</p></div>';
+    html += '<p style="margin:10px 0 0;font-size:11px;color:#475569">50% commission. Credited 24h after payment. People who sign up via your link get 7 days free!</p>';
+    html += '</div>';
+
+    if(convs.length > 0){
+      html += '<p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#94a3b8">Recent Conversions</p>';
+      convs.slice(0,5).forEach(function(cv){
+        html += '<div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">';
+        html += '<div><p style="margin:0;font-size:13px;font-weight:600">' + (cv.plan||"") + ' Plan</p><p style="margin:2px 0 0;font-size:11px;color:#64748b">' + new Date(cv.created_at).toLocaleDateString() + '</p></div>';
+        html += '<div style="text-align:right"><p style="margin:0;font-size:14px;font-weight:800;color:#10b981">+&#8358;' + parseFloat(cv.commission||0).toLocaleString() + '</p><span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.15);color:#10b981">' + (cv.status||"") + '</span></div>';
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="text-align:center;padding:20px"><p style="color:#64748b;font-size:13px">No conversions yet. Share your link to start earning.</p></div>';
+    }
+
+    html += '</div>';
+    setView(html);
+  } catch(e){
+    setView('<div class="card">' + header("💸 Affiliate","dashboard") + '<p style="color:red">' + e.message + '</p></div>');
+  }
+}
+
+function showAffWithdraw(){
+  var b = document.getElementById("aff_withdraw_box");
+  if(b) b.style.display = b.style.display==="none"?"block":"none";
+}
+
+async function submitAffWithdraw(){
+  var bank = document.getElementById("wd_bank")?.value.trim();
+  var acc = document.getElementById("wd_acc")?.value.trim();
+  var name = document.getElementById("wd_name")?.value.trim();
+  var result = document.getElementById("wd_result");
+  if(!bank||!acc||!name){ alert("Fill all bank details."); return; }
+  try {
+    var res = await fetch("/api/affiliate/withdraw",{
+      method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body:JSON.stringify({bank_name:bank,account_number:acc,account_name:name,amount:parseFloat(document.getElementById("aff_balance")?.textContent||0)})
+    });
+    var data = await res.json();
+    if(result) result.innerHTML = '<p style="color:' + (data.success?"#10b981":"#ef4444") + ';font-size:12px">' + (data.message||data.error) + '</p>';
+    if(data.success) setTimeout(function(){renderAffiliate();},2000);
+  } catch(e){ if(result) result.innerHTML='<p style="color:red;font-size:12px">Network error.</p>'; }
+}
+
+
 /* =========================
    REFERRAL PROGRAM
 ========================= */
@@ -2603,6 +2884,30 @@ async function submitFeedback(){
   }
 }
 
+
+window.openLeadDetail = async function(id){
+  var map = window._leadsMap || {};
+  var lead = map[id];
+  if(lead){
+    window._currentOpenLead = lead;
+    renderLeadDetailObj(lead);
+    return;
+  }
+  var leads = window._allLeads || [];
+  var lead = null;
+  for(var i=0;i<leads.length;i++){ if(leads[i].id===id){lead=leads[i];break;} }
+  if(!lead){
+    try{
+      var r = await fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+      var d = await r.json();
+      window._allLeads = d.leads||[];
+      for(var j=0;j<window._allLeads.length;j++){ if(window._allLeads[j].id===id){lead=window._allLeads[j];break;} }
+    }catch(e){}
+  }
+  if(!lead){ alert("Lead not found. Please go back to Leads."); loadPage("leads"); return; }
+  window._currentOpenLead = lead;
+  renderLeadDetailObj(lead);
+};
 /* =========================
    START APP
 ========================= */

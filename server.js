@@ -983,6 +983,58 @@ async function submitBooking(){
 </html>`);
 });
 
+
+/* ---------------- AFFILIATE ---------------- */
+app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { data: existing, error: selErr } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    if(existing) return res.json({ success: true, affiliate: existing });
+    const code = "AFF-" + uid.substring(0,6).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
+    const { data, error: insErr } = await supabase.from("affiliates").insert({ user_id: uid, affiliate_code: code }).select().single();
+    if(insErr){ console.log("Affiliate insert error:", insErr.message); return res.status(500).json({ error: insErr.message }); }
+    res.json({ success: true, affiliate: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { data: aff } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    if(!aff) return res.json({ success: false, error: "Not enrolled yet" });
+    const { data: convs } = await supabase.from("affiliate_conversions").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
+    const { data: withdrawals } = await supabase.from("affiliate_withdrawals").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
+    res.json({ success: true, affiliate: aff, conversions: convs||[], withdrawals: withdrawals||[] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/affiliate/withdraw", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { bank_name, account_number, account_name } = req.body;
+    const { data: aff } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    if(!aff) return res.json({ success: false, error: "Not an affiliate" });
+    const balance = parseFloat(aff.balance||0);
+    if(balance < 1000) return res.json({ success: false, error: "Minimum withdrawal is 1,000. Your balance: " + balance });
+    await supabase.from("affiliate_withdrawals").insert({ affiliate_id: uid, amount: balance, bank_name, account_number, account_name, status: "pending" });
+    await supabase.from("affiliates").update({ balance: 0 }).eq("user_id", uid);
+    res.json({ success: true, message: "Withdrawal of " + balance.toLocaleString() + " submitted. Payment within 24-48 hours." });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/affiliate/track-signup", async (req, res) => {
+  try {
+    const { affiliate_code, user_id } = req.body;
+    if(!affiliate_code || !user_id) return res.json({ success: false });
+    const { data: aff } = await supabase.from("affiliates").select("user_id").eq("affiliate_code", affiliate_code).single();
+    if(!aff || aff.user_id === user_id) return res.json({ success: false });
+    await supabase.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
+    const trialEnds = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await supabase.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
+    res.json({ success: true, trial: true, message: "7-day free trial activated!" });
+  } catch(err) { res.json({ success: false }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });

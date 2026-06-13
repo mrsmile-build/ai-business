@@ -33,7 +33,7 @@ body{
 }
 
 /* MENU */
-.menu{
+.menu{overflow-y:auto;max-height:calc(100vh - 60px);
   position:fixed;
   top:60px;
   right:15px;
@@ -140,7 +140,8 @@ input:focus, textarea:focus, select:focus {
   <div onclick="loadPage('appointments')">📅 Appointments</div>
   <div onclick="loadPage('invoice')">🧾 Invoice</div>
   <div onclick="loadPage('bizpage')">🌐 My Business Page</div>
-  <div onclick="loadPage('referral')">🎁 Refer and Earn</div>
+  <div onclick="loadPage('affiliate')")">&#128184; Affiliate Program</div>
+  <div onclick="loadPage('referral')"">🎁 Refer and Earn</div>
   <div onclick="loadPage('subscription')">Subscription</div>
   <div onclick="loadPage('settings')">Settings</div>
   <div onclick="loadPage('support')">Help / Support</div>
