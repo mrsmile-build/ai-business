@@ -227,7 +227,7 @@ app.get("/api/paystack/verify", async (req, res) => {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
-        await supabase.from("subscriptions").upsert({
+        await creditAffiliate(user.id, plan).catch(function(){}); await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
