@@ -341,11 +341,33 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     );
     const searchData = await searchRes.json();
 
-    // Extract local leads (have phone numbers — gold)
-    const localLeads = (searchData.localResults?.places || []).slice(0, 8).map(p => ({
-      name: p.title, phone: p.phone||null, address: p.address||null,
-      website: p.links?.website||null, rating: p.rating||null,
-      reviews: p.reviews||null, type: p.type||null, source: "local"
+    // Combine local results from SERP + Maps for more phone numbers
+    const serpLocal = (searchData.localResults?.places || []);
+    const mapsLocal = [];
+    const allLocal = [...serpLocal, ...mapsLocal];
+
+    // Deduplicate by phone number
+    const seenPhones = new Set();
+    const seenNames = new Set();
+    const deduped = allLocal.filter(p => {
+      const phone = p.phone || p.phoneNumber || null;
+      const name = (p.title || p.name || "").toLowerCase();
+      if(phone && seenPhones.has(phone)) return false;
+      if(seenNames.has(name)) return false;
+      if(phone) seenPhones.add(phone);
+      seenNames.add(name);
+      return true;
+    });
+
+    const localLeads = deduped.slice(0, 10).map(p => ({
+      name: p.title || p.name, 
+      phone: p.phone || p.phoneNumber || null, 
+      address: p.address || p.street || null,
+      website: p.links?.website || p.website || null, 
+      rating: p.rating || null,
+      reviews: p.reviews || p.reviewsCount || null, 
+      type: p.type || p.category || null, 
+      source: "local"
     }));
 
     // Extract organic leads (websites)
