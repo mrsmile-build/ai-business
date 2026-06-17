@@ -231,6 +231,7 @@ app.get("/api/paystack/verify", async (req, res) => {
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
+        sendEmail(email, "Payment Confirmed - AI Business " + plan, "<div style='font-family:Arial,sans-serif'><h2>Payment received</h2><p>Your " + plan + " plan is now active. Thank you for choosing AI Business.</p></div>").catch(function(){});
       }
       return res.redirect("/dashboard?payment=success");
     }
@@ -1101,6 +1102,27 @@ async function pushNotification(userId, type, message){
   try { await supabase.from("notifications").insert({ user_id: userId, type, message }); }
   catch(e){ console.log("Notification error:", e.message); }
 }
+
+/* ---------------- EMAIL (Resend) ---------------- */
+async function sendEmail(to, subject, html){
+  if(!process.env.RESEND_API_KEY){ console.log("Resend key missing, skipping email"); return; }
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: "AI Business <onboarding@resend.dev>", to: [to], subject: subject, html: html })
+    });
+  } catch(e){ console.log("Email send error:", e.message); }
+}
+
+app.post("/api/welcome-email", async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if(!email) return res.json({ success: false });
+    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='https://ai-business-1orz.onrender.com/dashboard'>Open your dashboard</a></p></div>");
+    res.json({ success: true });
+  } catch(err){ res.json({ success: false }); }
+});
 
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
