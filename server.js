@@ -720,6 +720,7 @@ app.post("/api/widget/chat", async (req, res) => {
 
     // Save as lead automatically
     if(visitor_name || visitor_phone){
+      await pushNotification(user_id, "lead", "New lead from your website widget: " + (visitor_name || "Website Visitor")).catch(()=>{});
       await supabase.from("leads").insert({
         user_id, name: visitor_name || "Website Visitor",
         phone: visitor_phone || null,
@@ -788,6 +789,7 @@ app.get("/api/book/:userId/services", async (req, res) => {
 app.post("/api/book/:userId", async (req, res) => {
   try {
     const { service_id, customer_name, customer_phone, customer_email, booking_date, booking_time, notes } = req.body;
+    await pushNotification(req.params.userId, "booking", "New booking from " + customer_name).catch(()=>{});
     const { data } = await supabase.from("bookings").insert({
       user_id: req.params.userId, service_id, customer_name,
       customer_phone, customer_email, booking_date, booking_time, notes, status: "pending"
@@ -1056,6 +1058,49 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
     res.json({ success: true, trial: true, message: "7-day free trial activated!" });
   } catch(err) { res.json({ success: false }); }
 });
+
+
+/* ---------------- DEMO DATA ---------------- */
+app.post("/api/demo-data", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    // Check if user already has leads
+    const { data: existing } = await supabase.from("leads").select("id").eq("user_id", uid).limit(1);
+    if(existing && existing.length > 0) return res.json({ success: false, message: "Already has data" });
+
+    const demoLeads = [
+      { user_id: uid, name: "Glamour Beauty Salon", phone: "08012345678", business: "Salon", status: "new", message: "Found via Instagram. Interested in website.", follow_up_date: new Date(Date.now() + 2*24*60*60*1000).toISOString().split("T")[0] },
+      { user_id: uid, name: "Chidi Restaurant Ikeja", phone: "07023456789", business: "Restaurant", status: "contacted", message: "Called today. Said call back Friday." },
+      { user_id: uid, name: "Lagos Fashion Hub", phone: "09034567890", business: "Fashion Store", status: "interested", message: "Very interested in social media management package.", follow_up_date: new Date(Date.now() + 1*24*60*60*1000).toISOString().split("T")[0] },
+      { user_id: uid, name: "TechVentures Nigeria", phone: null, business: "Tech Agency", status: "won", message: "Closed deal. ₦50,000 website project.", sale_amount: 50000 },
+      { user_id: uid, name: "Mega Supermarket Lekki", phone: "08145678901", business: "Retail", status: "new", message: "Found via Lead Finder. Has 3 locations." }
+    ];
+
+    await supabase.from("leads").insert(demoLeads);
+    res.json({ success: true, message: "Demo data added" });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+/* ---------------- NOTIFICATIONS ---------------- */
+app.get("/api/notifications", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("notifications").select("*").eq("user_id", req.user.id).order("created_at", { ascending: false }).limit(20);
+    const unread = (data||[]).filter(n => !n.is_read).length;
+    res.json({ success: true, notifications: data || [], unread });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/notifications/read-all", authMiddleware, async (req, res) => {
+  try {
+    await supabase.from("notifications").update({ is_read: true }).eq("user_id", req.user.id);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+async function pushNotification(userId, type, message){
+  try { await supabase.from("notifications").insert({ user_id: userId, type, message }); }
+  catch(e){ console.log("Notification error:", e.message); }
+}
 
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {

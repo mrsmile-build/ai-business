@@ -35,6 +35,7 @@ async function init(){
     currentProfile = pd.profile || {};
   }catch(e){}
   loadConversations();
+  checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
   if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadPage("dashboard"); }
@@ -73,6 +74,7 @@ window.addEventListener('popstate', function(e){
 });
 
 function loadPage(page){
+  try { if(typeof gtag !== 'undefined'){ gtag('event', 'page_view', {page_title: page, page_location: '/dashboard#' + page}); } } catch(e){}
   try { window.history.pushState({page:page},'','/dashboard'); } catch(e){}
   closeMenu();
 
@@ -1331,7 +1333,7 @@ async function searchLeads(){
 
   const plan = currentSub?.plan || "free";
   const isPro = plan === "pro" || plan === "business";
-  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: ai-business-1orz.onrender.com";
+  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: s-1orz.onrender.com";
 
   try{
     const res = await fetch("/api/lead-finder",{
@@ -2282,82 +2284,6 @@ Return ONLY the JSON, no markdown.`})
   if(btn){btn.disabled=false;btn.textContent="✨ Generate Marketing Content";}
 }
 
-
-/* =========================
-   VIDEO CREATOR
-========================= */
-async function renderVideoCreator(){
-  setView(`
-    <div class="card">
-      ${header("🎬 Create Business Video","dashboard")}
-      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Generate a professional video script for your business, then create it on VideoKit.</p>
-
-      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
-        <input id="vc_biz" placeholder="Your business name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${currentProfile?.display_name||""}">
-        <input id="vc_service" placeholder="What do you offer? *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="vc_location" placeholder="Your city (e.g. Lagos)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <select id="vc_type" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-          <option value="promo">Promotional video (get customers)</option>
-          <option value="intro">Introduction video (who we are)</option>
-          <option value="offer">Special offer video</option>
-          <option value="affiliate">Affiliate earning video</option>
-        </select>
-        <button onclick="generateVideoScript()" style="width:100%;padding:11px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">✨ Generate Video Script</button>
-      </div>
-
-      <div id="vc_result"></div>
-    </div>
-  `);
-}
-
-async function generateVideoScript(){
-  var biz = document.getElementById("vc_biz")?.value.trim();
-  var service = document.getElementById("vc_service")?.value.trim();
-  var location = document.getElementById("vc_location")?.value.trim();
-  var type = document.getElementById("vc_type")?.value;
-  if(!biz||!service) return alert("Fill business name and service.");
-
-  var btn = document.querySelector("button[onclick='generateVideoScript()']");
-  if(btn){btn.disabled=true;btn.textContent="Generating script...";}
-  var el = document.getElementById("vc_result");
-  if(el) el.innerHTML = "<p style='color:#64748b;font-size:13px;text-align:center;padding:20px'>Writing your video script...</p>";
-
-  var typePrompts = {
-    promo: "a 20-second promotional TikTok/YouTube Shorts video to attract new customers",
-    intro: "a 20-second introduction video telling people who we are and what we do",
-    offer: "a 20-second special offer video to drive urgent action",
-    affiliate: "a 20-second video about earning commission promoting AI Business"
-  };
-
-  try {
-    var res = await fetch("/api/ai-reply",{
-      method:"POST",
-      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write " + typePrompts[type] + " for: " + biz + " in " + (location||"Nigeria") + ". They offer: " + service + ". Format as numbered slides (1. text, 2. text etc). Each slide is ONE short sentence shown on screen. Max 8 slides. Use the formula: Problem (2 slides) + Pain (2 slides) + Solution (2 slides) + Call to action (2 slides). End with: Visit ai-business-1orz.onrender.com. Make it powerful and emotional. Nigerian audience."})
-    });
-    var data = await res.json();
-    if(data.success && data.reply){
-      var script = data.reply;
-      var videoKitUrl = "https://mrsmile-build.github.io/videokit/?script=" + encodeURIComponent(script.substring(0,500));
-      if(el) el.innerHTML = `
-        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px">
-          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Your Video Script ✅</p>
-          <div style="background:#162032;padding:12px;border-radius:8px;margin-bottom:10px">
-            <p style="margin:0;font-size:13px;color:#cbd5e1;line-height:1.8;white-space:pre-line">${script}</p>
-          </div>
-          <button onclick="navigator.clipboard.writeText('${script.replace(/'/g,"\'")}').then(()=>alert('Script copied!'))" style="width:100%;padding:10px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:8px">📋 Copy Script</button>
-          <a href="${videoKitUrl}" target="_blank" style="display:block;text-align:center;padding:12px;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:white;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;margin-bottom:8px">🎬 Create Video on VideoKit</a>
-          <p style="margin:0;font-size:11px;color:#475569;text-align:center">VideoKit will create your video with stock footage automatically</p>
-        </div>`;
-    } else {
-      if(el) el.innerHTML = "<p style='color:red;font-size:13px'>Failed to generate. Try again.</p>";
-    }
-  } catch(e){
-    if(el) el.innerHTML = "<div style='text-align:center'><p style='color:red;font-size:12px'>Network error.</p><button onclick='generateVideoScript()' style='padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-top:8px'>Retry</button></div>";
-  }
-  if(btn){btn.disabled=false;btn.textContent="✨ Generate Video Script";}
-}
-
 /* =========================
    NICHE SELECT
 ========================= */
@@ -2994,3 +2920,111 @@ setInterval(()=>{
 }, 4 * 60 * 1000);
 
 init();
+
+async function checkNotifications(){
+  try {
+    var res = await fetch("/api/notifications", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    var dot = document.getElementById("notif_dot");
+    if(dot) dot.style.display = (data.unread > 0) ? "block" : "none";
+    window._notifications = data.notifications || [];
+  } catch(e){}
+}
+
+function toggleNotifications(){
+  var existing = document.getElementById("notif_dropdown");
+  if(existing){ existing.remove(); return; }
+  var notifs = window._notifications || [];
+  var rows = "";
+  if(notifs.length === 0){
+    rows = '<p style="color:#64748b;font-size:12px;padding:10px;text-align:center">No notifications yet</p>';
+  } else {
+    notifs.forEach(function(n){
+      var icon = n.type === "booking" ? "📅" : n.type === "lead" ? "📩" : "🔔";
+      rows += '<div style="padding:8px;border-bottom:1px solid #0f172a;' + (n.is_read ? "opacity:0.5" : "") + '"><p style="margin:0;font-size:12px">' + icon + " " + n.message + '</p><p style="margin:2px 0 0;font-size:10px;color:#475569">' + new Date(n.created_at).toLocaleString() + '</p></div>';
+    });
+  }
+  var box = document.createElement("div");
+  box.id = "notif_dropdown";
+  box.style.cssText = "position:fixed;top:60px;right:10px;width:280px;max-height:400px;overflow-y:auto;background:#1e293b;border:1px solid #334155;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:9999;padding:10px";
+  box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p>' + rows;
+  document.body.appendChild(box);
+  fetch("/api/notifications/read-all", {method:"POST", headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).then(function(){
+    var dot = document.getElementById("notif_dot");
+    if(dot) dot.style.display = "none";
+  }).catch(function(){});
+  setTimeout(function(){
+    document.addEventListener("click", function closeDropdown(e){
+      var d = document.getElementById("notif_dropdown");
+      if(d && !d.contains(e.target)){ d.remove(); document.removeEventListener("click", closeDropdown); }
+    });
+  }, 50);
+}
+
+if(typeof window._notifInterval === "undefined"){
+  window._notifInterval = setInterval(checkNotifications, 30000);
+}
+
+
+
+/* =========================
+   VIDEO CREATOR
+========================= */
+function renderVideoCreator(){
+  setView(
+    '<div class="card">' +
+    header("Create Video","dashboard") +
+    '<p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Generate a video script for your business, then create it on VideoKit.</p>' +
+    '<div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">' +
+    '<input id="vc_biz" placeholder="Your business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">' +
+    '<input id="vc_service" placeholder="What do you offer?" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">' +
+    '<input id="vc_location" placeholder="Your city" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">' +
+    '<button onclick="generateVideoScript()" style="width:100%;padding:11px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Generate Video Script</button>' +
+    '</div>' +
+    '<div id="vc_result"></div>' +
+    '</div>'
+  );
+}
+
+async function generateVideoScript(){
+  var biz = document.getElementById("vc_biz").value.trim();
+  var service = document.getElementById("vc_service").value.trim();
+  var location = document.getElementById("vc_location").value.trim();
+  if(!biz || !service){ alert("Fill business name and service."); return; }
+
+  var btn = document.querySelector("button[onclick=\'generateVideoScript()\']");
+  if(btn){ btn.disabled = true; btn.textContent = "Generating..."; }
+  var el = document.getElementById("vc_result");
+  el.innerHTML = "<p style=\"color:#64748b;font-size:13px;text-align:center;padding:20px\">Writing your script...</p>";
+
+  try {
+    var res = await fetch("/api/ai-reply", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", Authorization:"Bearer " + localStorage.getItem("token")},
+      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit ai-business-1orz.onrender.com. Nigerian audience, emotional, powerful."})
+    });
+    var data = await res.json();
+    if(data.success && data.reply){
+      var script = data.reply;
+      el.innerHTML =
+        "<div style=\"background:#0f172a;border-radius:10px;padding:15px\">" +
+        "<p style=\"margin:0 0 10px;font-size:13px;font-weight:bold\">Your Script</p>" +
+        "<div style=\"background:#162032;padding:12px;border-radius:8px;margin-bottom:10px\">" +
+        "<p style=\"margin:0;font-size:13px;color:#cbd5e1;line-height:1.8;white-space:pre-line\">" + script + "</p>" +
+        "</div>" +
+        "<button onclick=\"copyVideoScript()\" style=\"width:100%;padding:10px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px\">Copy Script</button>" +
+        "</div>";
+      window._videoScript = script;
+    } else {
+      el.innerHTML = "<p style=\"color:red;font-size:13px\">Failed. Try again.</p>";
+    }
+  } catch(e){
+    el.innerHTML = "<p style=\"color:red;font-size:13px\">Network error. Try again.</p>";
+  }
+  if(btn){ btn.disabled = false; btn.textContent = "Generate Video Script"; }
+}
+
+function copyVideoScript(){
+  navigator.clipboard.writeText(window._videoScript || "").then(function(){ alert("Script copied!"); });
+}
+

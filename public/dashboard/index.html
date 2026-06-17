@@ -113,6 +113,17 @@ input:focus, textarea:focus, select:focus {
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="AI Business">
   <link rel="apple-touch-icon" href="/icon.svg">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-M5CXXJ9VKF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-M5CXXJ9VKF', {
+    page_title: 'AI Business',
+    send_page_view: true
+  });
+</script>
 </head>
 
 <body>
@@ -120,6 +131,7 @@ input:focus, textarea:focus, select:focus {
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:8px"><span id="topbar_avatar" onclick="loadPage('profile')" style="cursor:pointer"></span><span>📊 AI Business</span></div>
   <div style="display:flex;align-items:center;gap:10px">
+    <div onclick="toggleNotifications()" style="position:relative;cursor:pointer;padding:6px"><span style="font-size:18px">🔔</span><span id="notif_dot" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span></div>
     <div id="install_btn" onclick="installApp()" style="display:none;align-items:center;gap:5px;padding:5px 10px;background:linear-gradient(135deg,#3b82f6,#7c3aed);border-radius:8px;cursor:pointer;font-size:12px;color:white;font-weight:600">⬇️ Install App</div>
     <div style="display:flex;align-items:center;gap:8px"><button onclick="showFeedbackPopup()" style="padding:5px 10px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:8px;cursor:pointer;font-size:12px">💬 Feedback</button><div class="menu-btn" onclick="toggleMenu()">☰</div></div>
   </div>
@@ -134,7 +146,7 @@ input:focus, textarea:focus, select:focus {
   <div onclick="loadPage('aiTools')">AI Tools</div>
   <div onclick="loadPage('agents')">🤖 AI Agents</div>
   <div onclick="loadPage('automation')")">⚡ Automation</div>
-  <div onclick="loadPage('video')"">⚡ Automation</div>
+  <div onclick="loadPage('video')"">⚡ Create Video</div>
   <div onclick="loadPage('leadFinder')">🎯 Lead Finder</div>
   <div onclick="loadPage('proposal')">📄 Proposal Generator</div>
   <div onclick="loadPage('revenue')">💰 Revenue</div>

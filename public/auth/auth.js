@@ -144,6 +144,7 @@ window.signup = async () => {
     if(refCode){
       fetch('/api/referral/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referral_code:refCode,email})}).catch(()=>{});
     }
+    if(typeof gtag!=='undefined'){gtag('event','sign_up',{method:'email'});}
     alert("Account created. Please login.");
     toggleForm();
   } catch (err) {
