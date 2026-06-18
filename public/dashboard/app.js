@@ -95,6 +95,7 @@ function loadPage(page){
     referral: 'renderReferral',
     affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
+    followup: 'renderFollowupAssistant',
     video: 'renderVideoCreator',
     appointments: 'renderAppointments',
     invoice: 'renderInvoice',
@@ -2283,6 +2284,84 @@ Return ONLY the JSON, no markdown.`})
 
   if(btn){btn.disabled=false;btn.textContent="✨ Generate Marketing Content";}
 }
+
+/* =========================
+   FOLLOW-UP ASSISTANT
+========================= */
+async function renderFollowupAssistant(){
+  setView(
+    '<div class="card">' +
+    header("Follow-Up Assistant","dashboard") +
+    '<p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Customers you should contact today. AI has written the messages — just tap Send.</p>' +
+    '<div id="fa_content"><div style="text-align:center;padding:30px"><p style="color:#64748b">Loading your follow-ups...</p></div></div>' +
+    '</div>'
+  );
+  try {
+    var res = await fetch("/api/followup-assistant", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    var el = document.getElementById("fa_content");
+    if(!el) return;
+    if(!data.followups || data.followups.length === 0){
+      el.innerHTML = '<div style="text-align:center;padding:30px"><p style="font-size:32px;margin-bottom:8px">✅</p><p style="font-size:14px;font-weight:700;margin-bottom:4px">All caught up!</p><p style="color:#64748b;font-size:13px">No follow-ups needed right now. Keep adding leads.</p></div>';
+      return;
+    }
+    window._followups = data.followups;
+    var html = '<p style="font-size:13px;font-weight:600;color:#f59e0b;margin-bottom:12px">⏰ ' + data.followups.length + ' customer' + (data.followups.length > 1 ? 's' : '') + ' waiting for your follow-up</p>';
+    data.followups.forEach(function(f, i){
+      var waLink = f.phone ? 'https://wa.me/' + f.phone.replace(/[^0-9]/g,'').replace(/^0/,'234') + '?text=' + encodeURIComponent(f.message) : null;
+      var dayLabel = f.days === 0 ? 'Today' : f.days === 1 ? 'Yesterday' : f.days + ' days ago';
+      var urgency = f.days >= 14 ? '#ef4444' : f.days >= 7 ? '#f59e0b' : '#3b82f6';
+      html += '<div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px;border-left:3px solid ' + urgency + '">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+      html += '<div><p style="margin:0;font-size:14px;font-weight:700">' + f.name + '</p>';
+      if(f.business) html += '<p style="margin:2px 0;font-size:11px;color:#64748b">' + f.business + '</p>';
+      html += '</div><span style="font-size:11px;color:' + urgency + ';font-weight:600">' + dayLabel + '</span></div>';
+      html += '<div style="background:#162032;border-radius:8px;padding:10px;margin-bottom:10px">';
+      html += '<p style="margin:0 0 4px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.5px">AI-Written Message</p>';
+      html += '<textarea id="msg_' + i + '" style="width:100%;background:transparent;border:none;color:#cbd5e1;font-size:13px;line-height:1.5;resize:none;outline:none;box-sizing:border-box" rows="3">' + f.message + '</textarea></div>';
+      html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+      if(waLink){
+        html += '<a href="' + waLink + '" target="_blank" onclick="markSent(' + i + ')" style="flex:1;text-align:center;padding:9px;background:#25d366;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">💬 Send on WhatsApp</a>';
+      }
+      html += '<button onclick="copyFollowup(' + i + ')" style="padding:9px 14px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px">📋 Copy</button>';
+      html += '<button onclick="dismissFollowup(\'' + f.id + '\',' + i + ')" style="padding:9px 12px;background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.3);border-radius:8px;cursor:pointer;font-size:12px">✓ Done</button>';
+      html += '</div></div>';
+    });
+    el.innerHTML = html;
+  } catch(e){
+    var el2 = document.getElementById("fa_content");
+    if(el2) el2.innerHTML = '<p style="color:red;font-size:13px">Error loading. Check your connection and try again.</p>';
+  }
+}
+
+function copyFollowup(i){
+  var ta = document.getElementById("msg_" + i);
+  if(ta) navigator.clipboard.writeText(ta.value).then(function(){ alert("Message copied!"); });
+}
+
+function markSent(i){
+  var followup = window._followups && window._followups[i];
+  if(followup){
+    fetch("/api/leads/" + followup.id, {
+      method: "PATCH",
+      headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({status: "contacted"})
+    }).catch(function(){});
+  }
+}
+
+async function dismissFollowup(id, i){
+  var nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  await fetch("/api/leads/" + id, {
+    method: "PATCH",
+    headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+    body: JSON.stringify({follow_up_date: nextWeek.toISOString().split("T")[0], status: "contacted"})
+  }).catch(function(){});
+  var card = document.getElementById("msg_" + i)?.closest('[style*="border-left"]');
+  if(card) card.style.opacity = "0.3";
+}
+
 
 /* =========================
    NICHE SELECT
