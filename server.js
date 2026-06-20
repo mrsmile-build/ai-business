@@ -334,18 +334,20 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     const { service, location, context } = req.body;
     if(!service || !location) return res.status(400).json({ error: "Service and location required" });
 
-    // Search HasData
+    // Search HasData - SERP (3-pack) + real Maps listings (up to 20 with phone numbers)
     const searchQuery = (req.body.industry && req.body.industry !== req.body.service) ? req.body.industry + " " + location : service + " " + location;
-    const searchRes = await fetch(
-      `https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=ng&hl=en`,
-      { headers: { "x-api-key": process.env.HASDATA_KEY } }
-    );
-    const searchData = await searchRes.json();
+    const countryCode = detectCountryCode(location);
+    const [serpRes, mapsRes] = await Promise.all([
+      fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, { headers: { "x-api-key": process.env.HASDATA_KEY } }),
+      fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, { headers: { "x-api-key": process.env.HASDATA_KEY } })
+    ]);
+    const searchData = await serpRes.json();
+    const mapsData = await mapsRes.json().catch(()=>({}));
 
-    // Combine local results from SERP + Maps for more phone numbers
+    // Maps first - it returns far more real contacts with phone numbers than SERP
     const serpLocal = (searchData.localResults?.places || []);
-    const mapsLocal = [];
-    const allLocal = [...serpLocal, ...mapsLocal];
+    const mapsLocal = (mapsData.localResults || []);
+    const allLocal = [...mapsLocal, ...serpLocal];
 
     // Deduplicate by phone number
     const seenPhones = new Set();
@@ -360,7 +362,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       return true;
     });
 
-    const localLeads = deduped.slice(0, 10).map(p => ({
+    const localLeads = deduped.slice(0, 15).map(p => ({
       name: p.title || p.name, 
       phone: p.phone || p.phoneNumber || null, 
       address: p.address || p.street || null,
@@ -380,18 +382,25 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
         snippet: r.snippet?.slice(0,100), source: "organic"
       }));
 
-    const allLeads = [...localLeads, ...organicLeads].slice(0, 10);
+    const allLeads = [...localLeads, ...organicLeads].slice(0, 15);
 
     // Generate AI messages for all leads at once
     const userOffer = context || service;
     const prompt = `You help Nigerian entrepreneurs reach potential clients via WhatsApp.
 The entrepreneur offers: ${userOffer} in ${location}.
 
-Write a short friendly WhatsApp outreach message for each business below.
-- Under 80 words each
-- Mention the business name
-- Focus on value, not selling
-- End with a clear question
+Write a short, direct WhatsApp outreach message for each business below.
+
+Rules:
+- Under 60 words each
+- Start with "Hi [Business Name],"
+- State ONE clear benefit they get — not a question
+- End with a simple call to action like "Can I show you a quick example this week?"
+- Never start a sentence with "How", "What", "Are you", or "Do you"
+- Sound like a real person texting, not a salesperson
+
+WRONG example: "Hi Salon, how can we help you grow online?"
+RIGHT example: "Hi Glamour Salon, I build simple booking pages that get salons more appointments without WhatsApp back-and-forth. Can I show you a quick example this week?"
 
 Businesses:
 ${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " ("+l.type+")" : ""}${l.snippet ? " - "+l.snippet : ""}`).join("\n")}
@@ -1119,7 +1128,7 @@ app.post("/api/welcome-email", async (req, res) => {
   try {
     const { email, name } = req.body;
     if(!email) return res.json({ success: false });
-    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='https://ai-businesai-business-1orz.onrender.com/dashboard'>Open your dashboard</a></p></div>");
+    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://ai-business-production.up.railway.app") + "/dashboard'>Open your dashboard</a></p></div>");
     res.json({ success: true });
   } catch(err){ res.json({ success: false }); }
 });
@@ -1195,6 +1204,19 @@ Return ONLY the JSON array, no markdown.`;
     res.json({ success: true, followups });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+function detectCountryCode(location){
+  var loc = (location || "").toLowerCase();
+  var map = {
+    canada: "ca", "united states": "us", usa: "us",
+    uk: "gb", "united kingdom": "gb", london: "gb",
+    ghana: "gh", accra: "gh",
+    kenya: "ke", nairobi: "ke",
+    "south africa": "za", johannesburg: "za"
+  };
+  for (var key in map) { if (loc.indexOf(key) !== -1) return map[key]; }
+  return "ng";
+}
 
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {

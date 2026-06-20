@@ -1334,7 +1334,7 @@ async function searchLeads(){
 
   const plan = currentSub?.plan || "free";
   const isPro = plan === "pro" || plan === "business";
-  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: s-1orz.onrender.com";
+  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: " + window.location.origin;
 
   try{
     const res = await fetch("/api/lead-finder",{
@@ -3080,7 +3080,7 @@ async function generateVideoScript(){
     var res = await fetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer " + localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit ai-business-1orz.onrender.com. Nigerian audience, emotional, powerful."})
+      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + window.location.origin.replace(/^https?:\/\//,"") + ". Nigerian audience, emotional, powerful."})
     });
     var data = await res.json();
     if(data.success && data.reply){
