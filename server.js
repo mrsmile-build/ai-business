@@ -355,6 +355,8 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     const deduped = allLocal.filter(p => {
       const phone = p.phone || p.phoneNumber || null;
       const name = (p.title || p.name || "").toLowerCase();
+      const addr = (p.address || "").toLowerCase();
+      if(countryCode !== "us" && addr.includes("united states")) return false;
       if(phone && seenPhones.has(phone)) return false;
       if(seenNames.has(name)) return false;
       if(phone) seenPhones.add(phone);
@@ -374,7 +376,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     }));
 
     // Extract organic leads (websites)
-    const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube"];
+    const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube","quora","wikipedia","indeed","glassdoor","jobberman","reddit","pinterest","twitter","x.com",".gov"];
     const organicLeads = (searchData.organicResults || [])
       .filter(r => !skipDomains.some(d => r.link.includes(d)))
       .slice(0, 5).map(r => ({
