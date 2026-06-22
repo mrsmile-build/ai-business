@@ -1,3 +1,42 @@
+const API_BACKENDS = [
+  "https://ai-business-production.up.railway.app",
+  "https://ai-business-1-ok3x.onrender.com"
+];
+let _activeBackend = null;
+let _backendCheckPromise = null;
+
+async function resolveBackend(){
+  if(_activeBackend) return _activeBackend;
+  if(_backendCheckPromise) return _backendCheckPromise;
+  _backendCheckPromise = (async function(){
+    for(var i=0;i<API_BACKENDS.length;i++){
+      var url = API_BACKENDS[i];
+      try {
+        var ctrl = new AbortController();
+        var t = setTimeout(function(){ ctrl.abort(); }, 4000);
+        var res = await fetch(url + "/api/status", { signal: ctrl.signal });
+        clearTimeout(t);
+        if(res.ok){ _activeBackend = url; return url; }
+      } catch(e){}
+    }
+    _activeBackend = API_BACKENDS[0];
+    return _activeBackend;
+  })();
+  return _backendCheckPromise;
+}
+
+async function apiFetch(path, options){
+  var backend = await resolveBackend();
+  try {
+    return await fetch(backend + path, options);
+  } catch(e){
+    _activeBackend = null;
+    _backendCheckPromise = null;
+    var backend2 = await resolveBackend();
+    return fetch(backend2 + path, options);
+  }
+}
+
 import { supabase } from "./supabase.js";
 
 /* =========================
@@ -142,10 +181,10 @@ window.signup = async () => {
     // Track referral
     const refCode = new URLSearchParams(window.location.search).get('ref');
     if(refCode){
-      fetch('/api/referral/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referral_code:refCode,email})}).catch(()=>{});
+      apiFetch('/api/referral/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referral_code:refCode,email})}).catch(()=>{});
     }
     if(typeof gtag!=='undefined'){gtag('event','sign_up',{method:'email'});}
-    fetch('/api/welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name:username})}).catch(()=>{});
+    apiFetch('/api/welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name:username})}).catch(()=>{});
     alert("Account created. Please login.");
     toggleForm();
   } catch (err) {

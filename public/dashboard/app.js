@@ -1,3 +1,42 @@
+const API_BACKENDS = [
+  "https://ai-business-production.up.railway.app",
+  "https://ai-business-1-ok3x.onrender.com"
+];
+let _activeBackend = null;
+let _backendCheckPromise = null;
+
+async function resolveBackend(){
+  if(_activeBackend) return _activeBackend;
+  if(_backendCheckPromise) return _backendCheckPromise;
+  _backendCheckPromise = (async function(){
+    for(var i=0;i<API_BACKENDS.length;i++){
+      var url = API_BACKENDS[i];
+      try {
+        var ctrl = new AbortController();
+        var t = setTimeout(function(){ ctrl.abort(); }, 4000);
+        var res = await fetch(url + "/api/status", { signal: ctrl.signal });
+        clearTimeout(t);
+        if(res.ok){ _activeBackend = url; return url; }
+      } catch(e){}
+    }
+    _activeBackend = API_BACKENDS[0];
+    return _activeBackend;
+  })();
+  return _backendCheckPromise;
+}
+
+async function apiFetch(path, options){
+  var backend = await resolveBackend();
+  try {
+    return await fetch(backend + path, options);
+  } catch(e){
+    _activeBackend = null;
+    _backendCheckPromise = null;
+    var backend2 = await resolveBackend();
+    return fetch(backend2 + path, options);
+  }
+}
+
 const app = document.getElementById("app");
 
 let currentUser = null;
@@ -8,11 +47,11 @@ let currentUser = null;
 async function init(){
   try {
     let token = localStorage.getItem("token");
-    let res = await fetch("/api/me", { headers: { Authorization: "Bearer " + token }});
+    let res = await apiFetch("/api/me", { headers: { Authorization: "Bearer " + token }});
     if(res.status === 401){
       const rt = localStorage.getItem("refresh_token");
       if(rt){
-        const rr = await fetch("/api/refresh", {
+        const rr = await apiFetch("/api/refresh", {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({refresh_token: rt})
         });
@@ -20,7 +59,7 @@ async function init(){
         if(rd.token){
           localStorage.setItem("token", rd.token);
           localStorage.setItem("refresh_token", rd.refresh_token);
-          res = await fetch("/api/me", { headers: { Authorization: "Bearer " + rd.token }});
+          res = await apiFetch("/api/me", { headers: { Authorization: "Bearer " + rd.token }});
         } else { location.href="/auth"; return; }
       } else { location.href="/auth"; return; }
     }
@@ -30,7 +69,7 @@ async function init(){
   } catch(e) {}
   // Load profile
   try{
-    const pr = await fetch("/api/profile",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const pr = await apiFetch("/api/profile",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
     const pd = await pr.json();
     currentProfile = pd.profile || {};
   }catch(e){}
@@ -246,7 +285,7 @@ function renderDashboard(){
 async function renderLeads(){
   setView(`<div class="card">${header("📩 Leads","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const res = await fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await apiFetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     const data = await res.json();
     const leads = data.leads || [];
     const sub = currentSub || {};
@@ -349,7 +388,7 @@ function filterLeads(status){
 
 async function quickStatus(id, status){
   try {
-    await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+    await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
     if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l) l.status=status; }
     // Auto-trigger review agent if won
     if(status === "won"){
@@ -446,7 +485,7 @@ async function renderLeadDetailObj(lead){
 
 async function updateLeadStatus(id, status){
   try {
-    await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+    await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
     if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l){ l.status=status; renderLeadDetail(id); } }
   } catch(e){}
 }
@@ -459,7 +498,7 @@ async function saveLeadFollowup(id){
     var body = {};
     if(date) body.follow_up_date = date;
     if(amount) body.sale_amount = parseFloat(amount);
-    var res = await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify(body)});
+    var res = await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify(body)});
     var data = await res.json();
     if(data.success){
       if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l && date) l.follow_up_date=date; }
@@ -476,7 +515,7 @@ async function saveLeadNote(id){
     var lead = (window._allLeads||[]).find(l=>l.id===id);
     var existing = lead?.message || "";
     var stamp = "[" + new Date().toLocaleDateString() + "] "; var updated = existing ? (existing + "\n\n" + stamp + note) : (stamp + note);
-    var res = await fetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({message:updated})});
+    var res = await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({message:updated})});
     var data = await res.json();
     if(data.success){
       if(lead) lead.message = updated;
@@ -496,7 +535,7 @@ async function addLead(){
   var btn = document.querySelector("button[onclick='addLead()']");
   if(btn){btn.disabled=true;btn.textContent="Adding...";}
   try {
-    var res = await fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,phone,email,business,message,status:"new"})});
+    var res = await apiFetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,phone,email,business,message,status:"new"})});
     var data = await res.json();
     if(data.success){ setOnboardStep("lead_saved"); renderLeads(); }
     else { alert(data.error||"Error. Try again."); }
@@ -507,7 +546,7 @@ async function addLead(){
 async function deleteLead(id){
   if(!confirm("Delete this lead permanently?")) return;
   try {
-    await fetch("/api/leads/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    await apiFetch("/api/leads/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     renderLeads();
   } catch(e){ alert("Error deleting."); }
 }
@@ -681,7 +720,7 @@ async function runAITool(){
   conv.messages.push({role:"user",content:input});
   renderChat();
   try{
-    const res=await fetch("/api/ai-reply",{
+    const res=await apiFetch("/api/ai-reply",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body:JSON.stringify({message:input,tool,history:conv.messages.slice(-6)})
@@ -771,7 +810,7 @@ async function upgradePlan(plan){
   const btns = document.querySelectorAll("button");
   btns.forEach(b => b.disabled = true);
   try {
-    const res = await fetch("/api/paystack/init", {
+    const res = await apiFetch("/api/paystack/init", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") },
       body: JSON.stringify({ email: currentUser?.email, plan })
@@ -885,7 +924,7 @@ async function sendSupportMsg(){
   if(btn){btn.disabled=true;btn.textContent="...";}
 
   try{
-    const res = await fetch("/api/ai-reply",{
+    const res = await apiFetch("/api/ai-reply",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body:JSON.stringify({
@@ -957,7 +996,7 @@ async function deleteAccount(){
   const code = prompt("Type DELETE to confirm:");
   if(code !== "DELETE") return;
   try{
-    const res = await fetch("/api/account",{
+    const res = await apiFetch("/api/account",{
       method:"DELETE",
       headers:{Authorization:"Bearer "+localStorage.getItem("token")}
     });
@@ -976,7 +1015,7 @@ async function deleteAccount(){
 async function renderAgents(){
   setView(`<div class="card">${header("🤖 AI Agents","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const res = await fetch("/api/agent-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await apiFetch("/api/agent-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     const { settings } = await res.json();
     const s = settings || {};
     const isSetup = !!s.business_name;
@@ -1092,7 +1131,7 @@ async function saveAgentSettings(){
   const btn = document.querySelector("button[onclick='saveAgentSettings()']");
   if(btn){btn.disabled=true;btn.textContent="Saving...";}
   try {
-    const res = await fetch("/api/agent-settings",{
+    const res = await apiFetch("/api/agent-settings",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
@@ -1121,7 +1160,7 @@ async function testReceptionist(){
   const el = document.getElementById("rec_test_result");
   if(el) el.innerHTML = "<p style='color:#64748b;font-size:12px'>Thinking...</p>";
   try {
-    const res = await fetch("/api/receptionist",{
+    const res = await apiFetch("/api/receptionist",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({question:q})
@@ -1151,7 +1190,7 @@ async function runFollowUpAgent(){
   var el = document.getElementById("followup_agent_result");
   if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Checking...</p>';
   try{
-    var res = await fetch("/api/leads/followups",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/leads/followups",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     var leads = data.followups || [];
     if(leads.length === 0){
@@ -1167,7 +1206,7 @@ async function agentAI(prompt, resultId, btnEl, btnLabel){
   var el = document.getElementById(resultId);
   if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Writing...</p>';
   try{
-    var res = await fetch("/api/ai-reply",{
+    var res = await apiFetch("/api/ai-reply",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({message: prompt})
@@ -1337,7 +1376,7 @@ async function searchLeads(){
   const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: " + window.location.origin;
 
   try{
-    const res = await fetch("/api/lead-finder",{
+    const res = await apiFetch("/api/lead-finder",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry })
@@ -1430,7 +1469,7 @@ function copyEditedMsg(i){
 async function saveToLeads(i, name, phone, business, address, website, action){
   const message = document.getElementById("msg_"+i)?.value||"";
   try{
-    const res = await fetch("/api/leads",{
+    const res = await apiFetch("/api/leads",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
@@ -1464,7 +1503,7 @@ async function saveNote(i){
 ========================= */
 async function loadFollowUps(){
   try{
-    const res = await fetch("/api/leads/followups",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await apiFetch("/api/leads/followups",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
     const data = await res.json();
     const followups = data.followups || [];
     const box = document.getElementById("followup_box");
@@ -1493,7 +1532,7 @@ async function loadFollowUps(){
 async function renderRevenue(){
   setView(`<div class="card">${header("💰 Revenue","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try{
-    const res = await fetch("/api/revenue",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await apiFetch("/api/revenue",{ headers:{ Authorization:"Bearer "+localStorage.getItem("token")}});
     const data = await res.json();
     const total = data.total || 0;
     const monthly = data.monthly || 0;
@@ -1578,7 +1617,7 @@ async function generateProposal(){
   if(result) result.innerHTML = "<p style='color:#64748b;text-align:center'>Writing your proposal... (15-20 seconds)</p>";
 
   try{
-    const res = await fetch("/api/generate-proposal",{
+    const res = await apiFetch("/api/generate-proposal",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
@@ -1726,7 +1765,7 @@ async function saveProfile(){
   const country = document.getElementById("ep_country")?.value.trim();
   const biz = document.getElementById("ep_biz")?.value;
   try {
-    const res = await fetch("/api/profile",{
+    const res = await apiFetch("/api/profile",{
       method:"PATCH",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({display_name:name, phone, country, business_type:biz})
@@ -1749,7 +1788,7 @@ async function changePassword(){
   if(!oldPw||!newPw){ if(result) result.innerHTML="<p style='color:red;font-size:12px'>Fill both fields.</p>"; return; }
   if(newPw.length < 6){ if(result) result.innerHTML="<p style='color:red;font-size:12px'>Password must be 6+ characters.</p>"; return; }
   try {
-    const res = await fetch("/api/change-password",{
+    const res = await apiFetch("/api/change-password",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({current_password:oldPw, new_password:newPw})
@@ -1766,8 +1805,8 @@ async function renderAnalytics(){
   setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
     const [leadsRes, revenueRes] = await Promise.all([
-      fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
-      fetch("/api/revenue",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+      apiFetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      apiFetch("/api/revenue",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
     ]);
     const leadsData = await leadsRes.json();
     const revenueData = await revenueRes.json();
@@ -1851,8 +1890,8 @@ async function renderAppointments(){
   setView(`<div class="card">${header("📅 Appointments","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
     const [svcRes, bookRes] = await Promise.all([
-      fetch("/api/services",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
-      fetch("/api/bookings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+      apiFetch("/api/services",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      apiFetch("/api/bookings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
     ]);
     const { services } = await svcRes.json();
     const { bookings } = await bookRes.json();
@@ -1958,7 +1997,7 @@ async function addService(){
   var btn=document.querySelector("button[onclick='addService()']");
   if(btn){btn.disabled=true;btn.textContent="Saving...";}
   try{
-    var res=await fetch("/api/services",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,duration_minutes:parseInt(dur)||60,price:parseFloat(price)||0,description:desc})});
+    var res=await apiFetch("/api/services",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name,duration_minutes:parseInt(dur)||60,price:parseFloat(price)||0,description:desc})});
     var data=await res.json();
     if(data.success){renderAppointments();}
   }catch(e){alert("Error. Try again.");}
@@ -1967,12 +2006,12 @@ async function addService(){
 
 async function deleteService(id){
   if(!confirm("Remove this service?")) return;
-  await fetch("/api/services/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+  await apiFetch("/api/services/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
   renderAppointments();
 }
 
 async function updateBooking(id, status){
-  await fetch("/api/bookings/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
+  await apiFetch("/api/bookings/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
   renderAppointments();
 }
 /* =========================
@@ -2113,7 +2152,7 @@ ${notes?`<div class="notes"><strong>Payment Info:</strong> ${notes}</div>`:""}
 async function renderBizPage(){
   setView(`<div class="card">${header("🌐 Business Page","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const res = await fetch("/api/biz-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await apiFetch("/api/biz-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     const { page } = await res.json();
     const p = page || {};
     const slug = p.slug || currentUser?.id?.substring(0,8) || "";
@@ -2164,7 +2203,7 @@ async function saveBizPage(){
   var btn = document.querySelector("button[onclick='saveBizPage()']");
   if(btn){btn.disabled=true;btn.textContent="Publishing...";}
   try {
-    var res = await fetch("/api/biz-settings",{
+    var res = await apiFetch("/api/biz-settings",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
@@ -2229,7 +2268,7 @@ async function generateB2CContent(){
   var goalText = {new_customers:"attract new customers",reactivate:"re-engage old customers who haven't visited in a while",promotion:"promote a special offer",loyalty:"build customer loyalty and encourage repeat visits",referral:"encourage existing customers to refer friends"}[goal]||goal;
 
   try {
-    var res = await fetch("/api/ai-reply",{
+    var res = await apiFetch("/api/ai-reply",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({message: `Create marketing content for ${biz} in ${location||"Nigeria"} to ${goalText}. ${offer?"Special offer: "+offer:""}
@@ -2297,7 +2336,7 @@ async function renderFollowupAssistant(){
     '</div>'
   );
   try {
-    var res = await fetch("/api/followup-assistant", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/followup-assistant", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     var el = document.getElementById("fa_content");
     if(!el) return;
@@ -2342,7 +2381,7 @@ function copyFollowup(i){
 function markSent(i){
   var followup = window._followups && window._followups[i];
   if(followup){
-    fetch("/api/leads/" + followup.id, {
+    apiFetch("/api/leads/" + followup.id, {
       method: "PATCH",
       headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({status: "contacted"})
@@ -2353,7 +2392,7 @@ function markSent(i){
 async function dismissFollowup(id, i){
   var nextWeek = new Date();
   nextWeek.setDate(nextWeek.getDate() + 7);
-  await fetch("/api/leads/" + id, {
+  await apiFetch("/api/leads/" + id, {
     method: "PATCH",
     headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
     body: JSON.stringify({follow_up_date: nextWeek.toISOString().split("T")[0], status: "contacted"})
@@ -2391,7 +2430,7 @@ async function selectNiche(niche){
   else currentProfile = { business_type: niche };
   localStorage.setItem("aib_niche", niche);
   try {
-    await fetch("/api/profile",{
+    await apiFetch("/api/profile",{
       method:"PATCH",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({business_type: niche})
@@ -2453,8 +2492,8 @@ async function renderAutomation(){
   setView(`<div class="card">${header("⚡ Automation","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
     const [settingsRes, campaignsRes] = await Promise.all([
-      fetch("/api/automation/settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
-      fetch("/api/campaigns",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+      apiFetch("/api/automation/settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      apiFetch("/api/campaigns",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
     ]);
     const { settings } = await settingsRes.json();
     const { campaigns } = await campaignsRes.json();
@@ -2569,7 +2608,7 @@ async function saveAutoSettings(){
   const review = document.getElementById("auto_review")?.checked;
   const weekly = document.getElementById("auto_weekly")?.checked;
   try {
-    await fetch("/api/automation/settings",{
+    await apiFetch("/api/automation/settings",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({ followup_days: followup?days:null, auto_review: review, weekly_leads: weekly })
@@ -2585,7 +2624,7 @@ async function createCampaign(){
   const btn = document.querySelector("button[onclick='createCampaign()']");
   if(btn){btn.disabled=true;btn.textContent="Creating...";}
   try {
-    const res = await fetch("/api/campaigns",{
+    const res = await apiFetch("/api/campaigns",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({name, message_template: msg, target_status: status})
@@ -2600,7 +2639,7 @@ async function prepareCampaign(id){
   const el = document.getElementById("camp_result_"+id);
   if(el) el.innerHTML = '<p style="color:#64748b;font-size:12px">Preparing personalized messages... (15 seconds)</p>';
   try {
-    const res = await fetch("/api/campaigns/"+id+"/prepare",{
+    const res = await apiFetch("/api/campaigns/"+id+"/prepare",{
       method:"POST",
       headers:{Authorization:"Bearer "+localStorage.getItem("token")}
     });
@@ -2626,7 +2665,7 @@ async function prepareCampaign(id){
 
 async function deleteCampaign(id){
   if(!confirm("Delete this campaign?")) return;
-  await fetch("/api/campaigns/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+  await apiFetch("/api/campaigns/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
   renderAutomation();
 }
 
@@ -2639,7 +2678,7 @@ async function enrollAffiliate(){
   var btn = document.querySelector("button[onclick='enrollAffiliate()']");
   if(btn){btn.disabled=true;btn.textContent="Enrolling...";}
   try{
-    var res = await fetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     console.log("Enroll result:", JSON.stringify(data));
     if(data.success || data.affiliate){ renderAffiliate(); }
@@ -2650,8 +2689,8 @@ async function enrollAffiliate(){
 async function renderAffiliate(){
   setView('<div class="card">' + header("💸 Affiliate Program","dashboard") + '<p style="color:#64748b">Loading...</p></div>');
   try {
-    await fetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
-    var res = await fetch("/api/affiliate/stats",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    await apiFetch("/api/affiliate/join",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/affiliate/stats",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     if(!data.success){
       setView('<div class="card">' + header("💸 Affiliate Program","dashboard") +
@@ -2743,7 +2782,7 @@ async function submitAffWithdraw(){
   var result = document.getElementById("wd_result");
   if(!bank||!acc||!name){ alert("Fill all bank details."); return; }
   try {
-    var res = await fetch("/api/affiliate/withdraw",{
+    var res = await apiFetch("/api/affiliate/withdraw",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body:JSON.stringify({bank_name:bank,account_number:acc,account_name:name,amount:parseFloat(document.getElementById("aff_balance")?.textContent||0)})
@@ -2761,7 +2800,7 @@ async function submitAffWithdraw(){
 async function renderReferral(){
   setView(`<div class="card">${header("🎁 Refer & Earn","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const res = await fetch("/api/referral", { headers: { Authorization: "Bearer " + localStorage.getItem("token") }});
+    const res = await apiFetch("/api/referral", { headers: { Authorization: "Bearer " + localStorage.getItem("token") }});
     const data = await res.json();
     if(!data.success) throw new Error(data.error);
     
@@ -2894,7 +2933,7 @@ async function redeemReferral(){
   var btn = document.querySelector("button[onclick='redeemReferral()']");
   if(btn){btn.disabled=true;btn.textContent="Redeeming...";}
   try {
-    var res = await fetch("/api/referral/redeem",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/referral/redeem",{method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     if(data.success){ alert(data.message); renderReferral(); }
     else { alert(data.error||"Cannot redeem yet."); if(btn){btn.disabled=false;btn.textContent="Redeem Now";} }
@@ -2945,7 +2984,7 @@ async function submitFeedback(){
   if(btn){btn.disabled=true;btn.textContent="Sending...";}
 
   try {
-    await fetch("/api/feedback",{
+    await apiFetch("/api/feedback",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({rating:selectedRating, message:msg})
@@ -2980,7 +3019,7 @@ window.openLeadDetail = async function(id){
   for(var i=0;i<leads.length;i++){ if(leads[i].id===id){lead=leads[i];break;} }
   if(!lead){
     try{
-      var r = await fetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+      var r = await apiFetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
       var d = await r.json();
       window._allLeads = d.leads||[];
       for(var j=0;j<window._allLeads.length;j++){ if(window._allLeads[j].id===id){lead=window._allLeads[j];break;} }
@@ -2995,14 +3034,14 @@ window.openLeadDetail = async function(id){
 ========================= */
 // Keep Render alive
 setInterval(()=>{
-  fetch('/api/status').catch(()=>{});
+  apiFetch('/api/status').catch(()=>{});
 }, 4 * 60 * 1000);
 
 init();
 
 async function checkNotifications(){
   try {
-    var res = await fetch("/api/notifications", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var res = await apiFetch("/api/notifications", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     var dot = document.getElementById("notif_dot");
     if(dot) dot.style.display = (data.unread > 0) ? "block" : "none";
@@ -3028,7 +3067,7 @@ function toggleNotifications(){
   box.style.cssText = "position:fixed;top:60px;right:10px;width:280px;max-height:400px;overflow-y:auto;background:#1e293b;border:1px solid #334155;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:9999;padding:10px";
   box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p>' + rows;
   document.body.appendChild(box);
-  fetch("/api/notifications/read-all", {method:"POST", headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).then(function(){
+  apiFetch("/api/notifications/read-all", {method:"POST", headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).then(function(){
     var dot = document.getElementById("notif_dot");
     if(dot) dot.style.display = "none";
   }).catch(function(){});
@@ -3077,7 +3116,7 @@ async function generateVideoScript(){
   el.innerHTML = "<p style=\"color:#64748b;font-size:13px;text-align:center;padding:20px\">Writing your script...</p>";
 
   try {
-    var res = await fetch("/api/ai-reply", {
+    var res = await apiFetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer " + localStorage.getItem("token")},
       body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + window.location.origin.replace(/^https?:\/\//,"") + ". Nigerian audience, emotional, powerful."})
