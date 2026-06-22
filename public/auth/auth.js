@@ -1,3 +1,5 @@
+import { supabase } from "./supabase.js";
+
 const API_BACKENDS = [
   "https://ai-business-production.up.railway.app",
   "https://ai-business-1-ok3x.onrender.com"
@@ -36,8 +38,6 @@ async function apiFetch(path, options){
     return fetch(backend2 + path, options);
   }
 }
-
-import { supabase } from "./supabase.js";
 
 /* =========================
    SMART ERROR MAPPER
