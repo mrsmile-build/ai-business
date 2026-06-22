@@ -341,7 +341,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, { headers: { "x-api-key": process.env.HASDATA_KEY } }),
       fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, { headers: { "x-api-key": process.env.HASDATA_KEY } })
     ]);
-    const searchData = await serpRes.json();
+    const searchData = await serpRes.json().catch(()=>({}));
     const mapsData = await mapsRes.json().catch(()=>({}));
 
     // Maps first - it returns far more real contacts with phone numbers than SERP
