@@ -3146,3 +3146,11 @@ function copyVideoScript(){
   navigator.clipboard.writeText(window._videoScript || "").then(function(){ alert("Script copied!"); });
 }
 
+
+/* expose functions to global scope for inline onclick handlers */
+if (typeof toggleMenu === "function") window.toggleMenu = toggleMenu;
+if (typeof showFeedbackPopup === "function") window.showFeedbackPopup = showFeedbackPopup;
+if (typeof toggleNotifications === "function") window.toggleNotifications = toggleNotifications;
+if (typeof loadPage === "function") window.loadPage = loadPage;
+if (typeof logout === "function") window.logout = logout;
+console.log("APP.JS REACHED BOTTOM - exports attempted");
