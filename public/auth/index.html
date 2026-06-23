@@ -34,23 +34,6 @@ button{background:#2563eb;color:white;font-weight:bold}
 </head>
 
 <body>
-<script>
-window.addEventListener('error', function(e){
-  var msg = (e.error && e.error.stack) ? e.error.stack : (e.message + ' @ ' + e.filename + ':' + e.lineno);
-  var div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:white;padding:10px;font-size:11px;z-index:99999;word-break:break-all;max-height:200px;overflow:auto';
-  div.textContent = 'JS ERROR: ' + msg;
-  document.body.appendChild(div);
-});
-window.addEventListener('unhandledrejection', function(e){
-  var div = document.createElement('div');
-  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:white;padding:10px;font-size:11px;z-index:99999;word-break:break-all;max-height:200px;overflow:auto';
-  div.textContent = 'PROMISE ERROR: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
-  document.body.appendChild(div);
-});
-</script>
-
-
 <div class="card">
 <h2>🚀 AI Business</h2>
 
