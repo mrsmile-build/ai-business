@@ -1,4 +1,4 @@
-import { supabase } from "./supabase.js";
+import { supabase } from "/auth/supabase.js";
 
 const API_BACKENDS = [
   "https://ai-business-production.up.railway.app",

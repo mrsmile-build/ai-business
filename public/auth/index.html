@@ -129,7 +129,7 @@ window.addEventListener('unhandledrejection', function(e){
 </div>
 
 <script>
-import("./auth.js").catch(function(e){
+import("/auth/auth.js").catch(function(e){
   var div = document.createElement("div");
   div.style.cssText = "position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:white;padding:10px;font-size:11px;z-index:99999;word-break:break-all;max-height:300px;overflow:auto";
   div.textContent = "MODULE LOAD ERROR: " + (e && e.message ? e.message : e);
