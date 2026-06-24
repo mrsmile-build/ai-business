@@ -1,3 +1,24 @@
+const NICHE_OPTIONS = [
+  {value:"agency", label:"Agency/Freelancer", emoji:"💼"},
+  {value:"salon", label:"Salon/Beauty", emoji:"💇"},
+  {value:"restaurant", label:"Restaurant/Food", emoji:"🍽️"},
+  {value:"realestate", label:"Real Estate", emoji:"🏠"},
+  {value:"retail", label:"Retail/Fashion", emoji:"🛍️"},
+  {value:"tech", label:"Tech/IT", emoji:"💻"},
+  {value:"education", label:"Education", emoji:"📚"},
+  {value:"other", label:"Other", emoji:"🏢"}
+];
+
+function formatBizTypes(biz){
+  if(!biz) return "Not set";
+  var vals = biz.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+  var labels = vals.map(function(v){
+    var found = NICHE_OPTIONS.filter(function(o){ return o.value === v; })[0];
+    return found ? found.emoji + " " + found.label : v;
+  });
+  return labels.join(" & ");
+}
+
 const API_BACKENDS = [
   "https://ai-business-production.up.railway.app",
   "https://ai-business-1-ok3x.onrender.com"
@@ -2406,26 +2427,48 @@ async function dismissFollowup(id, i){
    NICHE SELECT
 ========================= */
 function renderNicheSelect(){
-  setView(`
-    <div class="card" style="text-align:center;padding:30px 20px">
-      <div style="font-size:48px;margin-bottom:16px">👋</div>
-      <h2 style="margin:0 0 8px;font-size:22px">Welcome to AI Business</h2>
-      <p style="color:#64748b;font-size:14px;margin-bottom:24px">What type of business do you run?</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
-        <button onclick="selectNiche('agency')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💼 Agency/Freelancer</button>
-        <button onclick="selectNiche('salon')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💇 Salon/Beauty</button>
-        <button onclick="selectNiche('restaurant')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🍽️ Restaurant/Food</button>
-        <button onclick="selectNiche('realestate')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🏠 Real Estate</button>
-        <button onclick="selectNiche('retail')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🛍️ Retail/Fashion</button>
-        <button onclick="selectNiche('tech')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">💻 Tech/IT</button>
-        <button onclick="selectNiche('education')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">📚 Education</button>
-        <button onclick="selectNiche('other')" style="padding:14px;background:#0f172a;border:1px solid #334155;color:white;border-radius:10px;cursor:pointer;font-size:13px">🏢 Other</button>
-      </div>
-    </div>
-  `);
+  window._selectedNiches = window._selectedNiches || [];
+  renderNicheSelectUI();
 }
 
-async function selectNiche(niche){
+function renderNicheSelectUI(){
+  var sel = window._selectedNiches || [];
+  var optionsHtml = NICHE_OPTIONS.map(function(o, idx){
+    var isSel = sel.indexOf(o.value) !== -1;
+    return '<button onclick="toggleNicheChoice(' + idx + ')" style="padding:14px;background:' + (isSel ? "#1d4ed8" : "#0f172a") + ';border:1px solid ' + (isSel ? "#3b82f6" : "#334155") + ';color:white;border-radius:10px;cursor:pointer;font-size:13px;text-align:left">' + (isSel ? "✅ " : "") + o.emoji + " " + o.label + "</button>";
+  }).join("");
+
+  setView(
+    '<div class="card" style="text-align:center;padding:30px 20px">' +
+    '<div style="font-size:48px;margin-bottom:16px">👋</div>' +
+    '<h2 style="margin:0 0 8px;font-size:22px">Welcome to AI Business</h2>' +
+    '<p style="color:#64748b;font-size:14px;margin-bottom:6px">What type of business do you run?</p>' +
+    '<p style="color:#475569;font-size:12px;margin-bottom:20px">Select up to 3</p>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-bottom:20px">' +
+    optionsHtml +
+    '</div>' +
+    '<button onclick="confirmNicheSelection()" ' + (sel.length === 0 ? "disabled" : "") + ' style="width:100%;padding:14px;background:' + (sel.length === 0 ? "#334155" : "#3b82f6") + ';color:white;border:none;border-radius:10px;cursor:' + (sel.length === 0 ? "not-allowed" : "pointer") + ';font-size:15px;font-weight:600">' + (sel.length === 0 ? "Select at least 1" : "Continue (" + sel.length + "/3 selected)") + '</button>' +
+    '</div>'
+  );
+}
+
+function toggleNicheChoice(idx){
+  var val = NICHE_OPTIONS[idx].value;
+  window._selectedNiches = window._selectedNiches || [];
+  var idx = window._selectedNiches.indexOf(val);
+  if(idx > -1){
+    window._selectedNiches.splice(idx, 1);
+  } else {
+    if(window._selectedNiches.length >= 3){ alert("You can select up to 3 business types."); return; }
+    window._selectedNiches.push(val);
+  }
+  renderNicheSelectUI();
+}
+
+async function confirmNicheSelection(){
+  var sel = window._selectedNiches || [];
+  if(sel.length === 0) return;
+  var niche = sel.join(",");
   if(currentProfile) currentProfile.business_type = niche;
   else currentProfile = { business_type: niche };
   localStorage.setItem("aib_niche", niche);

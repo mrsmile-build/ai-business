@@ -827,11 +827,26 @@ app.post("/api/biz-settings", authMiddleware, async (req, res) => {
 });
 
 // Public biz page
+app.post("/api/biz/:userId/enquiry", async (req, res) => {
+  try {
+    const { name, phone, message } = req.body;
+    if(!name || !phone) return res.status(400).json({ success: false, error: "Name and phone required" });
+    const uid = req.params.userId;
+    await pushNotification(uid, "lead", "New enquiry from your business page: " + name).catch(()=>{});
+    await supabase.from("leads").insert({
+      user_id: uid, name, phone, message: message || null,
+      status: "new", business: "Business Page Enquiry"
+    });
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.get("/biz/:slug", async (req, res) => {
   try {
-    const { data: page } = await supabase.from("biz_pages").select("*, profiles!inner(user_id)").eq("slug", req.params.slug).single();
+    const { data: page, error: pageErr } = await supabase.from("biz_pages").select("*").eq("slug", req.params.slug).single();
+    if(pageErr) console.log("Biz page lookup error:", pageErr.message);
     if(!page) return res.status(404).send("Business page not found");
-    const uid = page.user_id || page.profiles?.user_id;
+    const uid = page.user_id;
     const { data: services } = await supabase.from("services").select("*").eq("user_id", uid).eq("is_active", true);
     const color = page.theme_color || "#3b82f6";
     const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
@@ -896,7 +911,49 @@ ${services && services.length > 0 ? `
   <a href="/book/${uid}" class="book-btn">📅 Book an Appointment</a>
 </section>
 
+<section>
+  <h2>Get In Touch</h2>
+  <div id="enq_success" style="display:none;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:16px;text-align:center">
+    <p style="margin:0;font-size:14px;color:#10b981">✅ Thank you! We will contact you soon.</p>
+  </div>
+  <form id="enq_form" onsubmit="submitEnquiry(event)">
+    <input id="enq_name" required placeholder="Your name" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+    <input id="enq_phone" required placeholder="Phone number" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+    <textarea id="enq_message" placeholder="What do you need help with?" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;height:70px;resize:none;box-sizing:border-box"></textarea>
+    <button type="submit" id="enq_btn" style="width:100%;padding:12px;background:${color};color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Send Enquiry</button>
+  </form>
+</section>
+
 <div class="footer">Powered by <a href="${process.env.BASE_URL||"/"}">AI Business</a> — The AI Operating System for African Businesses</div>
+<script>
+async function submitEnquiry(e){
+  e.preventDefault();
+  var btn = document.getElementById('enq_btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    var res = await fetch('/api/biz/${uid}/enquiry', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('enq_name').value,
+        phone: document.getElementById('enq_phone').value,
+        message: document.getElementById('enq_message').value
+      })
+    });
+    var data = await res.json();
+    if(data.success){
+      document.getElementById('enq_form').style.display = 'none';
+      document.getElementById('enq_success').style.display = 'block';
+    } else {
+      alert('Something went wrong. Please try again or use WhatsApp.');
+      btn.disabled = false; btn.textContent = 'Send Enquiry';
+    }
+  } catch(err){
+    alert('Network error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Send Enquiry';
+  }
+}
+</script>
 </body>
 </html>`);
   } catch(err) { res.status(500).send("Error loading page"); }
