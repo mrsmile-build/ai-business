@@ -1751,18 +1751,16 @@ function renderEditProfile(){
         <input id="ep_country" value="${country}" placeholder="e.g. Nigeria" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       </div>
       <div style="margin-bottom:20px">
-        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Business Type</p>
-        <select id="ep_biz" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-          <option value="">-- Select --</option>
-          <option value="agency" ${biz==="agency"?"selected":""}>Agency/Freelancer</option>
-          <option value="salon" ${biz==="salon"?"selected":""}>Salon/Beauty</option>
-          <option value="restaurant" ${biz==="restaurant"?"selected":""}>Restaurant/Food</option>
-          <option value="realestate" ${biz==="realestate"?"selected":""}>Real Estate</option>
-          <option value="retail" ${biz==="retail"?"selected":""}>Retail/Fashion</option>
-          <option value="tech" ${biz==="tech"?"selected":""}>Tech/IT</option>
-          <option value="education" ${biz==="education"?"selected":""}>Education</option>
-          <option value="other" ${biz==="other"?"selected":""}>Other</option>
-        </select>
+        <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Business Type(s) — select up to 3</p>
+        <input type="hidden" id="ep_biz" value="${biz}">
+        <div id="ep_biz_grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${NICHE_OPTIONS.map(o => `
+            <label style="display:flex;align-items:center;gap:6px;padding:10px;background:#0f172a;border:1px solid #334155;border-radius:8px;font-size:12px;cursor:pointer">
+              <input type="checkbox" value="${o.value}" ${biz.split(",").map(s=>s.trim()).indexOf(o.value)>-1?"checked":""} onchange="updateEpBizHidden()" style="accent-color:#3b82f6">
+              ${o.emoji} ${o.label}
+            </label>
+          `).join("")}
+        </div>
       </div>
 
       <button onclick="saveProfile()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:10px">💾 Save Changes</button>
@@ -3197,3 +3195,15 @@ if (typeof toggleNotifications === "function") window.toggleNotifications = togg
 if (typeof loadPage === "function") window.loadPage = loadPage;
 if (typeof logout === "function") window.logout = logout;
 console.log("APP.JS REACHED BOTTOM - exports attempted");
+
+function updateEpBizHidden(){
+  var boxes = document.querySelectorAll("#ep_biz_grid input[type=checkbox]");
+  var checked = Array.prototype.filter.call(boxes, function(cb){ return cb.checked; });
+  if(checked.length > 3){
+    checked[checked.length - 1].checked = false;
+    alert("You can select up to 3 business types.");
+    checked = Array.prototype.filter.call(boxes, function(cb){ return cb.checked; });
+  }
+  var values = checked.map(function(cb){ return cb.value; });
+  document.getElementById("ep_biz").value = values.join(",");
+}
