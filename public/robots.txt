@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ai-business-1orz.onrender.com/sitemap.xml
+Sitemap: https://ai-business-two-psi.vercel.app/sitemap.xml
