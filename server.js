@@ -832,7 +832,14 @@ app.post("/api/biz-settings", authMiddleware, async (req, res) => {
     const uid = req.user.id;
     const slug = req.body.slug || uid.substring(0,8);
     const settings = { ...req.body, user_id: uid, slug, updated_at: new Date() };
-    await supabase.from("biz_pages").upsert(settings);
+    const { error } = await supabase.from("biz_pages").upsert(settings);
+    if(error){
+      console.log("Biz page save error:", error.message);
+      if(error.message.includes("duplicate") || error.message.includes("unique")){
+        return res.json({ success: false, error: "That page link (" + slug + ") is already taken. Please choose a different one." });
+      }
+      return res.json({ success: false, error: error.message });
+    }
     res.json({ success: true, slug });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
