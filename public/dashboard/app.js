@@ -27,6 +27,9 @@ let _activeBackend = null;
 let _backendCheckPromise = null;
 
 async function resolveBackend(){
+  if(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"){
+    return window.location.origin;
+  }
   if(_activeBackend) return _activeBackend;
   if(_backendCheckPromise) return _backendCheckPromise;
   _backendCheckPromise = (async function(){
@@ -1191,10 +1194,10 @@ async function testReceptionist(){
   } catch(e){ if(el) el.innerHTML = "<p style='color:red;font-size:12px'>Error. Try again.</p>"; }
 }
 
-function showWidgetCode(){
+async function showWidgetCode(){
   const box = document.getElementById("widget_code_box");
   const uid = currentUser?.id || "";
-  const bizUrl = window.location.origin;
+  const bizUrl = await resolveBackend();
   const code = `<script src="${bizUrl}/widget.js" data-user="${uid}"></script>`;
   if(box){
     box.style.display = "block";
@@ -1915,7 +1918,7 @@ async function renderAppointments(){
     const { services } = await svcRes.json();
     const { bookings } = await bookRes.json();
     const uid = currentUser?.id || "";
-    const bookLink = window.location.origin + "/book/" + uid;
+    const bookLink = (await resolveBackend()) + "/book/" + uid;
 
     const today = new Date().toISOString().split("T")[0];
     const upcoming = (bookings||[]).filter(b => b.booking_date >= today && b.status !== "cancelled");
@@ -2175,7 +2178,7 @@ async function renderBizPage(){
     const { page } = await res.json();
     const p = page || {};
     const slug = p.slug || currentUser?.id?.substring(0,8) || "";
-    const bizUrl = window.location.origin + "/biz/" + slug;
+    const bizUrl = (await resolveBackend()) + "/biz/" + slug;
 
     setView(`
       <div class="card">
@@ -2238,10 +2241,32 @@ async function saveBizPage(){
       })
     });
     var data = await res.json();
-    if(data.success){ alert("Page published!"); renderBizPage(); }
+    if(data.success){
+      var slug = data.slug || document.getElementById("bp_slug")?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"-") || "";
+      var bizUrl = (await resolveBackend()) + "/biz/" + slug;
+      renderBizPageSuccess(bizUrl);
+    }
     else alert("Error. Try again.");
   } catch(e){ alert("Network error."); }
   if(btn){btn.disabled=false;btn.textContent="Save and Publish Page";}
+}
+
+function renderBizPageSuccess(bizUrl){
+  var waShareText = "Check out my business page: " + bizUrl;
+  setView(`
+    <div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:48px;margin-bottom:12px">🎉</div>
+      <h2 style="margin:0 0 8px;font-size:20px">Your Business Page is Live!</h2>
+      <p style="color:#64748b;font-size:13px;margin-bottom:20px">Share this link anywhere — Instagram bio, WhatsApp status, Facebook page.</p>
+      <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:16px;word-break:break-all;font-size:13px;color:#3b82f6">${bizUrl}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button onclick="navigator.clipboard.writeText('${bizUrl}').then(()=>alert('Copied!'))" style="padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">📋 Copy Link</button>
+        <a href="${bizUrl}" target="_blank" style="padding:12px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;text-decoration:none;font-size:14px">👁️ View My Website</a>
+        <a href="https://wa.me/?text=${encodeURIComponent(waShareText)}" target="_blank" style="padding:12px;background:#25d366;color:white;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📱 Share on WhatsApp</a>
+        <button onclick="renderBizPage()" style="padding:12px;background:transparent;border:none;color:#64748b;cursor:pointer;font-size:13px;margin-top:6px">← Back to Edit Page</button>
+      </div>
+    </div>
+  `);
 }
 /* =========================
    B2C CUSTOMER GROWTH

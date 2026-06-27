@@ -793,9 +793,20 @@ app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
 
 // Public booking endpoint - no auth needed
 app.get("/api/book/:userId/services", async (req, res) => {
-  const { data } = await supabase.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true);
-  const { data: biz } = await supabase.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single();
-  res.json({ success: true, services: data || [], biz: biz || {} });
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error("timeout")); }, ms); })
+    ]);
+  }
+  try {
+    const r1 = await withTimeout(supabase.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true), 8000);
+    const r2 = await withTimeout(supabase.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single(), 8000);
+    res.json({ success: true, services: r1.data || [], biz: r2.data || {} });
+  } catch(err) {
+    console.log("Booking services lookup failed/timed out:", err.message);
+    res.json({ success: true, services: [], biz: {} });
+  }
 });
 
 app.post("/api/book/:userId", async (req, res) => {
@@ -1024,23 +1035,41 @@ input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid
 var uid = location.pathname.split("/book/")[1];
 var selectedService = null;
 
-fetch("/api/book/"+uid+"/services")
-  .then(r=>r.json())
-  .then(data=>{
-    if(data.biz) document.getElementById("biz_name").textContent = data.biz.business_name || "Book your appointment";
-    var list = document.getElementById("services_list");
-    if(!data.services || !data.services.length){
-      list.innerHTML = "<p style='color:#64748b;font-size:13px'>No services listed yet.</p>";
-      return;
+function loadServices(){
+  document.getElementById("services_list").innerHTML = "<p style='color:#64748b;font-size:13px'>Loading services...</p>";
+  var servicesLoaded = false;
+  var timeoutId = setTimeout(function(){
+    if(!servicesLoaded){
+      document.getElementById("services_list").innerHTML = "<p style='color:#ef4444;font-size:13px'>Could not load services. <button onclick='loadServices()' style='padding:4px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-left:6px'>Retry</button></p>";
     }
-    list.innerHTML = data.services.map(s=>
-      "<div class='service-card' id='svc_"+s.id+"' onclick='selectService(""+s.id+"",this)'>"+
-        "<div><div style='font-size:14px;font-weight:600'>"+s.name+"</div>"+
-        "<div style='font-size:11px;color:#64748b'>"+s.duration_minutes+" mins</div></div>"+
-        "<div style='font-size:16px;font-weight:800;color:#3b82f6'>₦"+parseFloat(s.price||0).toLocaleString()+"</div>"+
-      "</div>"
-    ).join("");
-  });
+  }, 8000);
+
+  fetch("/api/book/"+uid+"/services")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      servicesLoaded = true;
+      clearTimeout(timeoutId);
+      if(data.biz) document.getElementById("biz_name").textContent = data.biz.business_name || "Book your appointment";
+      var list = document.getElementById("services_list");
+      if(!data.services || !data.services.length){
+        list.innerHTML = "<p style='color:#64748b;font-size:13px'>No services listed yet.</p>";
+        return;
+      }
+      list.innerHTML = data.services.map(function(s){
+        return "<div class='service-card' id='svc_"+s.id+"' onclick='selectService(\"+s.id+\",this)'>"+
+          "<div><div style='font-size:14px;font-weight:600'>"+s.name+"</div>"+
+          "<div style='font-size:11px;color:#64748b'>"+s.duration_minutes+" mins</div></div>"+
+          "<div style='font-size:16px;font-weight:800;color:#3b82f6'>₦"+parseFloat(s.price||0).toLocaleString()+"</div>"+
+        "</div>";
+      }).join("");
+    })
+    .catch(function(){
+      servicesLoaded = true;
+      clearTimeout(timeoutId);
+      document.getElementById("services_list").innerHTML = "<p style='color:#ef4444;font-size:13px'>Network error. <button onclick='loadServices()' style='padding:4px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-left:6px'>Retry</button></p>";
+    });
+}
+loadServices();
 
 function selectService(id, el){
   selectedService = id;
