@@ -1069,6 +1069,11 @@ function loadServices(){
           "<div style='font-size:16px;font-weight:800;color:#3b82f6'>₦"+parseFloat(s.price||0).toLocaleString()+"</div>"+
         "</div>";
       }).join("");
+      if(data.services.length === 1){
+        selectedService = data.services[0].id;
+        var onlyCard = document.getElementById("svc_" + data.services[0].id);
+        if(onlyCard) onlyCard.classList.add("selected");
+      }
     })
     .catch(function(){
       servicesLoaded = true;

@@ -2502,7 +2502,97 @@ async function confirmNicheSelection(){
       body: JSON.stringify({business_type: niche})
     });
   } catch(e){}
-  loadPage("dashboard");
+  renderFirstWin(niche);
+}
+
+/* =========================
+   FIRST WIN SCREEN
+========================= */
+function renderFirstWin(niche){
+  var b2bNiches = ["agency", "tech", "realestate"];
+  var firstType = niche.split(",")[0];
+  var isB2B = b2bNiches.indexOf(firstType) !== -1;
+
+  if(isB2B){
+    setView(`
+      <div class="card" style="text-align:center;padding:30px 20px">
+        <div style="font-size:40px;margin-bottom:10px">🎯</div>
+        <h2 style="margin:0 0 8px;font-size:20px">Let's find your first customers</h2>
+        <p style="color:#64748b;font-size:13px;margin-bottom:24px">Type your city below and watch real businesses appear.</p>
+        <input id="fw_location" placeholder="e.g. Lagos, Abuja" style="width:100%;padding:12px;margin-bottom:14px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+        <button onclick="runFirstWinLeadFinder()" id="fw_btn" style="width:100%;padding:14px;background:#3b82f6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600">🔍 Find Customers Now</button>
+        <div id="fw_result" style="margin-top:18px;text-align:left"></div>
+      </div>
+    `);
+  } else {
+    setView(`
+      <div class="card" style="text-align:center;padding:30px 20px">
+        <div style="font-size:40px;margin-bottom:10px">📣</div>
+        <h2 style="margin:0 0 8px;font-size:20px">Let's grow your customer base</h2>
+        <p style="color:#64748b;font-size:13px;margin-bottom:24px">One tap — get a ready-to-post promo for your business.</p>
+        <button onclick="runFirstWinB2C()" id="fw_btn" style="width:100%;padding:14px;background:#8b5cf6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600">✨ Generate My First Post</button>
+        <div id="fw_result" style="margin-top:18px;text-align:left"></div>
+      </div>
+    `);
+  }
+}
+
+async function runFirstWinLeadFinder(){
+  var loc = document.getElementById("fw_location")?.value.trim();
+  if(!loc){ alert("Type a city first."); return; }
+  var btn = document.getElementById("fw_btn");
+  btn.disabled = true; btn.textContent = "Searching...";
+  var resultEl = document.getElementById("fw_result");
+  resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Looking for real businesses near you...</p>";
+  try {
+    var res = await apiFetch("/api/lead-finder", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({ service: "businesses", location: loc, industry: "businesses that need services" })
+    });
+    var data = await res.json();
+    if(data.leads && data.leads.length > 0){
+      var html = "<p style='font-size:13px;font-weight:700;color:#10b981;margin-bottom:10px'>✅ Found " + data.leads.length + " real businesses near you</p>";
+      data.leads.slice(0,3).forEach(function(l){
+        html += "<div style='background:#0f172a;border-radius:8px;padding:10px;margin-bottom:8px'><p style='margin:0;font-size:13px;font-weight:600'>" + l.name + "</p>" + (l.phone ? "<p style='margin:2px 0 0;font-size:12px;color:#10b981'>📞 " + l.phone + "</p>" : "") + "</div>";
+      });
+      html += "<button onclick=\"loadPage('dashboard')\" style='width:100%;padding:14px;background:#10b981;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;margin-top:10px'>Continue to Dashboard →</button>";
+      resultEl.innerHTML = html;
+    } else {
+      resultEl.innerHTML = "<p style='color:#64748b;font-size:13px;text-align:center'>No results for that city. Try another, or continue anyway.</p><button onclick=\"loadPage('dashboard')\" style='width:100%;padding:14px;background:#3b82f6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;margin-top:10px'>Continue to Dashboard →</button>";
+    }
+  } catch(e){
+    resultEl.innerHTML = "<p style='color:#ef4444;font-size:13px;text-align:center'>Network error. <button onclick=\"loadPage('dashboard')\" style='color:#3b82f6;background:none;border:none;cursor:pointer;text-decoration:underline'>Skip to Dashboard</button></p>";
+  }
+  btn.disabled = false; btn.textContent = "🔍 Find Customers Now";
+}
+
+async function runFirstWinB2C(){
+  var btn = document.getElementById("fw_btn");
+  btn.disabled = true; btn.textContent = "Generating...";
+  var resultEl = document.getElementById("fw_result");
+  resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Writing your first post...</p>";
+  try {
+    var bizName = (currentProfile && currentProfile.display_name) ? currentProfile.display_name : "your business";
+    var res = await apiFetch("/api/ai-reply", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({message: "Write one short, exciting WhatsApp status promo (under 40 words) for " + bizName + " to attract new customers. Nigerian audience. No markdown, just the message."})
+    });
+    var data = await res.json();
+    if(data.success && data.reply){
+      resultEl.innerHTML =
+        "<p style='font-size:13px;font-weight:700;color:#10b981;margin-bottom:10px'>✅ Your first post is ready</p>" +
+        "<div style='background:#0f172a;border-radius:8px;padding:12px;margin-bottom:14px'><p style='margin:0;font-size:13px;color:#cbd5e1;line-height:1.6'>" + data.reply + "</p></div>" +
+        "<button onclick=\"navigator.clipboard.writeText('" + data.reply.replace(/'/g,"\\'") + "').then(function(){alert('Copied!');})\" style='width:100%;padding:12px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:8px'>📋 Copy</button>" +
+        "<button onclick=\"loadPage('dashboard')\" style='width:100%;padding:14px;background:#10b981;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600'>Continue to Dashboard →</button>";
+    } else {
+      resultEl.innerHTML = "<p style='color:#64748b;font-size:13px;text-align:center'>Could not generate. <button onclick=\"loadPage('dashboard')\" style='color:#3b82f6;background:none;border:none;cursor:pointer;text-decoration:underline'>Skip to Dashboard</button></p>";
+    }
+  } catch(e){
+    resultEl.innerHTML = "<p style='color:#ef4444;font-size:13px;text-align:center'>Network error. <button onclick=\"loadPage('dashboard')\" style='color:#3b82f6;background:none;border:none;cursor:pointer;text-decoration:underline'>Skip to Dashboard</button></p>";
+  }
+  btn.disabled = false; btn.textContent = "✨ Generate My First Post";
 }
 
 /* =========================
