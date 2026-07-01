@@ -2881,13 +2881,32 @@ async function renderAffiliate(){
     }
     html += '</div>';
 
-    html += '<div id="aff_withdraw_box" style="display:none;background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">';
+    html += '<div id="aff_withdraw_box" style="display:none;background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px" data-balance="' + balance + '">';
     html += '<p style="margin:0 0 10px;font-size:13px;font-weight:bold">Withdrawal Details</p>';
-    html += '<input id="wd_bank" placeholder="Bank name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
+    html += '<select id="wd_bank" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
+    html += '<option value="">-- Select bank --</option>';
+    ["Access Bank","GTBank","Zenith Bank","First Bank","UBA","Fidelity Bank","Union Bank","Sterling Bank","Wema Bank","Ecobank","Stanbic IBTC","Polaris Bank","Unity Bank","Keystone Bank","OPay","PalmPay","Moniepoint","Kuda Bank","Other"].forEach(function(bn){
+      html += '<option value="' + bn + '">' + bn + '</option>';
+    });
+    html += '</select>';
     html += '<input id="wd_acc" placeholder="Account number" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
     html += '<input id="wd_name" placeholder="Account name" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">';
     html += '<button onclick="submitAffWithdraw()" style="width:100%;padding:11px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Submit Request</button>';
     html += '<div id="wd_result" style="margin-top:8px"></div></div>';
+
+    var withdrawals = data.withdrawals || [];
+    if(withdrawals.length > 0){
+      html += '<div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">';
+      html += '<p style="margin:0 0 10px;font-size:13px;font-weight:bold;color:#94a3b8">Withdrawal History</p>';
+      withdrawals.slice(0,5).forEach(function(w){
+        var statusColor = w.status === "paid" ? "#10b981" : "#f59e0b";
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #1e293b">';
+        html += '<div><p style="margin:0;font-size:13px;font-weight:600">&#8358;' + parseFloat(w.amount||0).toLocaleString() + '</p><p style="margin:2px 0 0;font-size:11px;color:#64748b">' + new Date(w.created_at).toLocaleDateString() + '</p></div>';
+        html += '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + statusColor + '22;color:' + statusColor + '">' + (w.status || "pending") + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
 
     html += '<div style="background:#0f172a;border-radius:12px;padding:16px;margin-bottom:14px">';
     html += '<p style="margin:0 0 4px;font-size:12px;color:#94a3b8">Your Affiliate Link</p>';
@@ -2941,7 +2960,7 @@ async function submitAffWithdraw(){
     var res = await apiFetch("/api/affiliate/withdraw",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-      body:JSON.stringify({bank_name:bank,account_number:acc,account_name:name,amount:parseFloat(document.getElementById("aff_balance")?.textContent||0)})
+      body:JSON.stringify({bank_name:bank,account_number:acc,account_name:name,amount:parseFloat(document.getElementById("aff_withdraw_box")?.getAttribute("data-balance")||0)})
     });
     var data = await res.json();
     if(result) result.innerHTML = '<p style="color:' + (data.success?"#10b981":"#ef4444") + ';font-size:12px">' + (data.message||data.error) + '</p>';
