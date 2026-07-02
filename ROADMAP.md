@@ -8,8 +8,8 @@ Status tags: `NOW` (building this session) · `NEXT` (next 1-2 sessions) · `LAT
 
 ## NOW
 
-### Affiliate withdraw — RLS bug (ACTIVE, unresolved as of this entry)
-`authMiddleware` fix attempted (stopped reusing shared Supabase client for `.auth.getUser()`) but issue persisted after deploy. Next diagnostic step: check real Postgres error text in Railway/Render logs (not just browser alert) to confirm true cause before further fixes.
+### Affiliate RLS bug — RESOLVED
+Root cause: `authMiddleware` called `.auth.getUser(token)` on the shared service-role Supabase client, silently downgrading it to the logged-in user session for all subsequent requests through that client. Fixed by creating an isolated client per auth check. Confirmed via fresh signup enrolling cleanly. Withdraw path not independently tested yet (same root cause and fix, high confidence).
 
 ### Landing Page Rewrite (5-second clarity test)
 Current homepage is feature-listy. Rewrite hero to lead with outcome, not capability.
