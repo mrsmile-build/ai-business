@@ -2509,6 +2509,7 @@ async function confirmNicheSelection(){
    FIRST WIN SCREEN
 ========================= */
 function renderFirstWin(niche){
+  window._firstWinNiche = niche;
   var b2bNiches = ["agency", "tech", "realestate"];
   var firstType = niche.split(",")[0];
   var isB2B = b2bNiches.indexOf(firstType) !== -1;
@@ -2529,7 +2530,9 @@ function renderFirstWin(niche){
       <div class="card" style="text-align:center;padding:30px 20px">
         <div style="font-size:40px;margin-bottom:10px">📣</div>
         <h2 style="margin:0 0 8px;font-size:20px">Let's grow your customer base</h2>
-        <p style="color:#64748b;font-size:13px;margin-bottom:24px">One tap — get a ready-to-post promo for your business.</p>
+        <p style="color:#64748b;font-size:13px;margin-bottom:20px">Tell us about your business, then get a ready-to-post promo.</p>
+        <input id="fw_bizname" placeholder="Business name (e.g. Glamour Hair Studio)" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+        <input id="fw_bizservice" placeholder="What you sell (e.g. hair braiding, weaves)" style="width:100%;padding:12px;margin-bottom:14px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
         <button onclick="runFirstWinB2C()" id="fw_btn" style="width:100%;padding:14px;background:#8b5cf6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600">✨ Generate My First Post</button>
         <div id="fw_result" style="margin-top:18px;text-align:left"></div>
       </div>
@@ -2545,16 +2548,24 @@ async function runFirstWinLeadFinder(){
   var resultEl = document.getElementById("fw_result");
   resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Looking for real businesses near you...</p>";
   try {
+    var nicheLabels = {agency:"marketing and business services",tech:"software and IT services",realestate:"real estate services"};
+    var firstNiche = (window._firstWinNiche || "agency").split(",")[0];
+    var offerText = nicheLabels[firstNiche] || "business services";
     var res = await apiFetch("/api/lead-finder", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({ service: "businesses", location: loc, industry: "businesses that need services" })
+      body: JSON.stringify({ service: offerText, location: loc, industry: "small businesses that need " + offerText })
     });
     var data = await res.json();
     if(data.leads && data.leads.length > 0){
       var html = "<p style='font-size:13px;font-weight:700;color:#10b981;margin-bottom:10px'>✅ Found " + data.leads.length + " real businesses near you</p>";
       data.leads.slice(0,3).forEach(function(l){
-        html += "<div style='background:#0f172a;border-radius:8px;padding:10px;margin-bottom:8px'><p style='margin:0;font-size:13px;font-weight:600'>" + l.name + "</p>" + (l.phone ? "<p style='margin:2px 0 0;font-size:12px;color:#10b981'>📞 " + l.phone + "</p>" : "") + "</div>";
+        var waLink = l.phone ? "https://wa.me/" + l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234") + "?text=" + encodeURIComponent("Hi " + l.name + ", " + l.message ? l.message : "I'd love to work with your business.") : null;
+        html += "<div style='background:#0f172a;border-radius:8px;padding:10px;margin-bottom:8px'>";
+        html += "<p style='margin:0;font-size:13px;font-weight:600'>" + l.name + "</p>";
+        if(l.phone) html += "<p style='margin:2px 0 8px;font-size:12px;color:#10b981'>📞 " + l.phone + "</p>";
+        if(waLink) html += "<a href='" + waLink + "' target='_blank' style='display:inline-block;padding:6px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600'>💬 Send WhatsApp</a>";
+        html += "</div>";
       });
       html += "<button onclick=\"loadPage('dashboard')\" style='width:100%;padding:14px;background:#10b981;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;margin-top:10px'>Continue to Dashboard →</button>";
       resultEl.innerHTML = html;
@@ -2572,12 +2583,18 @@ async function runFirstWinB2C(){
   btn.disabled = true; btn.textContent = "Generating...";
   var resultEl = document.getElementById("fw_result");
   resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Writing your first post...</p>";
+  var bizName = document.getElementById("fw_bizname")?.value.trim();
+  var bizService = document.getElementById("fw_bizservice")?.value.trim();
+  if(!bizName || !bizService){
+    alert("Fill in your business name and what you sell first.");
+    btn.disabled = false; btn.textContent = "✨ Generate My First Post";
+    return;
+  }
   try {
-    var bizName = (currentProfile && currentProfile.display_name) ? currentProfile.display_name : "your business";
     var res = await apiFetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write one short, exciting WhatsApp status promo (under 40 words) for " + bizName + " to attract new customers. Nigerian audience. No markdown, just the message."})
+      body: JSON.stringify({message: "Write one short, exciting WhatsApp status promo (under 40 words) for " + bizName + ", a business that sells " + bizService + ", to attract new customers. Nigerian audience. Mention the business name and what they sell specifically. No markdown, just the message."})
     });
     var data = await res.json();
     if(data.success && data.reply){
