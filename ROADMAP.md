@@ -17,10 +17,11 @@ Current homepage is feature-listy. Rewrite hero to lead with outcome, not capabi
 - Before/After section
 - One CTA, repeated, not buried among many
 
-### First-Win Onboarding Screen — fix known gaps
-Built and tested this session, but two real gaps identified before wider rollout:
-- B2B path: show phone number + working "Send WhatsApp" per result (not just names)
-- B2C path: ask for business name + what they sell BEFORE generating the promo post — current version produces generic filler when profile is empty
+### First-Win Onboarding Screen — RESOLVED
+Both known gaps fixed and confirmed working end-to-end:
+- B2B path: now uses real selected niche (not generic query), shows phone number + working WhatsApp button per result
+- B2C path: asks for business name + what they sell before generating; confirmed output mentions both specifically, not generic filler
+Known minor issue remaining: occasional wrong-country result in B2B search (see separate roadmap entry above)
 
 ---
 
