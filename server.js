@@ -109,6 +109,7 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
       .select()
       .single();
     if (error) throw error;
+    await pushNotification(req.user.id, "lead", "You added a new lead: " + name).catch(()=>{});
     res.json({ success: true, lead: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -136,6 +137,9 @@ app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
       .eq("user_id", req.user.id)
       .select().single();
     if(error) throw error;
+    if(status === "won" && data){
+      await pushNotification(req.user.id, "lead", "🎉 " + (data.name || "A lead") + " marked as Won!").catch(()=>{});
+    }
     res.json({ success: true, lead: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
