@@ -127,6 +127,15 @@ input:focus, textarea:focus, select:focus {
 </head>
 
 <body>
+<script>
+window.addEventListener('error', function(e){
+  var div = document.createElement('div');
+  div.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#7f1d1d;color:white;padding:10px;font-size:11px;z-index:99999;word-break:break-all;max-height:200px;overflow:auto';
+  div.textContent = 'JS ERROR: ' + e.message + ' @ line ' + e.lineno;
+  document.body.appendChild(div);
+});
+</script>
+
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:8px"><span id="topbar_avatar" onclick="loadPage('profile')" style="cursor:pointer"></span><span>📊 AI Business</span></div>
   <div style="display:flex;align-items:center;gap:10px">
