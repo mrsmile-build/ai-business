@@ -52,3 +52,6 @@ Visitor types a question into a sample AI before signing up, gets a real generat
 - Business page save: real error surfacing (slug-taken detection)
 - Affiliate dashboard: balance, commission breakdown, link, conversions, withdrawal history, bank dropdown
 - First-win onboarding screen, B2B/B2C branch
+
+### First-win B2B — occasional wrong-country result
+Same country-filter logic as main Lead Finder, but a US business ("Main Street ROI") appeared in an Ogun search during testing. Main Lead Finder's `gl=` country param fix may not fully suppress this on every query. Needs a repeat-test to confirm if it's consistent or rare before prioritizing a fix.
