@@ -3236,33 +3236,64 @@ async function checkNotifications(){
     var res = await apiFetch("/api/notifications", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var data = await res.json();
     var dot = document.getElementById("notif_dot");
-    if(dot) dot.style.display = (data.unread > 0) ? "block" : "none";
+    if(dot){
+      var count = data.unread || 0;
+      if(count > 0){
+        dot.textContent = count > 9 ? "9+" : String(count);
+        dot.style.display = "block";
+      } else {
+        dot.style.display = "none";
+      }
+    }
     window._notifications = data.notifications || [];
   } catch(e){}
 }
 
-function toggleNotifications(){
+function timeAgo(dateStr){
+  var diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+  if(diff < 60) return "Just now";
+  if(diff < 3600) return Math.floor(diff/60) + "m ago";
+  if(diff < 86400) return Math.floor(diff/3600) + "h ago";
+  if(diff < 172800) return "Yesterday";
+  return Math.floor(diff/86400) + "d ago";
+}
+
+async function toggleNotifications(){
   var existing = document.getElementById("notif_dropdown");
   if(existing){ existing.remove(); return; }
-  var notifs = window._notifications || [];
-  var rows = "";
-  if(notifs.length === 0){
-    rows = '<p style="color:#64748b;font-size:12px;padding:10px;text-align:center">No notifications yet</p>';
-  } else {
-    notifs.forEach(function(n){
-      var icon = n.type === "booking" ? "📅" : n.type === "lead" ? "📩" : "🔔";
-      rows += '<div style="padding:8px;border-bottom:1px solid #0f172a;' + (n.is_read ? "opacity:0.5" : "") + '"><p style="margin:0;font-size:12px">' + icon + " " + n.message + '</p><p style="margin:2px 0 0;font-size:10px;color:#475569">' + new Date(n.created_at).toLocaleString() + '</p></div>';
-    });
-  }
+
   var box = document.createElement("div");
   box.id = "notif_dropdown";
   box.style.cssText = "position:fixed;top:60px;right:10px;width:280px;max-height:400px;overflow-y:auto;background:#1e293b;border:1px solid #334155;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.5);z-index:9999;padding:10px";
-  box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p>' + rows;
+  box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p><p style="color:#64748b;font-size:12px;padding:10px;text-align:center">Loading...</p>';
   document.body.appendChild(box);
-  apiFetch("/api/notifications/read-all", {method:"POST", headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).then(function(){
+
+  try {
+    var res = await apiFetch("/api/notifications", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    var notifs = data.notifications || [];
+    window._notifications = notifs;
+
+    var rows = "";
+    if(notifs.length === 0){
+      rows = '<p style="color:#64748b;font-size:12px;padding:10px;text-align:center">No notifications yet</p>';
+    } else {
+      notifs.forEach(function(n){
+        var icon = n.type === "booking" ? "📅" : n.type === "lead" ? "📩" : "🔔";
+        var unreadStyle = n.is_read ? "opacity:0.5" : "background:rgba(59,130,246,0.08)";
+        rows += '<div style="padding:8px;border-bottom:1px solid #0f172a;border-radius:6px;' + unreadStyle + '"><p style="margin:0;font-size:12px">' + icon + " " + n.message + '</p><p style="margin:2px 0 0;font-size:10px;color:#475569">' + timeAgo(n.created_at) + '</p></div>';
+      });
+    }
+    var bodyEl = box.querySelector("p:last-child") ? box : box;
+    box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p>' + rows;
+
     var dot = document.getElementById("notif_dot");
     if(dot) dot.style.display = "none";
-  }).catch(function(){});
+    apiFetch("/api/notifications/read-all", {method:"POST", headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).catch(function(){});
+  } catch(e){
+    box.innerHTML = '<p style="margin:0 0 8px;font-size:13px;font-weight:bold">Notifications</p><p style="color:#ef4444;font-size:12px;padding:10px;text-align:center">Could not load. Try again.</p>';
+  }
+
   setTimeout(function(){
     document.addEventListener("click", function closeDropdown(e){
       var d = document.getElementById("notif_dropdown");
