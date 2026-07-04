@@ -56,3 +56,21 @@ Visitor types a question into a sample AI before signing up, gets a real generat
 
 ### First-win B2B — occasional wrong-country result
 Same country-filter logic as main Lead Finder, but a US business ("Main Street ROI") appeared in an Ogun search during testing. Main Lead Finder's `gl=` country param fix may not fully suppress this on every query. Needs a repeat-test to confirm if it's consistent or rare before prioritizing a fix.
+
+---
+
+## Session addendum — new ideas evaluated
+
+### NEXT candidates (buildable soon, no new infrastructure)
+- Notification upgrade: unread count badge (not just a dot), read/unread visual distinction, relative timestamps, always fetch fresh on open
+- Website Health Checker: fetch a URL, check for WhatsApp button/mobile viewport/CTA/booking form, AI summarizes fixes
+- Smart Analytics: plain-English insights generated from existing leads/bookings data (e.g. "Most leads arrive Fridays") — no new data source needed
+- Testimonials collection: simple submission form for existing users, stored for landing page use
+
+### LATER (real ideas, need paid/restricted external infrastructure)
+- Social Lead Discovery (Reddit/X/LinkedIn monitoring for "need a CRM"-style posts) — X API now paid/restricted
+- Competitor Monitor — needs scraping infra + user-defined competitor list
+- Review/Comment Opportunity Finder — needs Google My Business + Facebook Graph API, OAuth per business
+- Industry-specific landing pages (Hotels/Realtors/Clinics) — natural extension once niche personalization (existing NEXT item) ships
+
+Note: "Lost Lead Recovery" = already-shipped Follow-Up Assistant. "Grow My Business" button = existing "AI Workforce" LATER entry. Not duplicated.
