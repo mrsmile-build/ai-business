@@ -27,8 +27,8 @@ Known minor issue remaining: occasional wrong-country result in B2B search (see 
 
 ## NEXT
 
-### Notification triggers — expand beyond the 3 rare events
-Bell currently only fires on: widget chat lead, booking, public enquiry form. Daily-use actions (manual lead add, Lead Finder run, follow-up marked done) trigger nothing.
+### Notification triggers — RESOLVED
+Added triggers for manual lead add and lead marked Won. Fixed real bug: dropdown was showing stale 30-second-old cached data instead of fetching fresh on open. Added unread count badge (was a plain dot) and relative timestamps (was raw date).
 
 ### Niche data → actually personalize something
 Multi-select business type is captured and saved correctly but powers zero personalization yet.
