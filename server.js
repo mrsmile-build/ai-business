@@ -382,8 +382,10 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
 
     // Extract organic leads (websites)
     const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube","quora","wikipedia","indeed","glassdoor","jobberman","reddit","pinterest","twitter","x.com",".gov"];
+    const usSignals = [".com/us/","new-york","los-angeles","chicago-il","texas-tx","/nyc/","yelp.com","zillow.com","angi.com"];
     const organicLeads = (searchData.organicResults || [])
       .filter(r => !skipDomains.some(d => r.link.includes(d)))
+      .filter(r => countryCode === "us" || !usSignals.some(s => r.link.toLowerCase().includes(s)))
       .slice(0, 5).map(r => ({
         name: r.source||r.title, phone: null, website: r.link,
         snippet: r.snippet?.slice(0,100), source: "organic"
