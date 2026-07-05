@@ -104,3 +104,8 @@ Idea: instead of static reach-targets, show 5 suggested niches to search that ro
 
 ### First-win B2B — real estate moved to B2C group
 Testing revealed real estate agents' actual customers are individual buyers/renters, not searchable businesses. Lead Finder's B2B search tool structurally cannot find individual consumers (no public business listing to search). Real estate now routes to the B2C promo-post screen alongside salon/restaurant/retail, not Lead Finder. B2B group is now just agency + tech, the two niches that genuinely sell to other findable businesses.
+
+### LATER — AI Meeting Assistant / Voice-to-Business / Smart OCR
+Record meetings → transcribe → summarize → extract action items → auto-create reminders/quotations, linked to customer profile. Also: voice commands ("remind me to call X tomorrow") auto-creating leads/reminders/quotations. Also: OCR on receipts/price lists/business cards → structured data. Genuinely large scope: needs speech-to-text API, OCR API, audio storage, and real orchestration logic. Not a quick add — treat as its own project when there's room for it.
+
+Note: "Brain that connects everything" / daily digest vision reframe = same direction as existing "AI Workforce" LATER entry. No new task, just reinforces that direction.
