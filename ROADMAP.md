@@ -101,3 +101,12 @@ Currently only the dashboard shows "Recommended for You." Menu itself has no nic
 
 ### Lead Finder — rotating "trending this week" niche suggestions
 Idea: instead of static reach-targets, show 5 suggested niches to search that rotate based on current trends. Requires either manual curation or a trend data source — not yet scoped, real LATER item.
+
+### First-win B2B screen — customer-targeting logic bug (found via user testing)
+Current mapping incorrectly searches for "more of the same niche" instead of that niche's actual customers (e.g. Real Estate agent searching finds other real estate agencies, not property buyers). Needs either: (a) reuse the existing B2B/B2C "who do you want to reach" question from the full Lead Finder, or (b) a proper niche → typical-customer mapping. Fix in progress.
+
+### Menu — surface recommended features per niche
+Currently only the dashboard shows "Recommended for You." Menu itself has no niche-awareness. Worth revisiting once dashboard version is fully stable.
+
+### Lead Finder — rotating "trending this week" niche suggestions
+Idea: instead of static reach-targets, show 5 suggested niches to search that rotate based on current trends. Requires either manual curation or a trend data source — not yet scoped, real LATER item.
