@@ -238,7 +238,41 @@ function renderDashboard(){
             <span onclick="loadPage('proposal')" style="cursor:pointer;color:#ef4444">📄 Close</span>
           </div>
         </div>
-        <p style="margin:0 0 10px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:1px">Quick Actions</p>
+        ${(function(){
+          var NICHE_FEATURES = {
+            salon: [{page:"appointments",icon:"📅",label:"Bookings"},{page:"agents",icon:"🤖",label:"AI Agents"},{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"invoice",icon:"🧾",label:"Invoice"}],
+            restaurant: [{page:"appointments",icon:"📅",label:"Bookings"},{page:"agents",icon:"🤖",label:"AI Agents"},{page:"bizpage",icon:"🌐",label:"My Page"},{page:"leadFinder",icon:"🎯",label:"Lead Finder"}],
+            realestate: [{page:"leads",icon:"📩",label:"Leads"},{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"automation",icon:"⚡",label:"Automation"},{page:"proposal",icon:"📄",label:"Proposals"}],
+            agency: [{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"proposal",icon:"📄",label:"Proposals"},{page:"invoice",icon:"🧾",label:"Invoice"},{page:"leads",icon:"📩",label:"Leads"}],
+            retail: [{page:"bizpage",icon:"🌐",label:"My Page"},{page:"invoice",icon:"🧾",label:"Invoice"},{page:"leads",icon:"📩",label:"Leads"},{page:"agents",icon:"🤖",label:"AI Agents"}],
+            tech: [{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"proposal",icon:"📄",label:"Proposals"},{page:"automation",icon:"⚡",label:"Automation"},{page:"invoice",icon:"🧾",label:"Invoice"}],
+            education: [{page:"leads",icon:"📩",label:"Leads"},{page:"appointments",icon:"📅",label:"Bookings"},{page:"agents",icon:"🤖",label:"AI Agents"},{page:"bizpage",icon:"🌐",label:"My Page"}],
+            other: [{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"leads",icon:"📩",label:"Leads"},{page:"invoice",icon:"🧾",label:"Invoice"},{page:"agents",icon:"🤖",label:"AI Agents"}]
+          };
+          var bizType = (currentProfile && currentProfile.business_type) ? currentProfile.business_type : "";
+          if(!bizType) return "";
+          var selected = bizType.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+          var seen = {};
+          var recommended = [];
+          selected.forEach(function(nicheKey){
+            (NICHE_FEATURES[nicheKey] || []).forEach(function(f){
+              if(!seen[f.page]){ seen[f.page] = true; recommended.push(f); }
+            });
+          });
+          recommended = recommended.slice(0,4);
+          if(recommended.length === 0) return "";
+          var html = '<p style="margin:0 0 10px;font-size:10px;color:#3b82f6;text-transform:uppercase;letter-spacing:1px">⭐ Recommended for You</p>';
+          html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">';
+          recommended.forEach(function(f){
+            html += '<button onclick="loadPage(&#39;' + f.page + '&#39;)" style="padding:13px 10px;background:linear-gradient(135deg,#1d4ed820,#7c3aed20);border:1px solid #3b82f655;color:white;border-radius:9px;cursor:pointer;text-align:left">';
+            html += '<div style="font-size:18px;margin-bottom:3px">' + f.icon + '</div>';
+            html += '<div style="font-size:12px;font-weight:600">' + f.label + '</div>';
+            html += '</button>';
+          });
+          html += '</div>';
+          return html;
+        })()}
+        <p style="margin:0 0 10px;font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:1px">${(currentProfile && currentProfile.business_type) ? "More Features" : "Quick Actions"}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <button onclick="loadPage(\'leads\')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">📩</div>
@@ -2510,7 +2544,7 @@ async function confirmNicheSelection(){
 ========================= */
 function renderFirstWin(niche){
   window._firstWinNiche = niche;
-  var b2bNiches = ["agency", "tech", "realestate"];
+  var b2bNiches = ["agency", "tech"];
   var firstType = niche.split(",")[0];
   var isB2B = b2bNiches.indexOf(firstType) !== -1;
 
@@ -2548,13 +2582,15 @@ async function runFirstWinLeadFinder(){
   var resultEl = document.getElementById("fw_result");
   resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Looking for real businesses near you...</p>";
   try {
-    var nicheLabels = {agency:"marketing and business services",tech:"software and IT services",realestate:"real estate services"};
+    var nicheOffers = {agency:"marketing and business services",tech:"software and IT services",realestate:"real estate services"};
+    var nicheCustomers = {agency:"small businesses without an online presence",tech:"businesses that need a website or software",realestate:"people looking to buy, sell, or rent property"};
     var firstNiche = (window._firstWinNiche || "agency").split(",")[0];
-    var offerText = nicheLabels[firstNiche] || "business services";
+    var offerText = nicheOffers[firstNiche] || "business services";
+    var targetText = nicheCustomers[firstNiche] || "small businesses";
     var res = await apiFetch("/api/lead-finder", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({ service: offerText, location: loc, industry: "small businesses that need " + offerText })
+      body: JSON.stringify({ service: offerText, location: loc, industry: targetText })
     });
     var data = await res.json();
     if(data.leads && data.leads.length > 0){

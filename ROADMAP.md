@@ -110,3 +110,6 @@ Currently only the dashboard shows "Recommended for You." Menu itself has no nic
 
 ### Lead Finder — rotating "trending this week" niche suggestions
 Idea: instead of static reach-targets, show 5 suggested niches to search that rotate based on current trends. Requires either manual curation or a trend data source — not yet scoped, real LATER item.
+
+### First-win B2B — real estate moved to B2C group
+Testing revealed real estate agents' actual customers are individual buyers/renters, not searchable businesses. Lead Finder's B2B search tool structurally cannot find individual consumers (no public business listing to search). Real estate now routes to the B2C promo-post screen alongside salon/restaurant/retail, not Lead Finder. B2B group is now just agency + tech, the two niches that genuinely sell to other findable businesses.
