@@ -1333,6 +1333,58 @@ app.use((req, res, next) => {
   next();
 });
 
+app.post("/api/website-health", authMiddleware, async (req, res) => {
+  try {
+    const { url } = req.body;
+    if(!url) return res.status(400).json({ success: false, error: "URL required" });
+    let targetUrl = url.trim();
+    if(!/^https?:\/\//i.test(targetUrl)) targetUrl = "https://" + targetUrl;
+
+    function withTimeout(promise, ms){
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))
+      ]);
+    }
+
+    let html = "";
+    try {
+      const fetchRes = await withTimeout(fetch(targetUrl, { headers: { "User-Agent": "Mozilla/5.0" } }), 8000);
+      html = await fetchRes.text();
+    } catch(fetchErr) {
+      return res.json({ success: false, error: "Could not load that website. Check the URL and try again." });
+    }
+
+    const lower = html.toLowerCase();
+    const hasWhatsApp = lower.includes("wa.me") || lower.includes("whatsapp");
+    const isMobileFriendly = lower.includes("viewport");
+    const hasPhone = lower.includes("tel:");
+    const hasBookingWord = /book|appointment|schedule|reserve/.test(lower);
+
+    const missing = [];
+    if(!hasWhatsApp) missing.push("No WhatsApp contact button found");
+    if(!isMobileFriendly) missing.push("Not optimized for mobile phones");
+    if(!hasPhone) missing.push("No clickable phone number found");
+    if(!hasBookingWord) missing.push("No booking or appointment option found");
+
+    let aiSummary = "";
+    try {
+      const prompt = "A business website was checked and has these issues: " + (missing.join(", ") || "none major") + ". In 2-3 short sentences, explain what this means for the business and how to fix it. Nigerian business owner audience, friendly tone, no jargon.";
+      const groqRes = await withTimeout(fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
+      }), 8000);
+      const groqData = await groqRes.json();
+      aiSummary = groqData.choices?.[0]?.message?.content || "";
+    } catch(e){ aiSummary = ""; }
+
+    res.json({ success: true, missing, summary: aiSummary });
+  } catch(err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });

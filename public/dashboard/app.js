@@ -158,6 +158,7 @@ function loadPage(page){
     referral: 'renderReferral',
     affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
+    healthcheck: 'renderWebsiteHealth',
     followup: 'renderFollowupAssistant',
     video: 'renderVideoCreator',
     appointments: 'renderAppointments',
@@ -2480,6 +2481,56 @@ async function dismissFollowup(id, i){
 }
 
 
+async function renderWebsiteHealth(){
+  setView(`
+    <div class="card">
+      ${header("🩺 Website Health Check","dashboard")}
+      <p style="font-size:13px;color:#94a3b8;margin-bottom:16px">Check any business website for common gaps — yours, or a prospect's before you pitch them.</p>
+      <input id="whc_url" placeholder="e.g. example.com" style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <button onclick="runWebsiteHealthCheck()" id="whc_btn" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🔍 Check Website</button>
+      <div id="whc_result" style="margin-top:16px"></div>
+    </div>
+  `);
+}
+
+async function runWebsiteHealthCheck(){
+  var url = document.getElementById("whc_url")?.value.trim();
+  if(!url){ alert("Enter a website URL first."); return; }
+  var btn = document.getElementById("whc_btn");
+  btn.disabled = true; btn.textContent = "Checking...";
+  var el = document.getElementById("whc_result");
+  el.innerHTML = "<p style='color:#64748b;font-size:13px;text-align:center'>Analyzing website...</p>";
+  try {
+    var res = await apiFetch("/api/website-health", {
+      method: "POST",
+      headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify({ url: url })
+    });
+    var data = await res.json();
+    if(!data.success){
+      el.innerHTML = "<p style='color:#ef4444;font-size:13px;text-align:center'>" + (data.error||"Could not check that site.") + "</p>";
+      btn.disabled = false; btn.textContent = "🔍 Check Website";
+      return;
+    }
+    var html = "";
+    if(data.missing.length === 0){
+      html += "<div style='background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:14px;margin-bottom:12px'><p style='margin:0;color:#10b981;font-size:13px;font-weight:600'>✅ Looks solid! No major gaps found.</p></div>";
+    } else {
+      html += "<p style='font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:10px'>Found " + data.missing.length + " thing(s) to improve:</p>";
+      data.missing.forEach(function(m){
+        html += "<div style='background:#0f172a;border-radius:8px;padding:10px;margin-bottom:8px'><p style='margin:0;font-size:13px;color:#cbd5e1'>⚠️ " + m + "</p></div>";
+      });
+    }
+    if(data.summary){
+      html += "<div style='background:#162032;border-radius:8px;padding:12px;margin-top:8px;border-left:3px solid #3b82f6'><p style='margin:0;font-size:13px;color:#cbd5e1;line-height:1.6'>" + data.summary + "</p></div>";
+    }
+    el.innerHTML = html;
+  } catch(e){
+    el.innerHTML = "<p style='color:#ef4444;font-size:13px;text-align:center'>Network error. <button onclick='runWebsiteHealthCheck()' style='color:#3b82f6;background:none;border:none;cursor:pointer;text-decoration:underline'>Retry</button></p>";
+  }
+  btn.disabled = false; btn.textContent = "🔍 Check Website";
+}
+
 /* =========================
    NICHE SELECT
 ========================= */
@@ -2583,7 +2634,7 @@ async function runFirstWinLeadFinder(){
   resultEl.innerHTML = "<p style='text-align:center;color:#64748b;font-size:13px'>Looking for real businesses near you...</p>";
   try {
     var nicheOffers = {agency:"marketing and business services",tech:"software and IT services",realestate:"real estate services"};
-    var nicheCustomers = {agency:"small businesses without an online presence",tech:"businesses that need a website or software",realestate:"people looking to buy, sell, or rent property"};
+    var nicheCustomers = {agency:"retail shops and small local businesses",tech:"businesses that need a website or software",realestate:"real estate agencies"};
     var firstNiche = (window._firstWinNiche || "agency").split(",")[0];
     var offerText = nicheOffers[firstNiche] || "business services";
     var targetText = nicheCustomers[firstNiche] || "small businesses";
