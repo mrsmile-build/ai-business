@@ -122,3 +122,11 @@ Distinct from existing Follow-Up Assistant (which drafts outbound to cold leads)
 Structured fields beyond current lead notes: birthdays, payment promises with dates, stated preferences. Would need new lead sub-fields + UI to capture/display them, plus logic to resurface at the right time (e.g. "John's birthday is in 3 days").
 
 Note: daily-priorities dashboard, Health Score, Lost Revenue Alerts = already covered by existing "AI Workforce" LATER entry. Meeting Assistant / Voice Commands = already logged in prior entry. Not duplicated.
+
+### LATER — AI Inbox (draft-and-approve for inbound messages)
+Distinct from existing Follow-Up Assistant (which drafts outbound to cold leads). This is: AI reads an incoming customer message, drafts a reply, owner approves/edits before sending. Needs a real inbound message source first (currently only the widget captures inbound text) — likely blocked on WhatsApp Business API access, same constraint as other WhatsApp-automation ideas already ruled out as paid/restricted.
+
+### LATER — Business Memory per customer
+Structured fields beyond current lead notes: birthdays, payment promises with dates, stated preferences. Would need new lead sub-fields + UI to capture/display them, plus logic to resurface at the right time (e.g. "John's birthday is in 3 days").
+
+Note: daily-priorities dashboard, Health Score, Lost Revenue Alerts = already covered by existing "AI Workforce" LATER entry. Meeting Assistant / Voice Commands = already logged in prior entry. Not duplicated.
