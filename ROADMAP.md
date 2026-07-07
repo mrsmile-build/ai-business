@@ -121,3 +121,6 @@ Structured fields beyond current lead notes: birthdays, payment promises with da
 Note: daily-priorities dashboard, Health Score, Lost Revenue Alerts = already covered by existing "AI Workforce" LATER entry. Meeting Assistant / Voice Commands = already logged in prior entry. Not duplicated.
 
 
+
+### First-win B2B agency targeting — VERIFIED
+Confirmed via real HasData query: "retail shops [city]" returns 19/20 results with phone numbers (tested Ogun). Real, working fix — not exhaustive (skews toward grocery/retail, doesn't surface every small-business type an agency might target), but a genuine, verified improvement over the original broken abstract phrasing.
