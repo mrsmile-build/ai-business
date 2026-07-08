@@ -124,3 +124,6 @@ Note: daily-priorities dashboard, Health Score, Lost Revenue Alerts = already co
 
 ### First-win B2B agency targeting — VERIFIED
 Confirmed via real HasData query: "retail shops [city]" returns 19/20 results with phone numbers (tested Ogun). Real, working fix — not exhaustive (skews toward grocery/retail, doesn't surface every small-business type an agency might target), but a genuine, verified improvement over the original broken abstract phrasing.
+
+### First-win multi-niche routing — RESOLVED
+Was only checking the first saved niche; now checks all selected niches for a B2B match. Confirmed via real test: Agency + Restaurant combo correctly routes to B2B Lead Finder screen with real results. Known simplification: mixed B2B/B2C selections only show one first-win experience (B2B takes priority), not both — reasonable tradeoff for a single onboarding moment.
