@@ -2596,8 +2596,10 @@ async function confirmNicheSelection(){
 function renderFirstWin(niche){
   window._firstWinNiche = niche;
   var b2bNiches = ["agency", "tech"];
-  var firstType = niche.split(",")[0];
-  var isB2B = b2bNiches.indexOf(firstType) !== -1;
+  var selectedTypes = niche.split(",").map(function(s){ return s.trim(); });
+  var matchedB2B = selectedTypes.find(function(t){ return b2bNiches.indexOf(t) !== -1; });
+  var isB2B = !!matchedB2B;
+  if(isB2B){ window._firstWinNiche = matchedB2B; }
 
   if(isB2B){
     setView(`
