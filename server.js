@@ -722,9 +722,20 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
 /* ---------------- FEEDBACK ---------------- */
 app.post("/api/feedback", authMiddleware, async (req, res) => {
   try {
-    const { rating, message } = req.body;
-    await supabase.from("feedback").insert({ user_id: req.user.id, rating, message });
+    const { rating, message, feature_ok } = req.body;
+    await supabase.from("feedback").insert({ user_id: req.user.id, rating, message, feature_ok: !!feature_ok });
     res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/testimonials", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("feedback")
+      .select("*, profiles(display_name)")
+      .eq("feature_ok", true)
+      .gte("rating", 4)
+      .order("created_at", { ascending: false });
+    res.json({ success: true, testimonials: data || [] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 

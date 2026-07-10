@@ -3240,6 +3240,13 @@ function showFeedbackPopup(){
 
         <textarea id="aib_feedback_msg" placeholder="Tell us what you love or what we can improve..." style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;margin-bottom:12px"></textarea>
 
+        <div id="aib_testimonial_check" style="display:none;margin-bottom:12px">
+          <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#94a3b8;cursor:pointer">
+            <input type="checkbox" id="aib_feature_ok" style="margin-top:2px;accent-color:#3b82f6">
+            <span>Can we feature this as a testimonial on our website? (Optional, no pressure)</span>
+          </label>
+        </div>
+
         <div style="display:flex;gap:8px">
           <button onclick="submitFeedback()" style="flex:1;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Submit</button>
           <button onclick="document.getElementById('aib_feedback_modal').remove()" style="padding:11px 16px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Skip</button>
@@ -3250,12 +3257,17 @@ function showFeedbackPopup(){
 }
 
 var selectedRating = 0;
+function updateTestimonialCheckVisibility(){
+  var box = document.getElementById("aib_testimonial_check");
+  if(box) box.style.display = (selectedRating >= 4) ? "block" : "none";
+}
 function selectStar(n){
   selectedRating = n;
   for(var i=1;i<=5;i++){
     var el = document.getElementById("star_"+i);
     if(el) el.style.filter = i<=n ? "grayscale(0)" : "grayscale(1)";
   }
+  updateTestimonialCheckVisibility();
 }
 
 async function submitFeedback(){
@@ -3268,7 +3280,7 @@ async function submitFeedback(){
     await apiFetch("/api/feedback",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({rating:selectedRating, message:msg})
+      body: JSON.stringify({rating:selectedRating, message:msg, feature_ok: document.getElementById("aib_feature_ok")?.checked || false})
     });
   } catch(e){}
 
