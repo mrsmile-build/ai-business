@@ -158,6 +158,7 @@ function loadPage(page){
     referral: 'renderReferral',
     affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
+    testimonials: 'renderTestimonials',
     healthcheck: 'renderWebsiteHealth',
     followup: 'renderFollowupAssistant',
     video: 'renderVideoCreator',
@@ -2529,6 +2530,39 @@ async function runWebsiteHealthCheck(){
     el.innerHTML = "<p style='color:#ef4444;font-size:13px;text-align:center'>Network error. <button onclick='runWebsiteHealthCheck()' style='color:#3b82f6;background:none;border:none;cursor:pointer;text-decoration:underline'>Retry</button></p>";
   }
   btn.disabled = false; btn.textContent = "🔍 Check Website";
+}
+
+async function renderTestimonials(){
+  setView(`<div class="card">${header("💬 Testimonials","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    var res = await apiFetch("/api/testimonials", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    var items = data.testimonials || [];
+
+    var html = '<div class="card">' + header("💬 Testimonials","dashboard");
+    html += '<p style="font-size:13px;color:#94a3b8;margin-bottom:16px">People who agreed to be featured, from 4-5 star feedback.</p>';
+
+    if(items.length === 0){
+      html += '<div style="text-align:center;padding:30px"><p style="color:#64748b;font-size:13px">No testimonials yet. They will show up here once users opt in from the feedback popup.</p></div>';
+    } else {
+      items.forEach(function(t){
+        var name = (t.profiles && t.profiles.display_name) ? t.profiles.display_name : "A user";
+        var stars = "⭐".repeat(t.rating || 5);
+        var msg = t.message || "";
+        var escapedMsg = msg.replace(/'/g, "\\\\'").replace(/\\n/g, " ");
+        html += '<div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px">';
+        html += '<p style="margin:0 0 4px;font-size:13px">' + stars + '</p>';
+        html += '<p style="margin:0 0 8px;font-size:13px;color:#cbd5e1;line-height:1.5">"' + msg + '"</p>';
+        html += '<p style="margin:0 0 10px;font-size:11px;color:#475569">— ' + name + '</p>';
+        html += '<button data-text="' + escapedMsg + ' — ' + name + '" onclick="navigator.clipboard.writeText(this.getAttribute(&quot;data-text&quot;)).then(function(){alert(&quot;Copied!&quot;);})" style="padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">📋 Copy</button>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+    setView(html);
+  } catch(e){
+    setView('<div class="card">' + header("💬 Testimonials","dashboard") + '<p style="color:red">' + e.message + '</p></div>');
+  }
 }
 
 /* =========================
