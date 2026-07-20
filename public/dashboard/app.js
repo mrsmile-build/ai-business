@@ -3356,6 +3356,8 @@ window.openLeadDetail = async function(id){
   window._currentOpenLead = lead;
   renderLeadDetailObj(lead);
 };
+var currentSub = null;
+
 /* =========================
    START APP
 ========================= */
