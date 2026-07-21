@@ -127,3 +127,6 @@ Confirmed via real HasData query: "retail shops [city]" returns 19/20 results wi
 
 ### First-win multi-niche routing — RESOLVED
 Was only checking the first saved niche; now checks all selected niches for a B2B match. Confirmed via real test: Agency + Restaurant combo correctly routes to B2B Lead Finder screen with real results. Known simplification: mixed B2B/B2C selections only show one first-win experience (B2B takes priority), not both — reasonable tradeoff for a single onboarding moment.
+
+### LATER — Big-vision ideas (Digital Twin, Business Relationship Engine, AI Business Scientist, etc.)
+Multiple sessions have produced large-scope vision documents: Business Digital Twin (simulate decisions before spending), Cause-and-Effect reasoning, AI A/B testing WhatsApp messages at scale, Business Relationship Engine (Result = f(State, Relationship, Action)), Risk Predictor, AI CEO daily priorities. All genuinely large research-grade AI problems, not buildable as quick features — several need data/scale (500+ customers) the platform doesn't have yet. Each document's own conclusion agrees: start small, ship one thing well first. Treat as long-term direction only, not near-term scope. Opportunity Finder specifically = Lead Finder + approval step, mostly already exists, smaller than the framing suggests - worth a scoped look later, not full rebuild.
