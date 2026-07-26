@@ -1942,7 +1942,7 @@ async function renderAnalytics(){
             var insights = [];
 
             var dayCounts = {};
-            var dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            var dayNames = ["Sundays","Mondays","Tuesdays","Wednesdays","Thursdays","Fridays","Saturdays"];
             leads.forEach(function(l){
               if(l.created_at){
                 var d = new Date(l.created_at).getDay();
@@ -1951,7 +1951,7 @@ async function renderAnalytics(){
             });
             var topDay = Object.keys(dayCounts).sort(function(a,b){ return dayCounts[b]-dayCounts[a]; })[0];
             if(topDay !== undefined && dayCounts[topDay] > 1){
-              insights.push("Most of your leads arrive on " + dayNames[topDay] + "s (" + dayCounts[topDay] + " so far).");
+              insights.push("Most of your leads arrive on " + dayNames[topDay] + " (" + dayCounts[topDay] + " so far).");
             }
 
             var wonLeads = leads.filter(function(l){ return l.status === "won" && l.created_at; });
