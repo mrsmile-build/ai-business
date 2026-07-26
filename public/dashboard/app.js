@@ -1934,6 +1934,50 @@ async function renderAnalytics(){
             <span style="font-size:13px;font-weight:bold;text-transform:capitalize">${plan}</span>
           </div>
         </div>
+
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-top:14px">
+          <p style="margin:0 0 10px;font-size:13px;font-weight:bold">💡 Insights</p>
+          ${(function(){
+            if(total === 0) return '<p style="font-size:12px;color:#64748b">Add a few leads to start seeing insights here.</p>';
+            var insights = [];
+
+            var dayCounts = {};
+            var dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            leads.forEach(function(l){
+              if(l.created_at){
+                var d = new Date(l.created_at).getDay();
+                dayCounts[d] = (dayCounts[d]||0) + 1;
+              }
+            });
+            var topDay = Object.keys(dayCounts).sort(function(a,b){ return dayCounts[b]-dayCounts[a]; })[0];
+            if(topDay !== undefined && dayCounts[topDay] > 1){
+              insights.push("Most of your leads arrive on " + dayNames[topDay] + "s (" + dayCounts[topDay] + " so far).");
+            }
+
+            var wonLeads = leads.filter(function(l){ return l.status === "won" && l.created_at; });
+            if(wonLeads.length > 0){
+              var totalDays = 0;
+              wonLeads.forEach(function(l){
+                var created = new Date(l.created_at);
+                var now = new Date();
+                totalDays += Math.floor((now - created) / (1000*60*60*24));
+              });
+              var avgDays = Math.round(totalDays / wonLeads.length);
+              insights.push("Deals you've won took about " + avgDays + " day" + (avgDays===1?"":"s") + " on average from first contact.");
+            }
+
+            var stuckStatus = Object.keys(byStatus).filter(function(s){ return s !== "won" && s !== "lost"; })
+              .sort(function(a,b){ return byStatus[b]-byStatus[a]; })[0];
+            if(stuckStatus && byStatus[stuckStatus] > 0){
+              insights.push(byStatus[stuckStatus] + " lead" + (byStatus[stuckStatus]===1?" is":"s are") + " sitting in " + stuckStatus + " status right now.");
+            }
+
+            if(insights.length === 0) return '<p style="font-size:12px;color:#64748b">Keep adding leads — insights get sharper with more data.</p>';
+            return insights.map(function(i){
+              return '<p style="font-size:12px;color:#cbd5e1;padding:8px 0;border-bottom:1px solid #1e293b;line-height:1.5">✨ ' + i + '</p>';
+            }).join("");
+          })()}
+        </div>
       </div>
     `);
   } catch(e){
