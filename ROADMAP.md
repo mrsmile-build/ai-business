@@ -130,3 +130,8 @@ Was only checking the first saved niche; now checks all selected niches for a B2
 
 ### LATER — Big-vision ideas (Digital Twin, Business Relationship Engine, AI Business Scientist, etc.)
 Multiple sessions have produced large-scope vision documents: Business Digital Twin (simulate decisions before spending), Cause-and-Effect reasoning, AI A/B testing WhatsApp messages at scale, Business Relationship Engine (Result = f(State, Relationship, Action)), Risk Predictor, AI CEO daily priorities. All genuinely large research-grade AI problems, not buildable as quick features — several need data/scale (500+ customers) the platform doesn't have yet. Each document's own conclusion agrees: start small, ship one thing well first. Treat as long-term direction only, not near-term scope. Opportunity Finder specifically = Lead Finder + approval step, mostly already exists, smaller than the framing suggests - worth a scoped look later, not full rebuild.
+
+---
+
+## Standing filter for new feature ideas
+Before adding anything new, ask: does it help the business (1) get more customers, (2) convert more leads to sales, (3) keep customers coming back, (4) save significant time, or (5) make better decisions? If no, question whether it belongs in the product yet, regardless of how interesting the idea is.
