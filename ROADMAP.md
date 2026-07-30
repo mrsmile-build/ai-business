@@ -135,3 +135,6 @@ Multiple sessions have produced large-scope vision documents: Business Digital T
 
 ## Standing filter for new feature ideas
 Before adding anything new, ask: does it help the business (1) get more customers, (2) convert more leads to sales, (3) keep customers coming back, (4) save significant time, or (5) make better decisions? If no, question whether it belongs in the product yet, regardless of how interesting the idea is.
+
+### LATER — Industry-specific recommendation matching
+Real estate matches customers to properties, phone shop recommends the right phone, travel agency recommends packages, hotel recommends rooms — AI Business as a matching assistant per industry, not just a customer database. Explicitly sequenced by the person proposing it as after first real users + improved onboarding, positioned as a future premium feature, not core rebuild. Good shape for a LATER item — no action needed now.
