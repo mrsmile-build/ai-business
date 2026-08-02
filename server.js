@@ -1181,9 +1181,9 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
     const { data: aff } = await supabase.from("affiliates").select("user_id").eq("affiliate_code", affiliate_code).single();
     if(!aff || aff.user_id === user_id) return res.json({ success: false });
     await supabase.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
-    const trialEnds = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await supabase.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
-    res.json({ success: true, trial: true, message: "7-day free trial activated!" });
+    res.json({ success: true, trial: true, message: "30-day free trial activated!" });
   } catch(err) { res.json({ success: false }); }
 });
 
