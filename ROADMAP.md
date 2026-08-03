@@ -138,3 +138,6 @@ Before adding anything new, ask: does it help the business (1) get more customer
 
 ### LATER — Industry-specific recommendation matching
 Real estate matches customers to properties, phone shop recommends the right phone, travel agency recommends packages, hotel recommends rooms — AI Business as a matching assistant per industry, not just a customer database. Explicitly sequenced by the person proposing it as after first real users + improved onboarding, positioned as a future premium feature, not core rebuild. Good shape for a LATER item — no action needed now.
+
+### LATER — Lead Finder 2.0 / Lead Intelligence
+Buying signals (hiring, funding, LinkedIn activity, ad spend), AI Opportunity Score, Pain Detection. Genuinely blocked on data: LinkedIn/hiring/ad-library data all need paid or restricted APIs not currently integrated. Real risk if built on current HasData fields alone: scores/signals would be invented, not real - avoid overclaiming. One honestly buildable piece using data already fetched: review-count-based framing (e.g. "new listing, few reviews yet") could inform icebreaker messages without inventing anything.
