@@ -141,3 +141,6 @@ Real estate matches customers to properties, phone shop recommends the right pho
 
 ### LATER — Lead Finder 2.0 / Lead Intelligence
 Buying signals (hiring, funding, LinkedIn activity, ad spend), AI Opportunity Score, Pain Detection. Genuinely blocked on data: LinkedIn/hiring/ad-library data all need paid or restricted APIs not currently integrated. Real risk if built on current HasData fields alone: scores/signals would be invented, not real - avoid overclaiming. One honestly buildable piece using data already fetched: review-count-based framing (e.g. "new listing, few reviews yet") could inform icebreaker messages without inventing anything.
+
+### URGENT — single point of failure, only one backend remains
+Railway expired and was removed from failover. Only ai-business-1-ok3x.onrender.com remains. If this Render free trial also expires, the entire site goes offline with zero fallback. Need to either: add a second free backend back into rotation, or budget for Render's paid always-on tier once first paying customer covers it. Do not let this sit unaddressed.
