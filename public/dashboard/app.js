@@ -20,7 +20,6 @@ function formatBizTypes(biz){
 }
 
 const API_BACKENDS = [
-  "https://ai-business-production.up.railway.app",
   "https://ai-business-1-ok3x.onrender.com"
 ];
 let _activeBackend = null;
