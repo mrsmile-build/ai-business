@@ -144,3 +144,9 @@ Buying signals (hiring, funding, LinkedIn activity, ad spend), AI Opportunity Sc
 
 ### URGENT — single point of failure, only one backend remains
 Railway expired and was removed from failover. Only ai-business-1-ok3x.onrender.com remains. If this Render free trial also expires, the entire site goes offline with zero fallback. Need to either: add a second free backend back into rotation, or budget for Render's paid always-on tier once first paying customer covers it. Do not let this sit unaddressed.
+
+### LATER — Voice Receptionist (3-phase: browser → WhatsApp → phone)
+Phase 1 (browser "Talk to AI" button, speech-to-text/text-to-speech, no phone number) is genuinely buildable free - deserves its own dedicated session. Phase 2 (WhatsApp) and Phase 3 (Twilio-class telephony) duplicate already-logged blockers (Meta API access, paid telephony costs).
+
+### LATER — Opportunity Feed (evolution of Lead Finder 2.0 idea)
+Reframe from manual search to automatic daily feed. Most signals (funding, LinkedIn activity) still blocked per earlier entry. One real, free, buildable piece: Google News RSS feeds, no API key needed - could surface real news mentions (grand openings, expansions) as an honest signal, worth a small scoped build on its own rather than the full opportunity-score vision.
