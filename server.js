@@ -1396,6 +1396,72 @@ app.post("/api/website-health", authMiddleware, async (req, res) => {
   }
 });
 
+const BLOG_ADMIN_EMAIL = "mrsmile4569@gmail.com";
+
+function slugify(title){
+  return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
+}
+
+app.get("/api/blog", async (req, res) => {
+  try {
+    const { data } = await supabase.from("blog_posts").select("*").eq("status", "published").order("published_at", { ascending: false });
+    res.json({ success: true, posts: data || [] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/blog/:slug", async (req, res) => {
+  try {
+    const { data } = await supabase.from("blog_posts").select("*").eq("slug", req.params.slug).eq("status", "published").single();
+    if(!data) return res.status(404).json({ success: false, error: "Post not found" });
+    res.json({ success: true, post: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/admin/blog", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
+    res.json({ success: true, posts: data || [] });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/admin/blog", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    const { title, content, excerpt, cover_image_url, category, tags, seo_title, seo_description, status } = req.body;
+    if(!title) return res.status(400).json({ error: "Title required" });
+    const slug = slugify(title);
+    const insert = {
+      title, slug, content, excerpt, cover_image_url, category, tags, seo_title, seo_description,
+      status: status || "draft", author: "AI Business",
+      published_at: status === "published" ? new Date() : null
+    };
+    const { data, error } = await supabase.from("blog_posts").insert(insert).select().single();
+    if(error) throw error;
+    res.json({ success: true, post: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch("/api/admin/blog/:id", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    const updates = { ...req.body, updated_at: new Date() };
+    if(req.body.title) updates.slug = slugify(req.body.title);
+    if(req.body.status === "published") updates.published_at = new Date();
+    const { data, error } = await supabase.from("blog_posts").update(updates).eq("id", req.params.id).select().single();
+    if(error) throw error;
+    res.json({ success: true, post: data });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/api/admin/blog/:id", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    await supabase.from("blog_posts").delete().eq("id", req.params.id);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- STATUS ---------------- */
 app.get("/api/status", (req, res) => {
   res.json({ success: true, message: "AI Business SaaS Running" });
