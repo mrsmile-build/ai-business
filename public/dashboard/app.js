@@ -89,6 +89,16 @@ async function init(){
     const data = await res.json();
     currentUser = data.user;
     currentSub = data.subscription;
+    if(currentUser && currentUser.email === "mrsmile4569@gmail.com"){
+      var menuEl = document.getElementById("menu");
+      if(menuEl && !document.getElementById("blog_admin_link")){
+        var blogLink = document.createElement("div");
+        blogLink.id = "blog_admin_link";
+        blogLink.setAttribute("onclick", "loadPage('blogadmin')");
+        blogLink.textContent = "📝 Manage Blog";
+        menuEl.insertBefore(blogLink, menuEl.firstChild);
+      }
+    }
   } catch(e) {}
   // Load profile
   try{
@@ -157,6 +167,7 @@ function loadPage(page){
     referral: 'renderReferral',
     affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
+    blogadmin: 'renderBlogAdmin',
     testimonials: 'renderTestimonials',
     healthcheck: 'renderWebsiteHealth',
     followup: 'renderFollowupAssistant',
@@ -2607,6 +2618,103 @@ async function renderTestimonials(){
     setView('<div class="card">' + header("💬 Testimonials","dashboard") + '<p style="color:red">' + e.message + '</p></div>');
   }
 }
+
+async function renderBlogAdmin(){
+  setView(`<div class="card">${header("📝 Manage Blog","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  try {
+    var res = await apiFetch("/api/admin/blog", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data = await res.json();
+    if(!data.success){
+      setView('<div class="card">' + header("📝 Manage Blog","dashboard") + '<p style="color:#ef4444">' + (data.error||"Error loading posts") + '</p></div>');
+      return;
+    }
+    var posts = data.posts || [];
+
+    var html = '<div class="card">' + header("📝 Manage Blog","dashboard");
+    html += '<button onclick="renderBlogEditor(null)" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-bottom:16px">+ New Post</button>';
+
+    if(posts.length === 0){
+      html += '<p style="color:#64748b;font-size:13px;text-align:center;padding:20px">No posts yet. Create your first one.</p>';
+    } else {
+      posts.forEach(function(p){
+        var statusColor = p.status === "published" ? "#10b981" : "#f59e0b";
+        html += '<div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">';
+        html += '<p style="margin:0;font-size:14px;font-weight:600;flex:1">' + p.title + '</p>';
+        html += '<span style="font-size:11px;padding:3px 8px;border-radius:6px;background:' + statusColor + '22;color:' + statusColor + '">' + p.status + '</span>';
+        html += '</div>';
+        html += '<p style="margin:0 0 10px;font-size:12px;color:#64748b">/blog/' + p.slug + '</p>';
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+        html += '<button data-id="' + p.id + '" onclick="renderBlogEditor(this.getAttribute(&quot;data-id&quot;))" style="padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Edit</button>';
+        html += '<button data-id="' + p.id + '" onclick="deleteBlogPost(this.getAttribute(&quot;data-id&quot;))" style="padding:6px 12px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:12px">Delete</button>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+    setView(html);
+    window._blogPosts = posts;
+  } catch(e){
+    setView('<div class="card">' + header("📝 Manage Blog","dashboard") + '<p style="color:red">' + e.message + '</p></div>');
+  }
+}
+
+function renderBlogEditor(id){
+  var post = id ? (window._blogPosts || []).find(function(p){ return p.id === id; }) : null;
+  var p = post || {};
+
+  setView(`
+    <div class="card">
+      ${header(id ? "Edit Post" : "New Post", "dashboard")}
+      <input id="bp_title" placeholder="Title" value="${p.title||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+      <textarea id="bp_excerpt" placeholder="Short excerpt (shows in blog list)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box">${p.excerpt||''}</textarea>
+      <textarea id="bp_content" placeholder="Full content (plain text or Markdown)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:200px;resize:vertical;box-sizing:border-box">${p.content||''}</textarea>
+      <input id="bp_category" placeholder="Category (e.g. Business Tips)" value="${p.category||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <input id="bp_cover" placeholder="Cover image URL (optional)" value="${p.cover_image_url||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <input id="bp_seo_title" placeholder="SEO title (optional)" value="${p.seo_title||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <textarea id="bp_seo_desc" placeholder="SEO description (optional)" style="width:100%;padding:10px;margin-bottom:16px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:50px;resize:none;box-sizing:border-box">${p.seo_description||''}</textarea>
+      <div style="display:flex;gap:8px">
+        <button onclick="saveBlogPost('${id||''}', 'draft')" style="flex:1;padding:12px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px">Save Draft</button>
+        <button onclick="saveBlogPost('${id||''}', 'published')" style="flex:1;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">Publish</button>
+      </div>
+      <button onclick="renderBlogAdmin()" style="width:100%;padding:10px;background:transparent;border:none;color:#64748b;cursor:pointer;font-size:13px;margin-top:10px">← Back to all posts</button>
+    </div>
+  `);
+}
+
+async function saveBlogPost(id, status){
+  var body = {
+    title: document.getElementById("bp_title").value.trim(),
+    excerpt: document.getElementById("bp_excerpt").value.trim(),
+    content: document.getElementById("bp_content").value.trim(),
+    category: document.getElementById("bp_category").value.trim(),
+    cover_image_url: document.getElementById("bp_cover").value.trim(),
+    seo_title: document.getElementById("bp_seo_title").value.trim(),
+    seo_description: document.getElementById("bp_seo_desc").value.trim(),
+    status: status
+  };
+  if(!body.title){ alert("Title is required."); return; }
+  try {
+    var url = id ? "/api/admin/blog/" + id : "/api/admin/blog";
+    var method = id ? "PATCH" : "POST";
+    var res = await apiFetch(url, {
+      method: method,
+      headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
+      body: JSON.stringify(body)
+    });
+    var data = await res.json();
+    if(data.success){ alert(status === "published" ? "Published!" : "Draft saved."); renderBlogAdmin(); }
+    else { alert(data.error || "Error saving."); }
+  } catch(e){ alert("Network error."); }
+}
+
+async function deleteBlogPost(id){
+  if(!confirm("Delete this post permanently?")) return;
+  try {
+    await apiFetch("/api/admin/blog/" + id, { method: "DELETE", headers: {Authorization:"Bearer "+localStorage.getItem("token")} });
+    renderBlogAdmin();
+  } catch(e){ alert("Error deleting."); }
+}
+
 
 /* =========================
    NICHE SELECT
