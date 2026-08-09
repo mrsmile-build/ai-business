@@ -877,6 +877,95 @@ app.post("/api/biz/:userId/enquiry", async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.get("/blog", async (req, res) => {
+  try {
+    const { data: posts } = await supabase.from("blog_posts").select("title, slug, excerpt, category, cover_image_url, published_at").eq("status", "published").order("published_at", { ascending: false });
+    const list = posts || [];
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Blog | AI Business</title>
+<meta name="description" content="Business tips, guides, and updates from AI Business - helping Nigerian entrepreneurs find, win, and keep more customers.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#080c14;color:white;min-height:100vh}
+header{padding:20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center}
+header a{color:white;text-decoration:none;font-weight:800;font-size:18px}
+.wrap{max-width:600px;margin:0 auto;padding:20px}
+h1{font-size:24px;font-weight:800;margin-bottom:20px}
+.post-card{background:#0f172a;border-radius:12px;padding:18px;margin-bottom:14px;text-decoration:none;display:block;color:white}
+.post-cat{font-size:11px;color:#3b82f6;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.post-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.post-excerpt{font-size:13px;color:#94a3b8;line-height:1.5}
+.post-date{font-size:11px;color:#475569;margin-top:10px}
+</style>
+</head>
+<body>
+<header><a href="/">📊 AI Business</a></header>
+<div class="wrap">
+<h1>Blog</h1>
+${list.length === 0 ? '<p style="color:#64748b">No posts yet. Check back soon.</p>' : list.map(p => `
+<a href="/blog/${p.slug}" class="post-card">
+  <div class="post-cat">${p.category||"Business Tips"}</div>
+  <div class="post-title">${p.title}</div>
+  <div class="post-excerpt">${p.excerpt||""}</div>
+  <div class="post-date">${p.published_at ? new Date(p.published_at).toLocaleDateString() : ""}</div>
+</a>`).join("")}
+</div>
+</body>
+</html>`);
+  } catch(err) { res.status(500).send("Error loading blog"); }
+});
+
+app.get("/blog/:slug", async (req, res) => {
+  try {
+    const { data: post } = await supabase.from("blog_posts").select("*").eq("slug", req.params.slug).eq("status", "published").single();
+    if(!post) return res.status(404).send("Post not found");
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${post.seo_title || post.title} | AI Business</title>
+<meta name="description" content="${post.seo_description || post.excerpt || ""}">
+<meta property="og:title" content="${post.title}">
+<meta property="og:description" content="${post.excerpt||""}">
+${post.cover_image_url ? `<meta property="og:image" content="${post.cover_image_url}">` : ""}
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#080c14;color:white;min-height:100vh}
+header{padding:20px;border-bottom:1px solid #1e293b}
+header a{color:white;text-decoration:none;font-weight:800;font-size:18px}
+.wrap{max-width:600px;margin:0 auto;padding:20px}
+.back{color:#3b82f6;text-decoration:none;font-size:13px;display:inline-block;margin-bottom:16px}
+h1{font-size:24px;font-weight:800;margin-bottom:10px;line-height:1.3}
+.meta{font-size:12px;color:#64748b;margin-bottom:20px}
+.cover{width:100%;border-radius:12px;margin-bottom:20px}
+.content{font-size:15px;line-height:1.8;color:#cbd5e1;white-space:pre-wrap}
+.cta{background:#0f172a;border-radius:12px;padding:20px;margin-top:30px;text-align:center}
+.cta a{display:inline-block;margin-top:10px;padding:10px 24px;background:#3b82f6;color:white;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+<header><a href="/">📊 AI Business</a></header>
+<div class="wrap">
+<a href="/blog" class="back">← All posts</a>
+<h1>${post.title}</h1>
+<div class="meta">${post.category||"Business Tips"} · ${post.published_at ? new Date(post.published_at).toLocaleDateString() : ""}</div>
+${post.cover_image_url ? `<img src="${post.cover_image_url}" class="cover">` : ""}
+<div class="content">${post.content||""}</div>
+<div class="cta">
+<p style="font-size:14px;color:#94a3b8">Want to find more customers and never lose them again?</p>
+<a href="/auth?signup=true">Try AI Business Free</a>
+</div>
+</div>
+</body>
+</html>`);
+  } catch(err) { res.status(500).send("Error loading post"); }
+});
+
 app.get("/biz/:slug", async (req, res) => {
   try {
     const { data: page, error: pageErr } = await supabase.from("biz_pages").select("*").eq("slug", req.params.slug).single();
