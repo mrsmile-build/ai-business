@@ -150,3 +150,8 @@ Phase 1 (browser "Talk to AI" button, speech-to-text/text-to-speech, no phone nu
 
 ### LATER — Opportunity Feed (evolution of Lead Finder 2.0 idea)
 Reframe from manual search to automatic daily feed. Most signals (funding, LinkedIn activity) still blocked per earlier entry. One real, free, buildable piece: Google News RSS feeds, no API key needed - could surface real news mentions (grand openings, expansions) as an honest signal, worth a small scoped build on its own rather than the full opportunity-score vision.
+
+### Signal/Opportunity system - additional notes (consolidating repeated ideas)
+Multiple sessions have proposed variations of the same core idea: reposition Lead Finder as a scored "Signal" system (FIND -> UNDERSTAND -> CONTACT -> FOLLOW UP -> CONVERT journey), showing WHY a business is worth contacting (poor reviews, new listing, weak web presence) rather than just a list. Same idea as earlier "Lead Finder 2.0" and "Opportunity Feed" entries - not new scope, just refined framing each time.
+Real constraint that must guide any build here: do NOT scrape sites that prohibit it in their robots.txt/ToS, and do not attempt to bypass CAPTCHA/anti-bot/auth protections - this is a real legal exposure, not just a technical challenge. Stick to sources explicitly offering programmatic access (HasData, which is already paid/integrated, and public RSS feeds) rather than building a general-purpose scraper.
+Genuinely buildable now with existing data: review-count-based signal (HasData already returns review count) - "8 reviews, low engagement" is a real, honest signal from data already being fetched, no new source needed. This is the smallest real next step if/when this gets built.
