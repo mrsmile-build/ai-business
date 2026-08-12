@@ -1477,7 +1477,7 @@ async function searchLeads(){
               ${l.type?`<p style="margin:2px 0;font-size:11px;color:#64748b">${l.type}</p>`:""}
               ${l.address?`<p style="margin:2px 0;font-size:12px;color:#94a3b8">📍 ${l.address}</p>`:""}
               ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981;font-weight:bold">📞 ${l.phone}</p>`:""}
-              ${l.rating?`<p style="margin:2px 0;font-size:11px;color:#f59e0b">⭐ ${l.rating} (${l.reviews} reviews)</p>`:""}
+              ${l.rating?`<p style="margin:2px 0;font-size:11px;color:#f59e0b">⭐ ${l.rating} (${l.reviews} reviews)${l.reviews!=null && l.reviews<10?' — <span style="color:#10b981">new listing, few reviews yet</span>':''}</p>`:""}
             </div>
             <span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;${l.source==="local"?"background:rgba(16,185,129,0.15);color:#10b981":"background:rgba(59,130,246,0.15);color:#3b82f6"}">${l.source==="local"?"Local":"Online"}</span>
           </div>
