@@ -232,7 +232,7 @@ app.get("/api/paystack/verify", async (req, res) => {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
-        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan); } } catch(e) {} await supabase.from("subscriptions").upsert({
+        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {} await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
@@ -1282,6 +1282,25 @@ async function submitBooking(){
 
 
 /* ---------------- AFFILIATE ---------------- */
+async function creditAffiliate(userId, plan, amountPaid){
+  try {
+    const { data: profile } = await supabase.from("profiles").select("referred_by_affiliate").eq("user_id", userId).single();
+    const affCode = profile?.referred_by_affiliate;
+    if(!affCode) return;
+
+    const { data: aff } = await supabase.from("affiliates").select("user_id, balance").eq("affiliate_code", affCode).single();
+    if(!aff) return;
+
+    // First payment only for now - 20% recurring needs real renewal billing, not built yet
+    const { data: existing } = await supabase.from("affiliate_conversions").select("id").eq("converted_user_id", userId).limit(1);
+    if(existing && existing.length > 0) return;
+
+    const commission = Math.round(amountPaid * 0.5);
+    await supabase.from("affiliate_conversions").insert({ affiliate_id: aff.user_id, converted_user_id: userId });
+    await supabase.from("affiliates").update({ balance: (aff.balance || 0) + commission }).eq("user_id", aff.user_id);
+  } catch(e) { console.error("creditAffiliate error:", e.message); }
+}
+
 app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
