@@ -1,0 +1,182 @@
+{
+  "kind": "youtube#searchListResponse",
+  "etag": "Tvgt4ZQe-e7_hLqsiE3kpdYYFSE",
+  "nextPageToken": "CAUQAA",
+  "regionCode": "NG",
+  "pageInfo": {
+    "totalResults": 1000000,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#searchResult",
+      "etag": "5viMZOherZ-0SzhfyhEnYfFE1_Y",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "YF-jg221qiw"
+      },
+      "snippet": {
+        "publishedAt": "2025-09-11T12:36:06Z",
+        "channelId": "UCVvadOZixKIP6yY3ePUbQcw",
+        "title": "URGENT JOB VACANCIES IN LAGOS TODAY | Latest Lagos Jobs 2025",
+        "description": "Looking for urgent job vacancies in Lagos today? In this video, we share the latest job opportunities available in Lagos across ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/YF-jg221qiw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/YF-jg221qiw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/YF-jg221qiw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Star Queen Sisters ",
+        "liveBroadcastContent": "none",
+        "publishTime": "2025-09-11T12:36:06Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "ttaSql2kp6-TewLE_S51MAUXkCo",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "zuqM41Nk0U4"
+      },
+      "snippet": {
+        "publishedAt": "2025-06-13T12:27:47Z",
+        "channelId": "UCNLJTee8W96O6rSCI9wuUGA",
+        "title": "Come job hunting with me in Lagos #viralreels #dayinmylife",
+        "description": "",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/zuqM41Nk0U4/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/zuqM41Nk0U4/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/zuqM41Nk0U4/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Treasure Nma",
+        "liveBroadcastContent": "none",
+        "publishTime": "2025-06-13T12:27:47Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "ozNeotzklijE2T3ifaUqdS23OvU",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "tst9_UtLbJw"
+      },
+      "snippet": {
+        "publishedAt": "2025-10-16T11:11:07Z",
+        "channelId": "UCnxNBfiW9aLN71O0SqDsPOg",
+        "title": "7 Secret Remote Websites Nigerians Are Using to Land Online Jobs (No Capital Needed) 🇳🇬💻",
+        "description": "If you've been scrolling for legit online jobs, this is your sign to stop and save this Here are 7 trusted websites where you can ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/tst9_UtLbJw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/tst9_UtLbJw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/tst9_UtLbJw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Chinyere Patience ",
+        "liveBroadcastContent": "none",
+        "publishTime": "2025-10-16T11:11:07Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "PjptAjgil1bX14o__9GHLa8-o2U",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "dXoVAQW9_gE"
+      },
+      "snippet": {
+        "publishedAt": "2024-08-21T17:14:14Z",
+        "channelId": "UCUgFwAlHEV500nNIpBNzY2A",
+        "title": "Remote Jobs for Introverts Nigerians that pay over $1000 in 2024. #remotework",
+        "description": "",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/dXoVAQW9_gE/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/dXoVAQW9_gE/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/dXoVAQW9_gE/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Your Money Guy.",
+        "liveBroadcastContent": "none",
+        "publishTime": "2024-08-21T17:14:14Z"
+      }
+    },
+    {
+      "kind": "youtube#searchResult",
+      "etag": "gg4uGXxF0PhvlmQIm4WgdoVuOVg",
+      "id": {
+        "kind": "youtube#video",
+        "videoId": "8vjXYqsEgxw"
+      },
+      "snippet": {
+        "publishedAt": "2026-01-30T05:45:00Z",
+        "channelId": "UCTf5VMTWwjkJ17k2zYhIvwA",
+        "title": "Job Hunting Experience on the Streets of Lagos / Very Harsh Realities ",
+        "description": "This video highlights the struggles and harsh realities of hunting for a job in Nigeria's commercial city, Lagos. Being Unemployed ...",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/8vjXYqsEgxw/default.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "medium": {
+            "url": "https://i.ytimg.com/vi/8vjXYqsEgxw/mqdefault.jpg",
+            "width": 320,
+            "height": 180
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/8vjXYqsEgxw/hqdefault.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "channelTitle": "Loveth Chi",
+        "liveBroadcastContent": "none",
+        "publishTime": "2026-01-30T05:45:00Z"
+      }
+    }
+  ]
+}

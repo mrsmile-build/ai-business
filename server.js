@@ -314,6 +314,62 @@ app.delete("/api/account", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- SIGNAL ENGINE: YOUTUBE SOURCE (v1 - proof of concept) ---------------- */
+// In-memory daily counter - fine for testing, resets on restart.
+// Before real use, move this to Supabase the same way lead_finder_usage already works.
+let ytSearchCount = { date: new Date().toISOString().slice(0,10), count: 0 };
+function checkYoutubeQuota(){
+  const today = new Date().toISOString().slice(0,10);
+  if(ytSearchCount.date !== today){ ytSearchCount = { date: today, count: 0 }; }
+  return ytSearchCount.count < 80; // stop at 80/100 - leaves headroom, doesn't assume we own the whole quota
+}
+
+// First-pass noise filter - real hiring posts read differently than vlogs or advice listicles.
+// Tuned against the exact 3 results from tonight's live test, not exhaustively proven yet.
+function looksLikeBusinessSignal(title, description){
+  const text = (title + " " + (description||"")).toLowerCase();
+  const personalPatterns = ["#dayinmylife","#viralreels","my journey","vlog"];
+  const adviceListicle = /\b\d+\s+(secret|ways|tips|websites|hacks)\b/i;
+  if(personalPatterns.some(p => text.includes(p))) return false;
+  if(adviceListicle.test(title)) return false;
+  return true;
+}
+
+app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
+  try {
+    if(!checkYoutubeQuota()){
+      return res.status(429).json({ success: false, error: "Daily YouTube signal quota reached - try again tomorrow" });
+    }
+    const { keyword, location } = req.body;
+    if(!keyword || !location) return res.status(400).json({ error: "keyword and location required" });
+
+    const q = keyword + " " + location;
+    const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&type=video&maxResults=10&order=date&key=${process.env.YOUTUBE_API_KEY}`);
+    const ytData = await ytRes.json();
+    ytSearchCount.count++;
+    if(ytData.error) return res.status(500).json({ error: ytData.error.message });
+
+    const items = ytData.items || [];
+    const signals = items
+      .filter(i => looksLikeBusinessSignal(i.snippet.title, i.snippet.description))
+      .map(i => ({
+        // channelTitle is a placeholder, not the real business name - often a job-board/recruiter
+        // channel, not the employer itself. Real name extraction is a Gemini follow-up step, not v1.
+        name: i.snippet.channelTitle,
+        phone: null,
+        website: null,
+        signalType: "HIRING",
+        evidence: i.snippet.title,
+        sourceName: "YouTube",
+        sourceUrl: "https://youtube.com/watch?v=" + i.id.videoId,
+        sourceDate: i.snippet.publishedAt,
+        source: "youtube"
+      }));
+
+    res.json({ success: true, signals, filtered_out: items.length - signals.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- LEAD FINDER ---------------- */
 app.post("/api/lead-finder", authMiddleware, async (req, res) => {
   try {
