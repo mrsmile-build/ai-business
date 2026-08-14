@@ -168,7 +168,7 @@ window.signup = async () => {
   if (check) return alert(check);
 
   try {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -182,6 +182,11 @@ window.signup = async () => {
     const refCode = new URLSearchParams(window.location.search).get('ref');
     if(refCode){
       apiFetch('/api/referral/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({referral_code:refCode,email})}).catch(()=>{});
+    }
+    // Track affiliate (Affiliate Program) - separate system, separate param
+    const affCode = new URLSearchParams(window.location.search).get('aff');
+    if(affCode && data?.user?.id){
+      apiFetch('/api/affiliate/track-signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({affiliate_code:affCode,user_id:data.user.id})}).catch(()=>{});
     }
     if(typeof gtag!=='undefined'){gtag('event','sign_up',{method:'email'});}
     apiFetch('/api/welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name:username})}).catch(()=>{});
