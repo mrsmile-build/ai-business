@@ -1296,9 +1296,28 @@ async function creditAffiliate(userId, plan, amountPaid){
     if(existing && existing.length > 0) return;
 
     const commission = Math.round(amountPaid * 0.5);
-    await supabase.from("affiliate_conversions").insert({ affiliate_id: aff.user_id, converted_user_id: userId, amount: commission, type: "first_payment", status: "pending" });
-    await supabase.from("affiliates").update({ balance: (aff.balance || 0) + commission }).eq("user_id", aff.user_id);
+    const clearanceTime = new Date(Date.now() + 24*60*60*1000); // matches "Pending 24h" already in the dashboard UI
+
+    await supabase.from("affiliate_conversions").insert({
+      affiliate_id: aff.user_id, converted_user_id: userId, plan: plan,
+      payment_amount: amountPaid, commission: commission,
+      status: "pending", clearance_time: clearanceTime
+    });
+    // balance intentionally NOT updated here - only moves once clearMaturedCommissions() clears it
   } catch(e) { console.error("creditAffiliate error:", e.message); }
+}
+
+async function clearMaturedCommissions(affiliateUserId){
+  const { data: matured } = await supabase.from("affiliate_conversions")
+    .select("id, commission")
+    .eq("affiliate_id", affiliateUserId).eq("status", "pending")
+    .lte("clearance_time", new Date().toISOString());
+  if(!matured || matured.length === 0) return;
+  const totalCleared = matured.reduce(function(s,c){ return s + parseFloat(c.commission||0); }, 0);
+  const ids = matured.map(function(c){ return c.id; });
+  await supabase.from("affiliate_conversions").update({ status: "available" }).in("id", ids);
+  const { data: aff } = await supabase.from("affiliates").select("balance").eq("user_id", affiliateUserId).single();
+  await supabase.from("affiliates").update({ balance: (aff?.balance||0) + totalCleared }).eq("user_id", affiliateUserId);
 }
 
 app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
@@ -1316,6 +1335,7 @@ app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
 app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
+    await clearMaturedCommissions(uid).catch(function(){});
     const { data: aff } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
     if(!aff) return res.json({ success: false, error: "Not enrolled yet" });
     const { data: convs } = await supabase.from("affiliate_conversions").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
