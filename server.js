@@ -1296,7 +1296,7 @@ async function creditAffiliate(userId, plan, amountPaid){
     if(existing && existing.length > 0) return;
 
     const commission = Math.round(amountPaid * 0.5);
-    await supabase.from("affiliate_conversions").insert({ affiliate_id: aff.user_id, converted_user_id: userId });
+    await supabase.from("affiliate_conversions").insert({ affiliate_id: aff.user_id, converted_user_id: userId, amount: commission, type: "first_payment", status: "pending" });
     await supabase.from("affiliates").update({ balance: (aff.balance || 0) + commission }).eq("user_id", aff.user_id);
   } catch(e) { console.error("creditAffiliate error:", e.message); }
 }
