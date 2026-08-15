@@ -1300,14 +1300,15 @@ async function creditAffiliate(userId, plan, amountPaid){
     const affCode = profile?.referred_by_affiliate;
     if(!affCode) return;
 
-    const { data: aff } = await supabase.from("affiliates").select("user_id, balance").eq("affiliate_code", affCode).single();
+    const { data: aff } = await supabase.from("affiliates").select("user_id, balance, pending, total_conversions, commission_rate").eq("affiliate_code", affCode).single();
     if(!aff) return;
 
     // First payment only for now - 20% recurring needs real renewal billing, not built yet
     const { data: existing } = await supabase.from("affiliate_conversions").select("id").eq("converted_user_id", userId).limit(1);
     if(existing && existing.length > 0) return;
 
-    const commission = Math.round(amountPaid * 0.5);
+    const rate = (aff.commission_rate != null) ? parseFloat(aff.commission_rate) : 0.5;
+    const commission = Math.round(amountPaid * rate);
     const clearanceTime = new Date(Date.now() + 24*60*60*1000); // matches "Pending 24h" already in the dashboard UI
 
     await supabase.from("affiliate_conversions").insert({
@@ -1315,7 +1316,10 @@ async function creditAffiliate(userId, plan, amountPaid){
       payment_amount: amountPaid, commission: commission,
       status: "pending", clearance_time: clearanceTime
     });
-    // balance intentionally NOT updated here - only moves once clearMaturedCommissions() clears it
+    await supabase.from("affiliates").update({
+      pending: (aff.pending || 0) + commission,
+      total_conversions: (aff.total_conversions || 0) + 1
+    }).eq("user_id", aff.user_id);
   } catch(e) { console.error("creditAffiliate error:", e.message); }
 }
 
@@ -1328,8 +1332,12 @@ async function clearMaturedCommissions(affiliateUserId){
   const totalCleared = matured.reduce(function(s,c){ return s + parseFloat(c.commission||0); }, 0);
   const ids = matured.map(function(c){ return c.id; });
   await supabase.from("affiliate_conversions").update({ status: "available" }).in("id", ids);
-  const { data: aff } = await supabase.from("affiliates").select("balance").eq("user_id", affiliateUserId).single();
-  await supabase.from("affiliates").update({ balance: (aff?.balance||0) + totalCleared }).eq("user_id", affiliateUserId);
+  const { data: aff } = await supabase.from("affiliates").select("balance, pending, total_earned").eq("user_id", affiliateUserId).single();
+  await supabase.from("affiliates").update({
+    balance: (aff?.balance||0) + totalCleared,
+    pending: Math.max(0, (aff?.pending||0) - totalCleared),
+    total_earned: (aff?.total_earned||0) + totalCleared
+  }).eq("user_id", affiliateUserId);
 }
 
 app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
