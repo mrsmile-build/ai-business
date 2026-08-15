@@ -264,6 +264,18 @@ app.get("/api/profile", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+app.post("/api/profile/seed-phone", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { data: existing } = await supabase.from("profiles").select("phone").eq("user_id", uid).single();
+    if(existing?.phone) return res.json({ success: true, seeded: false });
+    const metaPhone = req.user.user_metadata?.phone;
+    if(!metaPhone) return res.json({ success: true, seeded: false });
+    await supabase.from("profiles").upsert({ user_id: uid, phone: metaPhone });
+    res.json({ success: true, seeded: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 app.patch("/api/profile", authMiddleware, async (req, res) => {
   try {
     const { display_name, avatar_url, phone, country } = req.body;

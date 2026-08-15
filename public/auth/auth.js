@@ -145,6 +145,7 @@ window.login = async () => {
 
     localStorage.setItem("token", data.session.access_token);
     localStorage.setItem("refresh_token", data.session.refresh_token);
+    apiFetch('/api/profile/seed-phone',{method:'POST',headers:{'Content-Type':'application/json'}}).catch(()=>{});
     window.location.href = "/dashboard";
   } catch (err) {
     alert(getErrorMessage(err));
