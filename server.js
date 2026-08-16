@@ -1378,6 +1378,17 @@ app.post("/api/affiliate/withdraw", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+app.post("/api/affiliate/track-click", async (req, res) => {
+  try {
+    const { affiliate_code } = req.body;
+    if(!affiliate_code) return res.json({ success: false });
+    const { data: aff } = await supabase.from("affiliates").select("user_id, clicks").eq("affiliate_code", affiliate_code).single();
+    if(!aff) return res.json({ success: false });
+    await supabase.from("affiliates").update({ clicks: (aff.clicks || 0) + 1 }).eq("user_id", aff.user_id);
+    res.json({ success: true });
+  } catch(err) { res.json({ success: false }); }
+});
+
 app.post("/api/affiliate/track-signup", async (req, res) => {
   try {
     const { affiliate_code, user_id } = req.body;

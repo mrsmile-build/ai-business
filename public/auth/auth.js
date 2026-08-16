@@ -1,5 +1,13 @@
 import { supabase } from "/auth/supabase.js";
 
+// Track affiliate link clicks - raw page-load count, not de-duplicated per visitor
+(function(){
+  const affCode = new URLSearchParams(window.location.search).get('aff');
+  if(affCode){
+    apiFetch('/api/affiliate/track-click',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({affiliate_code:affCode})}).catch(function(){});
+  }
+})();
+
 const API_BACKENDS = [
   "https://ai-business-1-ok3x.onrender.com",
   "https://ai-business-1orz.onrender.com"
