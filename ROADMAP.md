@@ -31,7 +31,7 @@ Known minor issue remaining: occasional wrong-country result in B2B search (see 
 Added triggers for manual lead add and lead marked Won. Fixed real bug: dropdown was showing stale 30-second-old cached data instead of fetching fresh on open. Added unread count badge (was a plain dot) and relative timestamps (was raw date).
 
 ### Niche data → actually personalize something
-Multi-select business type is captured and saved correctly but powers zero personalization yet.
+Multi-select business type is captured and saved correctly but powers zero personalization yet. — RESOLVED: dashboard already has a full NICHE_FEATURES rules engine in renderDashboard, covering all 8 business types with proper multi-niche dedup. Confirmed by reading the real code, not assumed.
 
 ---
 
