@@ -1590,7 +1590,7 @@ async function loadFollowUps(){
               <span style="font-size:13px">${l.name}</span>
               <span style="font-size:11px;color:#64748b;margin-left:8px">${l.follow_up_date}</span>
             </div>
-            <button onclick="loadPage(\'leads\')" style="padding:4px 10px;background:#f59e0b;color:black;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">View</button>
+            <button onclick="window.openLeadDetail(\'${l.id}\')" style="padding:4px 10px;background:#f59e0b;color:black;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:bold">Review & Send</button>
           </div>
         `).join("")}
       </div>`;
