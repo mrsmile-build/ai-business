@@ -228,7 +228,13 @@ app.get("/api/paystack/verify", async (req, res) => {
     if (data?.data?.status === "success") {
       const email = data.data.customer.email;
       const amount = data.data.amount / 100;
-      const plan = amount >= 45000 ? "business" : "pro";
+      const expectedPlan = data.data.metadata?.plan;
+      const planData = PLANS[expectedPlan];
+      if(!expectedPlan || !planData || amount < planData.price){
+        console.error("Payment amount mismatch - expected plan:", expectedPlan, "amount:", amount);
+        return res.redirect("/dashboard?payment=failed");
+      }
+      const plan = expectedPlan;
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
