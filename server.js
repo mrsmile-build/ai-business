@@ -1424,6 +1424,51 @@ app.post("/api/demo-data", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- DEMO CREATOR (prospect-facing, repeatable) ---------------- */
+app.post("/api/demo-data/generate", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { business_name, niche, website } = req.body;
+    if(!business_name || !niche) return res.status(400).json({ error: "business_name and niche required" });
+
+    const prompt = `Generate 5 realistic sample CRM leads for a demo shown to a prospective AI Business customer who runs: "${business_name}" (${niche}${website ? ", website: " + website : ""}).
+Return ONLY a JSON array of 5 objects: name, phone (realistic Nigerian format like 080XXXXXXXX, or null), business (short type), status (one of: new, contacted, interested, negotiation, won), message (short realistic note), sale_amount (number, only if status is "won").
+Make it feel specific to a ${niche} business, not generic. No markdown, no explanation.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
+    });
+    const groqData = await groqRes.json();
+    let generated = [];
+    try {
+      const raw = groqData.choices[0].message.content.replace(/```json|```/g,"").trim();
+      generated = JSON.parse(raw);
+    } catch(e) {
+      return res.status(500).json({ error: "Could not generate demo data" });
+    }
+
+    const demoLeads = generated.map(function(l){
+      return {
+        user_id: uid, name: l.name, phone: l.phone || null, business: l.business || niche,
+        status: l.status || "new", message: l.message || "", is_demo: true,
+        sale_amount: l.sale_amount || null
+      };
+    });
+
+    await supabase.from("leads").insert(demoLeads);
+    res.json({ success: true, count: demoLeads.length });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete("/api/demo-data/clear", authMiddleware, async (req, res) => {
+  try {
+    await supabase.from("leads").delete().eq("user_id", req.user.id).eq("is_demo", true);
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
 /* ---------------- NOTIFICATIONS ---------------- */
 app.get("/api/notifications", authMiddleware, async (req, res) => {
   try {
