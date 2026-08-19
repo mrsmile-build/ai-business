@@ -266,9 +266,7 @@ app.get("/api/paystack/verify", async (req, res) => {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
-        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {}
-        try { await supabase.from("referrals").update({ referred_plan: plan }).eq("referred_email", email).is("referred_plan", null); } catch(e) {}
-        await supabase.from("subscriptions").upsert({
+        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {} await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
@@ -484,65 +482,18 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       source: "local"
     }));
 
-    // Extract organic leads (websites) only when they look like real businesses.
-    // Avoid directories, social platforms, review sites and duplicate/irrelevant results.
-    const skipDomains = [
-      "upwork","jiji","instagram","facebook","linkedin","youtube","quora",
-      "wikipedia","indeed","glassdoor","jobberman","reddit","pinterest",
-      "twitter","x.com",".gov","tripadvisor","yelp","yellowpages",
-      "foursquare","mapquest","booking.com","hotels.com"
-    ];
-
-    const usSignals = [
-      ".com/us/","new-york","los-angeles","chicago-il","texas-tx",
-      "/nyc/","yelp.com","zillow.com","angi.com"
-    ];
-
+    // Extract organic leads (websites)
+    const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube","quora","wikipedia","indeed","glassdoor","jobberman","reddit","pinterest","twitter","x.com",".gov"];
+    const usSignals = [".com/us/","new-york","los-angeles","chicago-il","texas-tx","/nyc/","yelp.com","zillow.com","angi.com"];
     const organicLeads = (searchData.organicResults || [])
-      .filter(r => r && r.link)
-      .filter(r => {
-        const link = r.link.toLowerCase();
-        const title = (r.title || r.source || "").toLowerCase();
-
-        if (skipDomains.some(d => link.includes(d) || title.includes(d))) {
-          return false;
-        }
-
-        if (countryCode !== "us" && usSignals.some(s => link.includes(s))) {
-          return false;
-        }
-
-        // Skip obvious informational/listing pages.
-        const badTitleWords = [
-          "directory", "list of", "top 10", "best salons",
-          "reviews", "near me", "facebook", "instagram"
-        ];
-
-        if (badTitleWords.some(w => title.includes(w))) {
-          return false;
-        }
-
-        return true;
-      })
-      .slice(0, 3)
-      .map(r => ({
-        name: r.source || r.title,
-        phone: null,
-        website: r.link,
-        snippet: r.snippet?.slice(0,100),
-        source: "organic"
+      .filter(r => !skipDomains.some(d => r.link.includes(d)))
+      .filter(r => countryCode === "us" || !usSignals.some(s => r.link.toLowerCase().includes(s)))
+      .slice(0, 5).map(r => ({
+        name: r.source||r.title, phone: null, website: r.link,
+        snippet: r.snippet?.slice(0,100), source: "organic"
       }));
 
-    // Prefer real local businesses. Organic websites are only supplementary.
-    // This keeps directories such as Tripadvisor from dominating the results.
-    const allLeads = [...localLeads, ...organicLeads]
-      .filter((lead, index, arr) => {
-        const name = (lead.name || "").toLowerCase().trim();
-        return name && arr.findIndex(x =>
-          (x.name || "").toLowerCase().trim() === name
-        ) === index;
-      })
-      .slice(0, 15);
+    const allLeads = [...localLeads, ...organicLeads].slice(0, 15);
 
     // Generate AI messages for all leads at once
     const userOffer = context || service;
@@ -567,150 +518,18 @@ ${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " ("+l.type+")" : ""}${l.sn
 
 Return ONLY a JSON array of strings in the same order. No markdown, no explanation.`;
 
-    const compactPrompt = `You write personalized WhatsApp outreach messages for Nigerian businesses.
-
-The sender's offer is:
-${userOffer}
-
-Location:
-${location}
-
-IMPORTANT:
-The sender is usually SELLING their service to the business below.
-
-Do NOT assume the sender wants to add their service to the prospect's service menu.
-Do NOT automatically suggest a partnership or collaboration.
-Instead, explain how the sender's offer can solve a problem, save time, increase customers, increase sales, improve follow-up, or otherwise help the prospect.
-
-Only suggest a partnership when the offer naturally requires one.
-
-For each numbered business, write ONE personalized WhatsApp message.
-
-Rules:
-- Start exactly with "Hi [business name],"
-- Use the exact business name naturally
-- Personalize every message using ONE real detail provided for that business
-- Prefer a useful detail such as review count, rating, business type, location, or snippet
-- Use the detail naturally; do not mention ratings or review counts unless they genuinely strengthen the message
-- Never invent services, prices, clients, staff, products, or business facts
-- Connect the sender's offer to ONE realistic business benefit
-- Do not merely say "I noticed you run a [type]"
-- Maximum 35 words
-- Sound like a real Nigerian business person, not corporate advertising
-- End with a simple CTA
-- Do not use phrases like "our service complements your menu" unless the offer genuinely requires a partnership
-- No markdown
-- No explanation
-- Return ONLY a valid JSON array
-- The array MUST contain exactly ${allLeads.length} strings
-
-Example if the offer is CRM:
-"Hi Majik Spa, a simple CRM can help you keep track of enquiries and follow up with clients before they forget to book. Can I show you a quick example?"
-
-Example if the offer is website design:
-"Hi Majik Spa, a professional booking website could make it easier for clients to discover your treatments and book without WhatsApp back-and-forth. Can I show you an example?"
-
-Businesses:
-${allLeads.map((l,i) => {
-  const details = [
-    l.type ? `type: ${l.type}` : "",
-    l.rating ? `rating: ${l.rating}/5` : "",
-    l.reviews ? `reviews: ${l.reviews}` : "",
-    l.address ? `address: ${l.address}` : "",
-    l.snippet ? `about: ${l.snippet}` : ""
-  ].filter(Boolean).join(" | ");
-
-  return `${i+1}. ${l.name}${details ? " | " + details : ""}`;
-}).join("\n")}`;
-
-    const leadCount = allLeads.length;
-
-    async function generateLeadMessages(extraInstruction = "") {
-      const aiPrompt = compactPrompt + (extraInstruction ? "\n" + extraInstruction : "");
-
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
-        },
-        body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
-          messages: [{ role: "user", content: aiPrompt }],
-          max_tokens: 2200,
-          temperature: 0.3
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error(
-          "Lead Finder Groq error:",
-          response.status,
-          JSON.stringify(data)
-        );
-        return null;
-      }
-
-      const content = data.choices?.[0]?.message?.content || "";
-
-      try {
-        const raw = content
-          .replace(/```json/gi, "")
-          .replace(/```/g, "")
-          .trim();
-
-        const parsed = JSON.parse(raw);
-
-        if (
-          Array.isArray(parsed) &&
-          parsed.length === leadCount &&
-          parsed.every(x => typeof x === "string" && x.trim())
-        ) {
-          return parsed;
-        }
-
-        console.error(
-          "Lead Finder AI returned invalid message count:",
-          Array.isArray(parsed) ? parsed.length : "not-array",
-          "expected:",
-          leadCount
-        );
-      } catch (e) {
-        console.error(
-          "Lead Finder AI JSON parse failed:",
-          e.message,
-          "Raw response:",
-          content.slice(0, 1000)
-        );
-      }
-
-      return null;
-    }
-
-    let messages = await generateLeadMessages();
-
-    // One compact retry if the first AI response was incomplete/invalid.
-    if (!messages) {
-      messages = await generateLeadMessages(
-        "RETRY: Return ONLY the complete JSON array. Exactly " +
-        leadCount +
-        " short strings are required."
-      );
-    }
-
-    // Strong personalized fallback if AI is unavailable.
-    if (!messages) {
-      messages = allLeads.map(l => {
-        const businessType = l.type || "business";
-        const benefit =
-          userOffer.toLowerCase().includes("crm")
-            ? "manage enquiries, clients and follow-ups in one place"
-            : `attract more customers with ${userOffer}`;
-
-        return `Hi ${l.name}, I noticed you run a ${businessType}. I can help you ${benefit}, so fewer potential customers slip away. Can I show you a quick example?`;
-      });
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }] })
+    });
+    const groqData = await groqRes.json();
+    let messages = [];
+    try {
+      const raw = groqData.choices[0].message.content.replace(/```json|```/g,"").trim();
+      messages = JSON.parse(raw);
+    } catch(e) {
+      messages = allLeads.map(l => `Hi ${l.name}, I offer ${userOffer} and would love to help your business grow. Can we talk?`);
     }
 
     const leads = allLeads.map((l,i) => ({

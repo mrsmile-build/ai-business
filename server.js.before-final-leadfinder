@@ -266,9 +266,7 @@ app.get("/api/paystack/verify", async (req, res) => {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
-        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {}
-        try { await supabase.from("referrals").update({ referred_plan: plan }).eq("referred_email", email).is("referred_plan", null); } catch(e) {}
-        await supabase.from("subscriptions").upsert({
+        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {} await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
@@ -588,13 +586,9 @@ For each numbered business, write ONE personalized WhatsApp message.
 
 Rules:
 - Start exactly with "Hi [business name],"
-- Use the exact business name naturally
-- Personalize every message using ONE real detail provided for that business
-- Prefer a useful detail such as review count, rating, business type, location, or snippet
-- Use the detail naturally; do not mention ratings or review counts unless they genuinely strengthen the message
-- Never invent services, prices, clients, staff, products, or business facts
+- Use the business name naturally
+- Mention something relevant to that specific business
 - Connect the sender's offer to ONE realistic business benefit
-- Do not merely say "I noticed you run a [type]"
 - Maximum 35 words
 - Sound like a real Nigerian business person, not corporate advertising
 - End with a simple CTA
@@ -611,17 +605,7 @@ Example if the offer is website design:
 "Hi Majik Spa, a professional booking website could make it easier for clients to discover your treatments and book without WhatsApp back-and-forth. Can I show you an example?"
 
 Businesses:
-${allLeads.map((l,i) => {
-  const details = [
-    l.type ? `type: ${l.type}` : "",
-    l.rating ? `rating: ${l.rating}/5` : "",
-    l.reviews ? `reviews: ${l.reviews}` : "",
-    l.address ? `address: ${l.address}` : "",
-    l.snippet ? `about: ${l.snippet}` : ""
-  ].filter(Boolean).join(" | ");
-
-  return `${i+1}. ${l.name}${details ? " | " + details : ""}`;
-}).join("\n")}`;
+${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " | "+l.type : ""}${l.snippet ? " | "+l.snippet : ""}`).join("\n")}`;
 
     const leadCount = allLeads.length;
 

@@ -266,9 +266,7 @@ app.get("/api/paystack/verify", async (req, res) => {
       const { data: users } = await supabase.auth.admin.listUsers();
       const user = users.users.find(u => u.email === email);
       if (user) {
-        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {}
-        try { await supabase.from("referrals").update({ referred_plan: plan }).eq("referred_email", email).is("referred_plan", null); } catch(e) {}
-        await supabase.from("subscriptions").upsert({
+        try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {} await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
@@ -484,65 +482,18 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       source: "local"
     }));
 
-    // Extract organic leads (websites) only when they look like real businesses.
-    // Avoid directories, social platforms, review sites and duplicate/irrelevant results.
-    const skipDomains = [
-      "upwork","jiji","instagram","facebook","linkedin","youtube","quora",
-      "wikipedia","indeed","glassdoor","jobberman","reddit","pinterest",
-      "twitter","x.com",".gov","tripadvisor","yelp","yellowpages",
-      "foursquare","mapquest","booking.com","hotels.com"
-    ];
-
-    const usSignals = [
-      ".com/us/","new-york","los-angeles","chicago-il","texas-tx",
-      "/nyc/","yelp.com","zillow.com","angi.com"
-    ];
-
+    // Extract organic leads (websites)
+    const skipDomains = ["upwork","jiji","instagram","facebook","linkedin","youtube","quora","wikipedia","indeed","glassdoor","jobberman","reddit","pinterest","twitter","x.com",".gov"];
+    const usSignals = [".com/us/","new-york","los-angeles","chicago-il","texas-tx","/nyc/","yelp.com","zillow.com","angi.com"];
     const organicLeads = (searchData.organicResults || [])
-      .filter(r => r && r.link)
-      .filter(r => {
-        const link = r.link.toLowerCase();
-        const title = (r.title || r.source || "").toLowerCase();
-
-        if (skipDomains.some(d => link.includes(d) || title.includes(d))) {
-          return false;
-        }
-
-        if (countryCode !== "us" && usSignals.some(s => link.includes(s))) {
-          return false;
-        }
-
-        // Skip obvious informational/listing pages.
-        const badTitleWords = [
-          "directory", "list of", "top 10", "best salons",
-          "reviews", "near me", "facebook", "instagram"
-        ];
-
-        if (badTitleWords.some(w => title.includes(w))) {
-          return false;
-        }
-
-        return true;
-      })
-      .slice(0, 3)
-      .map(r => ({
-        name: r.source || r.title,
-        phone: null,
-        website: r.link,
-        snippet: r.snippet?.slice(0,100),
-        source: "organic"
+      .filter(r => !skipDomains.some(d => r.link.includes(d)))
+      .filter(r => countryCode === "us" || !usSignals.some(s => r.link.toLowerCase().includes(s)))
+      .slice(0, 5).map(r => ({
+        name: r.source||r.title, phone: null, website: r.link,
+        snippet: r.snippet?.slice(0,100), source: "organic"
       }));
 
-    // Prefer real local businesses. Organic websites are only supplementary.
-    // This keeps directories such as Tripadvisor from dominating the results.
-    const allLeads = [...localLeads, ...organicLeads]
-      .filter((lead, index, arr) => {
-        const name = (lead.name || "").toLowerCase().trim();
-        return name && arr.findIndex(x =>
-          (x.name || "").toLowerCase().trim() === name
-        ) === index;
-      })
-      .slice(0, 15);
+    const allLeads = [...localLeads, ...organicLeads].slice(0, 15);
 
     // Generate AI messages for all leads at once
     const userOffer = context || service;
@@ -588,13 +539,9 @@ For each numbered business, write ONE personalized WhatsApp message.
 
 Rules:
 - Start exactly with "Hi [business name],"
-- Use the exact business name naturally
-- Personalize every message using ONE real detail provided for that business
-- Prefer a useful detail such as review count, rating, business type, location, or snippet
-- Use the detail naturally; do not mention ratings or review counts unless they genuinely strengthen the message
-- Never invent services, prices, clients, staff, products, or business facts
+- Use the business name naturally
+- Mention something relevant to that specific business
 - Connect the sender's offer to ONE realistic business benefit
-- Do not merely say "I noticed you run a [type]"
 - Maximum 35 words
 - Sound like a real Nigerian business person, not corporate advertising
 - End with a simple CTA
@@ -611,17 +558,7 @@ Example if the offer is website design:
 "Hi Majik Spa, a professional booking website could make it easier for clients to discover your treatments and book without WhatsApp back-and-forth. Can I show you an example?"
 
 Businesses:
-${allLeads.map((l,i) => {
-  const details = [
-    l.type ? `type: ${l.type}` : "",
-    l.rating ? `rating: ${l.rating}/5` : "",
-    l.reviews ? `reviews: ${l.reviews}` : "",
-    l.address ? `address: ${l.address}` : "",
-    l.snippet ? `about: ${l.snippet}` : ""
-  ].filter(Boolean).join(" | ");
-
-  return `${i+1}. ${l.name}${details ? " | " + details : ""}`;
-}).join("\n")}`;
+${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " | "+l.type : ""}${l.snippet ? " | "+l.snippet : ""}`).join("\n")}`;
 
     const leadCount = allLeads.length;
 
