@@ -625,7 +625,9 @@ app.post("/api/referral/track", async (req, res) => {
     if(!referral_code || !email) return res.json({ success: false });
     const { data: profile } = await supabase.from("profiles").select("user_id").eq("referral_code", referral_code).single();
     if(!profile) return res.json({ success: false, error: "Invalid referral code" });
-    await supabase.from("referrals").upsert({ referrer_id: profile.user_id, referred_email: email, status: "registered" });
+    const { data: existing } = await supabase.from("referrals").select("id").eq("referrer_id", profile.user_id).eq("referred_email", email).limit(1);
+    if(existing && existing.length > 0) return res.json({ success: true, already_tracked: true });
+    await supabase.from("referrals").insert({ referrer_id: profile.user_id, referred_email: email, status: "registered" });
     res.json({ success: true });
   } catch(err) { res.json({ success: false }); }
 });
@@ -1401,6 +1403,13 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
     if(!affiliate_code || !user_id) return res.json({ success: false });
     const { data: aff } = await supabase.from("affiliates").select("user_id").eq("affiliate_code", affiliate_code).single();
     if(!aff || aff.user_id === user_id) return res.json({ success: false });
+
+    const { data: existingProfile } = await supabase.from("profiles").select("referred_by_affiliate").eq("user_id", user_id).single();
+    if(existingProfile?.referred_by_affiliate) return res.json({ success: false, error: "Already attributed" });
+
+    const { data: existingSub } = await supabase.from("subscriptions").select("user_id").eq("user_id", user_id).limit(1);
+    if(existingSub && existingSub.length > 0) return res.json({ success: false, error: "Trial already used" });
+
     await supabase.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
     const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await supabase.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
