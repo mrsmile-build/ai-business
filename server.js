@@ -206,7 +206,8 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
         model: "qwen/qwen3.6-27b",
         messages,
         max_tokens: 800,
-        temperature: 0.7
+        temperature: 0.7,
+        reasoning_format: "hidden"
       })
     });
 
@@ -651,7 +652,8 @@ ${allLeads.map((l,i) => {
           model: "qwen/qwen3.6-27b",
           messages: [{ role: "user", content: aiPrompt }],
           max_tokens: 2200,
-          temperature: 0.3
+          temperature: 0.3,
+          reasoning_format: "hidden"
         })
       });
 
@@ -801,7 +803,7 @@ Format with clear sections using headers. Be detailed but concise.`;
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_format: "hidden" })
     });
     const data = await response.json();
     const proposal = cleanAIOutput(data.choices?.[0]?.message?.content);
@@ -940,7 +942,7 @@ Return ONLY a JSON array of personalized messages in same order. No markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_format: "hidden" })
     });
     const groqData = await groqRes.json();
     let messages = [];
