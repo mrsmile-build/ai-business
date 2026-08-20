@@ -5,6 +5,19 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
+
+/* ---------------- AI OUTPUT CLEANER ---------------- */
+/*
+ * Qwen can include internal reasoning in <think>...</think> blocks.
+ * Keep the model and existing JSON validation unchanged; this helper
+ * only removes reasoning blocks before normal text is sent to users.
+ */
+function cleanAIOutput(text) {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim();
+}
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
@@ -791,7 +804,7 @@ Format with clear sections using headers. Be detailed but concise.`;
       body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
     });
     const data = await response.json();
-    const proposal = data.choices?.[0]?.message?.content;
+    const proposal = cleanAIOutput(data.choices?.[0]?.message?.content);
     res.json({ success: true, proposal });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -999,7 +1012,7 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
       body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
     });
     const data = await groqRes.json();
-    const reply = data.choices?.[0]?.message?.content || "Thank you for your message. Our team will respond shortly.";
+    const reply = cleanAIOutput(data.choices?.[0]?.message?.content) || "Thank you for your message. Our team will respond shortly.";
     res.json({ success: true, reply });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
