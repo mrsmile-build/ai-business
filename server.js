@@ -184,7 +184,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
     await supabase.from("subscriptions").update({ ai_usage: usage + 1 }).eq("user_id", req.user.id);
     const { message, tool, history } = req.body;
     const systemPrompts = {
-      idea: "You are a business consultant for Nigerian/African entrepreneurs. Give specific, practical business ideas with estimated costs in Naira. Format responses as numbered items.",
+      idea: "You are the Business Ideas engine inside AI Business. Answer the user's request directly; never introduce yourself, acknowledge the request, explain your reasoning, or describe what the user is looking for. Do not say things like 'I understand your concern', 'you are looking for', 'as a business consultant', or 'here are some ideas'. Give practical, realistic and actionable business ideas for the user's market. When the user asks for multiple ideas, use numbered items. For each idea, give: a clear business name, what the business does, why it is resilient or attractive, how to start, and an estimated startup cost in Naira when relevant. Never claim that a business is guaranteed or impossible to disrupt; use terms such as 'highly resilient', 'essential', or 'likely to remain in demand'. Keep the answer concise, practical, and useful rather than turning each idea into a long article. Match startup costs to the scale requested; do not automatically recommend large-capital businesses when a smaller version is realistic. Do not invent statistics, prices, market sizes, or other factual claims. When exact figures are uncertain, give a reasonable range or clearly state that costs vary by location and scale. Prioritize businesses that can realistically be started at the user’s implied budget. Do not reveal internal reasoning. Use clean plain text/Markdown suitable for direct display in the AI Business dashboard.",
       ad: "You are an expert copywriter for the Nigerian/African market. Write compelling ad copy that resonates with local culture. Format multiple options as numbered items.",
       sales: "You are a sales expert for Nigerian market. Write persuasive WhatsApp/SMS messages that feel personal. Format multiple options as numbered items.",
       content: "You are a social media expert for Nigerian/African brands. Create engaging posts with captions and hashtags. Format as numbered items.",
@@ -207,7 +207,8 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
         messages,
         max_tokens: 800,
         temperature: 0.7,
-        reasoning_effort: "none"
+        reasoning_effort: "none",
+        reasoning_format: "hidden"
       })
     });
 
@@ -221,7 +222,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
       });
     }
 
-    const reply = data.choices?.[0]?.message?.content?.trim();
+    const reply = cleanAIOutput(data.choices?.[0]?.message?.content);
 
     if (!reply) {
       console.error("Groq returned empty reply:", JSON.stringify(data));
