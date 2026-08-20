@@ -5,6 +5,19 @@ const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
 
 const app = express();
+
+/* ---------------- AI OUTPUT CLEANER ---------------- */
+/*
+ * Qwen can include internal reasoning in <think>...</think> blocks.
+ * Keep the model and existing JSON validation unchanged; this helper
+ * only removes reasoning blocks before normal text is sent to users.
+ */
+function cleanAIOutput(text) {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .trim();
+}
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
@@ -193,7 +206,8 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
         model: "qwen/qwen3.6-27b",
         messages,
         max_tokens: 800,
-        temperature: 0.7
+        temperature: 0.7,
+        reasoning_effort: "none"
       })
     });
 
@@ -638,7 +652,8 @@ ${allLeads.map((l,i) => {
           model: "qwen/qwen3.6-27b",
           messages: [{ role: "user", content: aiPrompt }],
           max_tokens: 2200,
-          temperature: 0.3
+          temperature: 0.3,
+          reasoning_effort: "none"
         })
       });
 
@@ -788,10 +803,10 @@ Format with clear sections using headers. Be detailed but concise.`;
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
     });
     const data = await response.json();
-    const proposal = data.choices?.[0]?.message?.content;
+    const proposal = cleanAIOutput(data.choices?.[0]?.message?.content);
     res.json({ success: true, proposal });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -927,7 +942,7 @@ Return ONLY a JSON array of personalized messages in same order. No markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
     });
     const groqData = await groqRes.json();
     let messages = [];
@@ -999,7 +1014,7 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
       body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
     });
     const data = await groqRes.json();
-    const reply = data.choices?.[0]?.message?.content || "Thank you for your message. Our team will respond shortly.";
+    const reply = cleanAIOutput(data.choices?.[0]?.message?.content) || "Thank you for your message. Our team will respond shortly.";
     res.json({ success: true, reply });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
