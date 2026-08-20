@@ -190,7 +190,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
         "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b",
+        model: "llama-3.3-70b-versatile",
         messages,
         max_tokens: 800,
         temperature: 0.7
@@ -635,7 +635,7 @@ ${allLeads.map((l,i) => {
           "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
         },
         body: JSON.stringify({
-          model: "openai/gpt-oss-120b",
+          model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: aiPrompt }],
           max_tokens: 2200,
           temperature: 0.3
@@ -788,7 +788,7 @@ Format with clear sections using headers. Be detailed but concise.`;
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
     });
     const data = await response.json();
     const proposal = data.choices?.[0]?.message?.content;
@@ -927,7 +927,7 @@ Return ONLY a JSON array of personalized messages in same order. No markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
     });
     const groqData = await groqRes.json();
     let messages = [];
@@ -996,7 +996,7 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
     });
     const data = await groqRes.json();
     const reply = data.choices?.[0]?.message?.content || "Thank you for your message. Our team will respond shortly.";
@@ -1055,7 +1055,7 @@ Reply helpfully in under 80 words.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
     });
     const data = await groqRes.json();
     const reply = data.choices?.[0]?.message?.content || "Thank you! We will respond shortly.";
@@ -1662,7 +1662,7 @@ Make it feel specific to a ${niche} business, not generic. No markdown, no expla
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }] })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }] })
     });
     const groqData = await groqRes.json();
     let generated = [];
@@ -1783,7 +1783,7 @@ Return ONLY the JSON array, no markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7 })
+      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7 })
     });
     const groqData = await groqRes.json();
     let messages = [];
@@ -1868,7 +1868,7 @@ app.post("/api/website-health", authMiddleware, async (req, res) => {
       const groqRes = await withTimeout(fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-        body: JSON.stringify({ model: "openai/gpt-oss-120b", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
+        body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
       }), 8000);
       const groqData = await groqRes.json();
       aiSummary = groqData.choices?.[0]?.message?.content || "";
