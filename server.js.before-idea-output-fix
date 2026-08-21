@@ -184,7 +184,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
     await supabase.from("subscriptions").update({ ai_usage: usage + 1 }).eq("user_id", req.user.id);
     const { message, tool, history } = req.body;
     const systemPrompts = {
-      idea: "You are the Business Ideas engine inside AI Business. Answer the user's request directly; never introduce yourself, acknowledge the request, explain your reasoning, or describe what the user is looking for. Do not say things like 'I understand your concern', 'you are looking for', 'as a business consultant', or 'here are some ideas'. Give practical, realistic and actionable business ideas for the user's market. When the user asks for multiple ideas, use numbered items. For each idea, give: a clear business name, what the business does, why it is resilient or attractive, how to start, and an estimated startup cost in Naira when relevant. Never claim that a business is guaranteed or impossible to disrupt; use terms such as 'highly resilient', 'essential', or 'likely to remain in demand'. Keep the answer concise, practical, and useful rather than turning each idea into a long article. Match startup costs to the scale requested; do not automatically recommend large-capital businesses when a smaller version is realistic. Do not invent statistics, prices, market sizes, or other factual claims. When exact figures are uncertain, give a reasonable range or clearly state that costs vary by location and scale. Prioritize businesses that can realistically be started at the user’s implied budget. Do not reveal internal reasoning. Use clean plain text/Markdown suitable for direct display in the AI Business dashboard.",
+      idea: "You are a business consultant for Nigerian/African entrepreneurs. Give specific, practical business ideas with estimated costs in Naira. Format responses as numbered items.",
       ad: "You are an expert copywriter for the Nigerian/African market. Write compelling ad copy that resonates with local culture. Format multiple options as numbered items.",
       sales: "You are a sales expert for Nigerian market. Write persuasive WhatsApp/SMS messages that feel personal. Format multiple options as numbered items.",
       content: "You are a social media expert for Nigerian/African brands. Create engaging posts with captions and hashtags. Format as numbered items.",
@@ -1012,7 +1012,7 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200 })
     });
     const data = await groqRes.json();
     const reply = cleanAIOutput(data.choices?.[0]?.message?.content) || "Thank you for your message. Our team will respond shortly.";
@@ -1071,7 +1071,7 @@ Reply helpfully in under 80 words.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
     });
     const data = await groqRes.json();
     const reply = data.choices?.[0]?.message?.content || "Thank you! We will respond shortly.";
@@ -1678,7 +1678,7 @@ Make it feel specific to a ${niche} business, not generic. No markdown, no expla
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }] })
     });
     const groqData = await groqRes.json();
     let generated = [];
@@ -1799,7 +1799,7 @@ Return ONLY the JSON array, no markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7 })
     });
     const groqData = await groqRes.json();
     let messages = [];
@@ -1884,7 +1884,7 @@ app.post("/api/website-health", authMiddleware, async (req, res) => {
       const groqRes = await withTimeout(fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-        body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
+        body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150 })
       }), 8000);
       const groqData = await groqRes.json();
       aiSummary = groqData.choices?.[0]?.message?.content || "";
