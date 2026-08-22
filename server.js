@@ -1746,7 +1746,6 @@ Best regards,`
     res.status(500).json({ success: false, error: "Failed to load affiliate resources" });
   }
 });
-});
 
 app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
   try {
