@@ -3173,8 +3173,15 @@ async function renderAffiliate(){
 
       // --- AFFILIATE RESOURCES UI SECTION ---
       html += '<div style="margin-top:20px;background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155;">';
-      html += '<h3 style="margin:0 0 8px 0;font-size:17px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
-      html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand scripts, social posts, and referral links.</p>';
+      
+      // Calculate current rotation week (0, 1, 2, or 3)
+      const currentWeekNum = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000)) % 4 + 1;
+      
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+      html += '  <h3 style="margin:0;font-size:17px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
+      html += '  <span style="background:#15803d;color:#dcfce7;font-size:10px;padding:3px 8px;border-radius:12px;font-weight:600;">Week ' + currentWeekNum + ' Pack Active</span>';
+      html += '</div>';
+      html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand promotional scripts, posts, and direct referral links. (Scripts auto-rotate weekly!)</p>';
 
       const affCode = (typeof aff !== "undefined" && aff && aff.affiliate_code) ? aff.affiliate_code : "YOUR_CODE";
       const baseUrl = "https://ai-business-two-psi.vercel.app/auth?aff=" + affCode;
@@ -3188,6 +3195,45 @@ async function renderAffiliate(){
           </button>
           <div id="${id}" style="display:none;padding:12px;border-top:1px solid #1e293b;background:#1e293b;">${content}</div>
         </div>`;
+
+      // --- ROTATIONAL CONTENT BANKS ---
+      const waPacks = {
+        1: [
+          { style: "Casual Pitch", text: "Hi! Quick question: how are you finding local business clients right now? We built an AI tool that extracts verified leads and drafts proposals in 30s. Try the 30-day trial free: " + baseUrl },
+          { style: "Problem-Solving Pitch", text: "Are you spending too much time searching for client contacts or writing quotes? AI Business extracts target business details and automates Paystack billing. Claim 30 days free: " + baseUrl }
+        ],
+        2: [
+          { style: "Local Agency Hook", text: "Hey! If you build websites or run ads for local businesses, this AI tool finds unserviced clients in your city and drafts pitch documents instantly. Test 30 days free: " + baseUrl },
+          { style: "Automated Follow-Up", text: "Quick update! Tested an automated lead scraper that finds verified phone numbers and business emails across Nigeria. Saved me hours this week. Try it free: " + baseUrl }
+        ],
+        3: [
+          { style: "Direct Value Offer", text: "Hey (Name), do you currently have a system to find new client projects every month? AI Business gives you real-time lead extraction + automated Paystack invoicing. Get 30 days free: " + baseUrl },
+          { style: "Freelancer Rescue", text: "Tired of client proposals being ignored? Try sending AI-generated custom proposals with direct Paystack payment links built in. Free access here: " + baseUrl }
+        ],
+        4: [
+          { style: "Case Study / Proof", text: "Client acquisition in 2026 doesn’t need to be manual. AI Business turns raw local lead search into closed projects in minutes. Check out the 30-day trial: " + baseUrl },
+          { style: "End of Month Pitch", text: "Looking to scale your service business this month? Grab verified leads and close clients faster with AI Business. Start your 30-day trial here: " + baseUrl }
+        ]
+      };
+
+      const socPacks = {
+        1: [
+          { platform: "WhatsApp Status / Story", hook: "🔥 Stop losing client deals to slow follow-ups!", content: "AI Business helps local agencies & freelancers find verified leads and send proposals in 30 seconds.\n\n30-day trial: " + baseUrl }
+        ],
+        2: [
+          { platform: "LinkedIn / Facebook", hook: "The biggest bottleneck for agency owners in 2026", content: "It is not your technical skill—it is finding verified client leads systematically.\n\nAI Business automates lead scraping and proposal creation.\n\nTry 30 days free: " + baseUrl }
+        ],
+        3: [
+          { platform: "X (Twitter)", hook: "How to automate client outreach step-by-step:", content: "1. Find verified local leads\n2. Generate custom pitch documents\n3. Send Paystack payment links\n\nTest it free: " + baseUrl }
+        ],
+        4: [
+          { platform: "WhatsApp Status / Story", hook: "💡 Work smarter on your agency business", content: "Stop wasting hours drafting manual quotes. Let AI Business pull lead numbers and build proposals for you.\n\n30 days free: " + baseUrl }
+        ]
+      };
+
+      // Select active scripts for current week
+      const currentWa = waPacks[currentWeekNum] || waPacks[1];
+      const currentSoc = socPacks[currentWeekNum] || socPacks[1];
 
       // 1. Referral Links
       let linksHtml = `
@@ -3204,30 +3250,23 @@ async function renderAffiliate(){
           <button onclick="navigator.clipboard.writeText('${baseUrl}&plan=pro'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
         </div>`;
 
-      // 2. WhatsApp Scripts
-      let waHtml = `
-        <div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
-          <strong style="color:#22c55e;display:block;margin-bottom:4px;">Casual Pitch</strong>
-          Hi! Quick question: how are you finding local business clients right now? We built an AI tool that extracts verified leads and drafts proposals in 30s. Try the 30-day trial free: ${baseUrl}
-          <button onclick="navigator.clipboard.writeText('Hi! Quick question: how are you finding local business clients right now? We built an AI tool that extracts verified leads and drafts proposals in 30s. Try the 30-day trial free: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
-        </div>
-        <div style="background:#0f172a;padding:10px;border-radius:6px;font-size:11px;line-height:1.4;color:#cbd5e1;">
-          <strong style="color:#22c55e;display:block;margin-bottom:4px;">Problem-Solving Pitch</strong>
-          Are you spending too much time searching for client contacts or writing quotes? AI Business extracts target business details and automates Paystack billing. Claim 30 days free: ${baseUrl}
-          <button onclick="navigator.clipboard.writeText('Are you spending too much time searching for client contacts or writing quotes? AI Business extracts target business details and automates Paystack billing. Claim 30 days free: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
+      // 2. WhatsApp Scripts (Rotated)
+      let waHtml = '';
+      currentWa.forEach(s => {
+        waHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
+          <strong style="color:#22c55e;display:block;margin-bottom:4px;">${s.style}</strong>${s.text}
+          <button onclick="navigator.clipboard.writeText(\`${s.text}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
         </div>`;
+      });
 
-      // 3. Social Media Content
-      let socHtml = `
-        <div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
-          <strong style="color:#38bdf8;display:block;margin-bottom:4px;">WhatsApp Status / Story</strong>
-          🔥 Stop losing client deals to slow follow-ups!
-
-AI Business helps local agencies & freelancers find verified leads and send proposals in 30 seconds.
-
-30-day trial: ${baseUrl}
-          <button onclick="navigator.clipboard.writeText('🔥 Stop losing client deals to slow follow-ups!\n\nAI Business helps local agencies & freelancers find verified leads and send proposals in 30 seconds.\n\n30-day trial: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
+      // 3. Social Media Content (Rotated)
+      let socHtml = '';
+      currentSoc.forEach(sc => {
+        socHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
+          <strong style="color:#38bdf8;display:block;margin-bottom:4px;">${sc.platform} - ${sc.hook}</strong>${sc.content}
+          <button onclick="navigator.clipboard.writeText(\`${sc.content}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
         </div>`;
+      });
 
       // 4. Objection Handling
       let objHtml = `
@@ -3240,11 +3279,11 @@ AI Business helps local agencies & freelancers find verified leads and send prop
           <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: Plans start at ₦6,000/mo after a 30-day free trial. Closing 1 client pays for an entire year.</span>
         </div>`;
 
-      // 5. Training & Sales Kit
+      // 5. Training & Strategy
       let trnHtml = `
         <div style="font-size:11px;color:#cbd5e1;line-height:1.4;">
           <p style="margin:0 0 6px 0;"><strong style="color:#a855f7;">Lesson 1: Target Audience</strong><br>Focus on web developers, agency owners, digital marketers, and local SMEs who need paying clients.</p>
-          <p style="margin:0;"><strong style="color:#a855f7;">Lesson 2: Daily Workflow</strong><br>Post 1 WhatsApp status daily and send 5 direct messages to freelancers on LinkedIn or X using the scripts above.</p>
+          <p style="margin:0;"><strong style="color:#a855f7;">Lesson 2: Daily Workflow</strong><br>Post 1 WhatsApp status daily and send 5 direct messages to freelancers on LinkedIn or X using the weekly scripts above.</p>
         </div>`;
 
       html += makeAcc('aff-acc-links', '🔗', 'Targeted Referral Links', linksHtml);
