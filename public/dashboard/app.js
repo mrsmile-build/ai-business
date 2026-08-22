@@ -3170,6 +3170,78 @@ async function renderAffiliate(){
       html += '<button onclick="showAffWithdraw()" style="width:100%;padding:11px;background:white;color:#065f46;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">Withdraw &#8358;' + balance.toLocaleString() + '</button>';
     } else {
       html += '<p style="margin:0;font-size:12px;color:rgba(255,255,255,0.6)">Min withdrawal &#8358;1,000</p>';
+
+      // --- AFFILIATE RESOURCES UI SECTION ---
+      html += '<div style="margin-top:20px;background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155;">';
+      html += '<h3 style="margin:0 0 12px 0;font-size:18px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
+      html += '<p style="margin:0 0 16px 0;font-size:13px;color:#94a3b8;">Copy ready-to-use scripts, posts, and direct checkout links to start converting leads immediately.</p>';
+
+      html += '<div id="affiliate-resources-container" style="color:#e2e8f0;font-size:14px;"><p style="color:#94a3b8;font-style:italic;">Loading promotional resources...</p></div>';
+      html += '</div>';
+
+      // Fetch and render resources async
+      setTimeout(async () => {
+        try {
+          const res = await fetch('/api/affiliate/resources', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') } });
+          const data = await res.json();
+          if (!data.success) return;
+
+          const container = document.getElementById('affiliate-resources-container');
+          if (!container) return;
+
+          const cats = data.categories;
+          let rHtml = '';
+
+          // 1. Referral Links Card
+          rHtml += '<div style="margin-bottom:16px;background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
+          rHtml += '<strong style="color:#38bdf8;display:block;margin-bottom:8px;">🔗 Targeted Referral Links</strong>';
+          cats.links.forEach(l => {
+            rHtml += `<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#1e293b;padding:8px 12px;border-radius:6px;">
+              <div>
+                <div style="font-weight:600;font-size:13px;color:#f8fafc;">${l.title}</div>
+                <div style="font-size:11px;color:#94a3b8;">${l.description}</div>
+              </div>
+              <button onclick="navigator.clipboard.writeText('${l.url}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">Copy</button>
+            </div>`;
+          });
+          rHtml += '</div>';
+
+          // 2. WhatsApp Scripts
+          rHtml += '<div style="margin-bottom:16px;background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
+          rHtml += '<strong style="color:#22c55e;display:block;margin-bottom:8px;">📱 WhatsApp Outreach Scripts</strong>';
+          
+          rHtml += '<div style="margin-bottom:8px;"><span style="font-size:12px;color:#a7f3d0;font-weight:600;">First Contact Message:</span></div>';
+          cats.whatsapp_scripts.first_contact.forEach(s => {
+            rHtml += `<div style="background:#1e293b;padding:10px;border-radius:6px;margin-bottom:8px;font-size:12px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">${s}
+              <button onclick="navigator.clipboard.writeText(\`${s}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:8px;background:#15803d;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy Script</button>
+            </div>`;
+          });
+
+          rHtml += '<div style="margin:12px 0 6px 0;"><span style="font-size:12px;color:#a7f3d0;font-weight:600;">Objection Handling Replies:</span></div>';
+          cats.whatsapp_scripts.objection_handling.forEach(o => {
+            rHtml += `<div style="background:#1e293b;padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;">
+              <strong style="color:#f43f5e;display:block;">Prospect: "${o.objection}"</strong>
+              <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: ${o.response}</span>
+            </div>`;
+          });
+          rHtml += '</div>';
+
+          // 3. Product Sales Kit
+          rHtml += '<div style="background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
+          rHtml += '<strong style="color:#a855f7;display:block;margin-bottom:6px;">📘 Product Sales Cheat Sheet</strong>';
+          rHtml += `<div style="font-size:12px;line-height:1.5;color:#94a3b8;">
+            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">What it is:</strong> ${cats.product_sales_kit.what_is_it}</p>
+            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">Target Audience:</strong> ${cats.product_sales_kit.target_audience}</p>
+            <p style="margin:0;"><strong style="color:#e2e8f0;">Key Value:</strong> ${cats.product_sales_kit.core_problems_solved}</p>
+          </div>`;
+          rHtml += '</div>';
+
+          container.innerHTML = rHtml;
+        } catch(e) {
+          console.error("Failed to render affiliate resources UI", e);
+        }
+      }, 300);
+
     }
     html += '</div>';
 
