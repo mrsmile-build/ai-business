@@ -27,6 +27,36 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// --- EVENT & ACTIVATION TRACKING HELPERS ---
+async function trackEvent(userId, action, details = {}) {
+  if (!userId) return;
+  try {
+    await supabase.from('activity').insert([{ user_id: userId, action, details }]);
+  } catch (err) {
+    console.error('Tracking error (non-blocking):', err.message);
+  }
+}
+
+async function trackMilestone(userId, action, details = {}) {
+  if (!userId) return;
+  try {
+    await supabase.from('activity').insert([{ user_id: userId, action, details }]);
+  } catch (err) {
+    // Gracefully ignore duplicate milestone inserts
+  }
+}
+
+async function checkAndTriggerActivation(userId, featureName) {
+  if (!userId) return;
+  try {
+    await trackMilestone(userId, 'first_value_achieved', { initial_feature: featureName });
+  } catch (err) {
+    // Non-blocking
+  }
+}
+// -------------------------------------------
+
+
 /* ---------------- PLAN LIMITS ---------------- */
 const PLANS = {
   free:     { leads: 10,       ai_per_day: 3,        label: "Free",     price: 0 },
@@ -240,6 +270,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
 
 /* ---------------- PAYSTACK INIT ---------------- */
 app.post("/api/paystack/init", authMiddleware, async (req, res) => {
+  trackEvent(req.user.id, 'checkout_initiated', { plan: req.body.plan });
   try {
     const { email, plan } = req.body;
     const planData = PLANS[plan];
@@ -435,6 +466,7 @@ app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
 
 /* ---------------- LEAD FINDER ---------------- */
 app.post("/api/lead-finder", authMiddleware, async (req, res) => {
+  trackEvent(req.user.id, 'lead_finder_searched'); checkAndTriggerActivation(req.user.id, 'lead_finder');
   try {
     const sub = await getSubscription(req.user);
     const plan = sub.plan || "free";
@@ -775,6 +807,7 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 
 /* ---------------- PROPOSAL GENERATOR ---------------- */
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
+  trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   try {
     const { client_name, service, price, details, your_name, your_business } = req.body;
     const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
@@ -1845,6 +1878,7 @@ app.use((req, res, next) => {
 });
 
 app.post("/api/website-health", authMiddleware, async (req, res) => {
+  trackEvent(req.user.id, 'website_health_checked'); checkAndTriggerActivation(req.user.id, 'website_health');
   try {
     const { url } = req.body;
     if(!url) return res.status(400).json({ success: false, error: "URL required" });
