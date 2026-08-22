@@ -3818,3 +3818,95 @@ function updateEpBizHidden(){
   var values = checked.map(function(cb){ return cb.value; });
   document.getElementById("ep_biz").value = values.join(",");
 }
+
+
+
+// --- DEMO CREATOR / HELPER FRONTEND UI ---
+async function renderDemoCreatorUI(containerId = 'dashboard-content') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
+      <h2 style="margin-top:0; color:#38bdf8;">⚡ Personalized Demo Creator</h2>
+      <p style="color:#94a3b8; font-size:14px;">Generate an instant, customized live demonstration for your prospect. Show, don't tell.</p>
+      
+      <form id="demo-creator-form" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Prospect Business Name*</label>
+          <input type="text" id="demo_biz_name" placeholder="e.g. Apex Dental Clinic" required style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Prospect Contact Name</label>
+          <input type="text" id="demo_prospect_name" placeholder="e.g. Dr. Smith" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Niche / Industry*</label>
+          <input type="text" id="demo_niche" placeholder="e.g. Dental Practice / Local Healthcare" required style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Key Pain Point to Solve</label>
+          <input type="text" id="demo_pain_point" placeholder="e.g. missed after-hours phone calls" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div style="grid-column: span 2;">
+          <button type="submit" style="background:#2563eb; color:#fff; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">🚀 Generate Personal Demo Asset</button>
+        </div>
+      </form>
+
+      <div id="demo-output-container" style="margin-top:24px; display:none;"></div>
+    </div>
+  `;
+
+  document.getElementById('demo-creator-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const output = document.getElementById('demo-output-container');
+    output.style.display = 'block';
+    output.innerHTML = '<p style="color:#38bdf8;">Generating personalized live demo preview...</p>';
+
+    const bodyData = {
+      prospectBusiness: document.getElementById('demo_biz_name').value,
+      prospectName: document.getElementById('demo_prospect_name').value,
+      niche: document.getElementById('demo_niche').value,
+      PainPoint: document.getElementById('demo_pain_point').value
+    };
+
+    try {
+      const res = await fetch('/api/demo-creator', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const d = data.demo;
+        output.innerHTML = `
+          <div style="background:#1e293b; border-radius:8px; padding:18px; border:1px solid #334155;">
+            <h3 style="margin-top:0; color:#4ade80;">✅ Demo Ready for ${d.meta.prospectBusiness}</h3>
+            
+            <div style="background:#0f172a; padding:12px; border-radius:6px; margin-bottom:14px;">
+              <strong style="color:#38bdf8; font-size:13px;">Copyable Outreach Message:</strong>
+              <p style="font-size:13px; color:#cbd5e1; white-space:pre-wrap; margin:8px 0;">${d.personalizedPitch.hook}
+
+${d.personalizedPitch.valueProp}
+
+${d.personalizedPitch.cta}</p>
+            </div>
+
+            <div style="background:#0f172a; padding:12px; border-radius:6px;">
+              <strong style="color:#f43f5e; font-size:13px;">Simulated Client Interaction Preview:</strong>
+              <div style="margin-top:8px; font-size:12px;">
+                <div style="color:#94a3b8;"><strong>Customer:</strong> ${d.interactivePreview.simulatedInteraction[0].text}</div>
+                <div style="color:#38bdf8; margin-top:4px;"><strong>AI Assistant:</strong> ${d.interactivePreview.simulatedInteraction[1].text}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        output.innerHTML = `<p style="color:#f87171;">Error: ${data.error}</p>`;
+      }
+    } catch (err) {
+      output.innerHTML = `<p style="color:#f87171;">Failed to connect to demo server.</p>`;
+    }
+  });
+}

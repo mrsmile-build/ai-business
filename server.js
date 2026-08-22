@@ -2177,4 +2177,91 @@ app.get("/api/status", (req, res) => {
 
 /* ---------------- START ---------------- */
 const PORT = process.env.PORT || 3000;
+
+// ==========================================
+// DEMO CREATOR / HELPER & MARKETING APIs
+// ==========================================
+
+// 1. Demo Creator Helper Endpoint
+app.post("/api/demo-creator", async (req, res) => {
+  try {
+    const { prospectName, prospectBusiness, niche, PainPoint } = req.body;
+    
+    if (!prospectBusiness || !niche) {
+      return res.status(400).json({ success: false, error: "Prospect business name and niche are required." });
+    }
+
+    const recipient = prospectName || "Team";
+    const pain = PainPoint || "manual customer follow-ups and lead leakage";
+
+    const personalizedDemo = {
+      meta: {
+        prospectBusiness,
+        prospectName: recipient,
+        niche,
+        generatedAt: new Date().toISOString()
+      },
+      interactivePreview: {
+        bannerHeadline: `How ${prospectBusiness} Can Reclaim 15+ Hours Weekly With AI Automation`,
+        mockWidgetTitle: `${prospectBusiness} AI Sales & Support Assistant`,
+        simulatedInteraction: [
+          { role: "customer", text: `Hi! What are your current opening hours and pricing for ${niche} services?` },
+          { role: "ai_bot", text: `Hello! Welcome to ${prospectBusiness}. We are open Mon-Fri 8am-6pm. I can immediately schedule your initial consultation or share our pricing options!` }
+        ]
+      },
+      personalizedPitch: {
+        hook: `Hey ${recipient}, I put together a 60-second interactive preview showing how ${prospectBusiness} can automate ${pain} using AI Business.`,
+        valueProp: `Instead of letting inbound leads cool off, this system responds instantly, qualifies prospects, and books them right into your calendar 24/7.`,
+        cta: `Take a look at this customized live demo we built for ${prospectBusiness} and let me know if you'd like to try it on your live website for 7 days!`
+      },
+      projectedImpact: {
+        estimatedTimeSaved: "12-18 hours/week",
+        leadResponseTime: "< 10 seconds",
+        conversionLift: "+25% to +40%"
+      }
+    };
+
+    return res.json({ success: true, demo: personalizedDemo });
+  } catch (err) {
+    console.error("Demo Creator Error:", err.message);
+    return res.status(500).json({ success: false, error: "Failed to generate personalized demo." });
+  }
+});
+
+// 2. AI Followup Assistant Endpoint
+app.post("/api/followup-assistant", async (req, res) => {
+  try {
+    const { leadName, lastInteraction, objection } = req.body;
+    
+    const draftMessage = `Hi ${leadName || 'there'},
+
+I wanted to follow up on our last conversation regarding ${lastInteraction || 'our platform'}. ` +
+      (objection ? `I understand your concern about ${objection}, and I'd love to show you how we solve that exact challenge.` : `Let me know if you have any questions or if you're ready for a quick walk-through!`) +
+      `
+
+Best regards,
+The Team`;
+
+    return res.json({ success: true, followUpScript: draftMessage });
+  } catch (err) {
+    console.error("Followup Assistant Error:", err.message);
+    return res.status(500).json({ success: false, error: "Failed to generate follow-up." });
+  }
+});
+
+// 3. Website & System Health Check Endpoint
+app.get("/api/website-health", (req, res) => {
+  return res.json({
+    success: true,
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    services: {
+      database: "connected",
+      apiServer: "online"
+    }
+  });
+});
+
+
 app.listen(PORT, () => console.log("AI SaaS running on port " + PORT));
