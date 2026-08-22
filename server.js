@@ -1951,6 +1951,65 @@ app.get("/api/blog/:slug", async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// --- ADMIN ACTIVATION METRICS & FUNNEL API ---
+app.get("/api/admin/metrics", authMiddleware, async (req, res) => {
+  try {
+    // 1. Total Signups
+    const { count: totalSignups, error: userErr } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    if (userErr) throw userErr;
+
+    // 2. Activated Users (first_value_achieved)
+    const { data: activatedEvents, error: actErr } = await supabase
+      .from('activity')
+      .select('user_id')
+      .eq('action', 'first_value_achieved');
+
+    if (actErr) throw actErr;
+
+    const activatedUserIds = new Set((activatedEvents || []).map(e => e.user_id));
+    const totalActivated = activatedUserIds.size;
+    const activationRate = totalSignups > 0 ? ((totalActivated / totalSignups) * 100).toFixed(1) : 0;
+
+    // 3. Checkout Initiations
+    const { count: checkoutInitiated, error: chkErr } = await supabase
+      .from('activity')
+      .select('*', { count: 'exact', head: true })
+      .eq('action', 'checkout_initiated');
+
+    if (chkErr) throw chkErr;
+
+    // 4. Feature Usage Totals
+    const { data: featureUsage, error: featErr } = await supabase
+      .from('activity')
+      .select('action');
+
+    if (featErr) throw featErr;
+
+    const featureCounts = (featureUsage || []).reduce((acc, row) => {
+      acc[row.action] = (acc[row.action] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json({
+      success: true,
+      metrics: {
+        total_signups: totalSignups || 0,
+        total_activated: totalActivated,
+        activation_rate_percent: parseFloat(activationRate),
+        checkouts_initiated: checkoutInitiated || 0,
+        feature_counts: featureCounts
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching metrics:", err.message);
+    res.status(500).json({ success: false, error: "Failed to compute activation metrics" });
+  }
+});
+
 app.get("/api/admin/blog", authMiddleware, async (req, res) => {
   try {
     if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
