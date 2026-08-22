@@ -3913,3 +3913,93 @@ async function renderDemoCreatorUI(containerId = 'dashboard-content') {
     }
   });
 }
+
+
+
+// --- DEMO CREATOR SIDEBAR INTEGRATION ---
+document.addEventListener("DOMContentLoaded", () => {
+  const navContainer = document.querySelector("nav") || document.querySelector(".sidebar") || document.querySelector("#sidebar");
+  if (navContainer && !document.getElementById("nav-demo-creator")) {
+    const demoBtn = document.createElement("a");
+    demoBtn.id = "nav-demo-creator";
+    demoBtn.href = "#";
+    demoBtn.style.cssText = "display:block; padding:10px 16px; color:#38bdf8; text-decoration:none; font-weight:bold; margin-top:8px; border-radius:6px; background:rgba(56,189,248,0.1);";
+    demoBtn.innerHTML = "⚡ Demo Creator";
+    demoBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      renderDemoCreatorUI();
+    });
+    navContainer.appendChild(demoBtn);
+  }
+});
+
+
+
+// --- AI FOLLOWUP ASSISTANT UI ---
+async function renderFollowupAssistantUI(containerId = 'dashboard-content') {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = `
+    <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
+      <h2 style="margin-top:0; color:#22c55e;">🎯 AI Sales Follow-Up Assistant</h2>
+      <p style="color:#94a3b8; font-size:14px;">Generate high-converting follow-up messages and objection destroyers for cold prospects.</p>
+      
+      <form id="followup-form" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Prospect Name</label>
+          <input type="text" id="fu_lead_name" placeholder="e.g. Sarah" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div>
+          <label style="font-size:12px; color:#cbd5e1;">Last Interaction</label>
+          <input type="text" id="fu_last_interaction" placeholder="e.g. Sent live demo link 2 days ago" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="font-size:12px; color:#cbd5e1;">Specific Objection (Optional)</label>
+          <input type="text" id="fu_objection" placeholder="e.g. Too busy right now / thinks it's too expensive" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+        </div>
+        <div style="grid-column: span 2;">
+          <button type="submit" style="background:#22c55e; color:#000; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">💬 Generate Follow-Up Script</button>
+        </div>
+      </form>
+
+      <div id="followup-output" style="margin-top:24px; display:none;"></div>
+    </div>
+  `;
+
+  document.getElementById('followup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const output = document.getElementById('followup-output');
+    output.style.display = 'block';
+    output.innerHTML = '<p style="color:#22c55e;">Drafting custom sales script...</p>';
+
+    const bodyData = {
+      leadName: document.getElementById('fu_lead_name').value,
+      lastInteraction: document.getElementById('fu_last_interaction').value,
+      objection: document.getElementById('fu_objection').value
+    };
+
+    try {
+      const res = await fetch('/api/followup-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        output.innerHTML = `
+          <div style="background:#1e293b; border-radius:8px; padding:18px; border:1px solid #334155;">
+            <strong style="color:#22c55e; font-size:13px;">Ready-to-Send Follow-Up Script:</strong>
+            <textarea readonly style="width:100%; height:120px; margin-top:8px; background:#0f172a; color:#f8fafc; border:1px solid #334155; padding:10px; border-radius:6px; font-family:sans-serif; line-height:1.4;">${data.followUpScript}</textarea>
+            <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value); alert('Script copied to clipboard!');" style="margin-top:8px; background:#22c55e; color:#000; border:none; padding:8px 16px; border-radius:4px; font-weight:bold; cursor:pointer;">Copy Script</button>
+          </div>
+        `;
+      } else {
+        output.innerHTML = `<p style="color:#f87171;">Error generating script.</p>`;
+      }
+    } catch (err) {
+      output.innerHTML = `<p style="color:#f87171;">Server communication error.</p>`;
+    }
+  });
+}
