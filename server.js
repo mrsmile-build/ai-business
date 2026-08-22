@@ -1648,6 +1648,29 @@ app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+// --- AFFILIATE PROMOTIONAL RESOURCES API ---
+app.get("/api/affiliate/resources", authMiddleware, async (req, res) => {
+  const resources = {
+    whatsapp_status: [
+      "Stop losing client leads! AI Business helps agency owners, freelancers, and local SMBs find leads and generate proposals in seconds. Try it here: {ref_link}",
+      "I just generated a complete web pitch proposal in 30 seconds using AI Business. Check out how it works: {ref_link}"
+    ],
+    cold_emails: [
+      {
+        subject: "Close more client deals on autopilot with AI",
+        body: "Hi {name},\n\nIf you are spending hours searching for business leads and manually drafting quotes, AI Business automates the entire pipeline from discovery to payment collection.\n\nGet started here: {ref_link}\n\nBest regards,"
+      }
+    ],
+    value_props: [
+      "Automated Lead Finder for local Nigerian & international businesses",
+      "Instant proposal & quote builder integrated with Paystack",
+      "AI Follow-up assistant to turn cold contacts into paying clients"
+    ]
+  };
+  res.json({ success: true, resources });
+});
+
 app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
