@@ -3174,97 +3174,86 @@ async function renderAffiliate(){
       // --- AFFILIATE RESOURCES UI SECTION ---
       html += '<div style="margin-top:20px;background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155;">';
       html += '<h3 style="margin:0 0 8px 0;font-size:17px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
-      html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand promotional scripts, posts, and direct referral links.</p>';
+      html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand scripts, social posts, and referral links.</p>';
 
-      html += '<div id="affiliate-resources-container" style="color:#e2e8f0;font-size:13px;"><p style="color:#94a3b8;font-style:italic;">Loading promotional resources...</p></div>';
+      const baseUrl = "https://ai-business-two-psi.vercel.app/auth?aff=" + affCode;
+
+      // Accordion Generator Helper
+      const makeAcc = (id, icon, title, content) => `
+        <div style="margin-bottom:10px;background:#0f172a;border-radius:8px;border:1px solid #1e293b;overflow:hidden;">
+          <button onclick="const e=document.getElementById('${id}'); e.style.display=e.style.display==='none'?'block':'none';" style="width:100%;text-align:left;background:#0f172a;color:#f8fafc;border:none;padding:12px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+            <span>${icon} ${title}</span>
+            <span style="color:#64748b;">▼</span>
+          </button>
+          <div id="${id}" style="display:none;padding:12px;border-top:1px solid #1e293b;background:#1e293b;">${content}</div>
+        </div>`;
+
+      // 1. Referral Links
+      let linksHtml = `
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#0f172a;padding:8px 10px;border-radius:6px;">
+          <div><div style="font-weight:600;font-size:12px;color:#f8fafc;">Main Signup Link</div><div style="font-size:10px;color:#94a3b8;">Default onboarding link with 30-day free trial</div></div>
+          <button onclick="navigator.clipboard.writeText('${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
+        </div>
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#0f172a;padding:8px 10px;border-radius:6px;">
+          <div><div style="font-weight:600;font-size:12px;color:#f8fafc;">Starter Plan Link</div><div style="font-size:10px;color:#94a3b8;">Direct checkout link for ₦6,000/mo</div></div>
+          <button onclick="navigator.clipboard.writeText('${baseUrl}&plan=starter'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#0f172a;padding:8px 10px;border-radius:6px;">
+          <div><div style="font-weight:600;font-size:12px;color:#f8fafc;">Pro Plan Link</div><div style="font-size:10px;color:#94a3b8;">Direct checkout link for ₦15,000/mo</div></div>
+          <button onclick="navigator.clipboard.writeText('${baseUrl}&plan=pro'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy</button>
+        </div>`;
+
+      // 2. WhatsApp Scripts
+      let waHtml = `
+        <div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
+          <strong style="color:#22c55e;display:block;margin-bottom:4px;">Casual Pitch</strong>
+          Hi! Quick question: how are you finding local business clients right now? We built an AI tool that extracts verified leads and drafts proposals in 30s. Try the 30-day trial free: ${baseUrl}
+          <button onclick="navigator.clipboard.writeText('Hi! Quick question: how are you finding local business clients right now? We built an AI tool that extracts verified leads and drafts proposals in 30s. Try the 30-day trial free: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
+        </div>
+        <div style="background:#0f172a;padding:10px;border-radius:6px;font-size:11px;line-height:1.4;color:#cbd5e1;">
+          <strong style="color:#22c55e;display:block;margin-bottom:4px;">Problem-Solving Pitch</strong>
+          Are you spending too much time searching for client contacts or writing quotes? AI Business extracts target business details and automates Paystack billing. Claim 30 days free: ${baseUrl}
+          <button onclick="navigator.clipboard.writeText('Are you spending too much time searching for client contacts or writing quotes? AI Business extracts target business details and automates Paystack billing. Claim 30 days free: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
+        </div>`;
+
+      // 3. Social Media Content
+      let socHtml = `
+        <div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
+          <strong style="color:#38bdf8;display:block;margin-bottom:4px;">WhatsApp Status / Story</strong>
+          🔥 Stop losing client deals to slow follow-ups!
+
+AI Business helps local agencies & freelancers find verified leads and send proposals in 30 seconds.
+
+30-day trial: ${baseUrl}
+          <button onclick="navigator.clipboard.writeText('🔥 Stop losing client deals to slow follow-ups!\n\nAI Business helps local agencies & freelancers find verified leads and send proposals in 30 seconds.\n\n30-day trial: ${baseUrl}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
+        </div>`;
+
+      // 4. Objection Handling
+      let objHtml = `
+        <div style="background:#0f172a;padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:11px;">
+          <strong style="color:#f43f5e;display:block;">Prospect: "I already use ChatGPT"</strong>
+          <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: ChatGPT is just a bot. AI Business combines local lead scraping, proposal generation, Paystack billing, and client tracking in one place.</span>
+        </div>
+        <div style="background:#0f172a;padding:8px 10px;border-radius:6px;font-size:11px;">
+          <strong style="color:#f43f5e;display:block;">Prospect: "Is it expensive?"</strong>
+          <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: Plans start at ₦6,000/mo after a 30-day free trial. Closing 1 client pays for an entire year.</span>
+        </div>`;
+
+      // 5. Training & Sales Kit
+      let trnHtml = `
+        <div style="font-size:11px;color:#cbd5e1;line-height:1.4;">
+          <p style="margin:0 0 6px 0;"><strong style="color:#a855f7;">Lesson 1: Target Audience</strong><br>Focus on web developers, agency owners, digital marketers, and local SMEs who need paying clients.</p>
+          <p style="margin:0;"><strong style="color:#a855f7;">Lesson 2: Daily Workflow</strong><br>Post 1 WhatsApp status daily and send 5 direct messages to freelancers on LinkedIn or X using the scripts above.</p>
+        </div>`;
+
+      html += makeAcc('aff-acc-links', '🔗', 'Targeted Referral Links', linksHtml);
+      html += makeAcc('aff-acc-wa', '📱', 'WhatsApp Outreach Scripts', waHtml);
+      html += makeAcc('aff-acc-soc', '📣', 'Social Media Posts', socHtml);
+      html += makeAcc('aff-acc-obj', '🛡️', 'Objection Handling Replies', objHtml);
+      html += makeAcc('aff-acc-trn', '🎓', 'Affiliate Training & Strategy', trnHtml);
+
       html += '</div>';
 
-      setTimeout(async () => {
-        try {
-          const res = await fetch('/api/affiliate/resources', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') } });
-          const data = await res.json();
-          if (!data.success) return;
-
-          const container = document.getElementById('affiliate-resources-container');
-          if (!container) return;
-
-          const cats = data.categories;
-          let rHtml = '';
-
-          // Accordion Helper Generator
-          const makeAccordion = (id, icon, title, contentHtml) => {
-            return `<div style="margin-bottom:10px;background:#0f172a;border-radius:8px;border:1px solid #1e293b;overflow:hidden;">
-              <button onclick="const el=document.getElementById('${id}'); el.style.display = el.style.display==='none'?'block':'none';" style="width:100%;text-align:left;background:#0f172a;color:#f8fafc;border:none;padding:12px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                <span>${icon} ${title}</span>
-                <span style="color:#64748b;">▼</span>
-              </button>
-              <div id="${id}" style="display:none;padding:12px;border-top:1px solid #1e293b;background:#1e293b;">${contentHtml}</div>
-            </div>`;
-          };
-
-          // 1. Links
-          let linksHtml = '';
-          cats.links.forEach(l => {
-            linksHtml += `<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#0f172a;padding:8px 10px;border-radius:6px;">
-              <div>
-                <div style="font-weight:600;font-size:12px;color:#f8fafc;">${l.title}</div>
-                <div style="font-size:10px;color:#94a3b8;">${l.description}</div>
-              </div>
-              <button onclick="navigator.clipboard.writeText('${l.url}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-weight:600;">Copy</button>
-            </div>`;
-          });
-          rHtml += makeAccordion('aff-acc-links', '🔗', 'Targeted Referral Links', linksHtml);
-
-          // 2. WhatsApp Scripts
-          let waHtml = '';
-          cats.whatsapp_scripts.forEach(s => {
-            waHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">
-              <strong style="color:#22c55e;display:block;margin-bottom:4px;">${s.style}</strong>${s.text}
-              <button onclick="navigator.clipboard.writeText(\`${s.text}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
-            </div>`;
-          });
-          rHtml += makeAccordion('aff-acc-wa', '📱', 'WhatsApp Outreach Scripts', waHtml);
-
-          // 3. Social Content
-          let socHtml = '';
-          cats.social_content.forEach(sc => {
-            socHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">
-              <strong style="color:#38bdf8;display:block;margin-bottom:4px;">${sc.platform} - ${sc.hook}</strong>${sc.content}
-              <button onclick="navigator.clipboard.writeText(\`${sc.content}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
-            </div>`;
-          });
-          rHtml += makeAccordion('aff-acc-soc', '📣', 'Social Media Posts', socHtml);
-
-          // 4. Objection Handling
-          let objHtml = '';
-          cats.objection_handling.forEach(o => {
-            objHtml += `<div style="background:#0f172a;padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:11px;">
-              <strong style="color:#f43f5e;display:block;">Prospect: "${o.objection}"</strong>
-              <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: ${o.response}</span>
-            </div>`;
-          });
-          rHtml += makeAccordion('aff-acc-obj', '🛡️', 'Objection Handling Replies', objHtml);
-
-          // 5. Sales Kit
-          let kitHtml = `<div style="font-size:11px;line-height:1.4;color:#94a3b8;">
-            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">What it is:</strong> ${cats.sales_kit.what_is_it}</p>
-            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">Target Audience:</strong> ${cats.sales_kit.target_audience}</p>
-            <p style="margin:0;"><strong style="color:#e2e8f0;">Key Value:</strong> ${cats.sales_kit.core_problems_solved}</p>
-          </div>`;
-          rHtml += makeAccordion('aff-acc-kit', '📘', 'Product Sales Cheat Sheet', kitHtml);
-
-          // 6. Training & FAQ
-          let trnHtml = '';
-          cats.training.forEach(t => {
-            trnHtml += `<div style="margin-bottom:6px;font-size:11px;"><strong style="color:#a855f7;">${t.lesson}</strong><br><span style="color:#cbd5e1;">${t.content}</span></div>`;
-          });
-          rHtml += makeAccordion('aff-acc-trn', '🎓', 'Affiliate Training & FAQ', trnHtml);
-
-          container.innerHTML = rHtml;
-        } catch(e) {
-          console.error("Failed to render affiliate resources UI", e);
-        }
-      }, 300);
 
     }
     html += '</div>';
@@ -3311,7 +3300,7 @@ async function renderAffiliate(){
     html += '<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Starter Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;6,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#10b981">You earn &#8358;3,000</p></div>';
     html += '<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Pro Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;15,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#3b82f6">You earn &#8358;7,500</p></div>';
     html += '<div style="padding:8px 0;display:flex;justify-content:space-between"><div><p style="margin:0;font-size:13px;font-weight:600">Business Plan</p><p style="margin:0;font-size:11px;color:#64748b">Customer pays &#8358;45,000</p></div><p style="margin:0;font-size:15px;font-weight:800;color:#8b5cf6">You earn &#8358;22,500</p></div>';
-    html += '<p style="margin:10px 0 0;font-size:11px;color:#475569">50% commission. Credited 24h after payment. People who sign up via your link get 7 days free!</p>';
+    html += '<p style="margin:10px 0 0;font-size:11px;color:#475569">50% commission. Credited 24h after payment. People who sign up via your link get 30 days free!</p>';
     html += '</div>';
 
     if(convs.length > 0){
