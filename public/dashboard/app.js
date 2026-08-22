@@ -4003,3 +4003,53 @@ async function renderFollowupAssistantUI(containerId = 'dashboard-content') {
     }
   });
 }
+
+
+
+// --- PRECISE DASHBOARD MENU & GRID INTEGRATION ---
+document.addEventListener("DOMContentLoaded", () => {
+  injectToolsToUI();
+});
+
+function injectToolsToUI() {
+  // 1. Sidebar Injection under "AI Tools"
+  const allElements = Array.from(document.querySelectorAll('*'));
+  const aiToolsHeader = allElements.find(el => el.textContent.trim() === 'AI Tools' && el.children.length === 0);
+  
+  if (aiToolsHeader && !document.getElementById('nav-demo-creator')) {
+    const parent = aiToolsHeader.parentElement;
+    
+    const demoLink = document.createElement('a');
+    demoLink.id = 'nav-demo-creator';
+    demoLink.href = '#';
+    demoLink.style.cssText = 'display:block; padding:8px 12px; color:#38bdf8; text-decoration:none; font-weight:bold; margin-top:4px; border-radius:6px;';
+    demoLink.innerHTML = '⚡ Demo Creator';
+    demoLink.onclick = (e) => { e.preventDefault(); renderDemoCreatorUI(); };
+
+    const followupLink = document.createElement('a');
+    followupLink.id = 'nav-followup-assistant';
+    followupLink.href = '#';
+    followupLink.style.cssText = 'display:block; padding:8px 12px; color:#22c55e; text-decoration:none; font-weight:bold; margin-top:4px; border-radius:6px;';
+    followupLink.innerHTML = '🎯 Follow-Up Assistant';
+    followupLink.onclick = (e) => { e.preventDefault(); renderFollowupAssistantUI(); };
+
+    parent.appendChild(demoLink);
+    parent.appendChild(followupLink);
+  }
+
+  // 2. Fallback: Add floating quick-access header button
+  const topNav = document.querySelector('header') || document.body;
+  if (!document.getElementById('quick-demo-btn')) {
+    const quickBar = document.createElement('div');
+    quickBar.id = 'quick-demo-btn';
+    quickBar.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; gap:10px;';
+    quickBar.innerHTML = `
+      <button onclick="renderDemoCreatorUI()" style="background:#0284c7; color:#fff; border:none; padding:10px 16px; border-radius:20px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.4);">⚡ Demo Creator</button>
+      <button onclick="renderFollowupAssistantUI()" style="background:#16a34a; color:#fff; border:none; padding:10px 16px; border-radius:20px; font-weight:bold; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.4);">🎯 Follow-Up</button>
+    `;
+    topNav.appendChild(quickBar);
+  }
+}
+
+// Auto-run injection on dynamic page views
+setInterval(injectToolsToUI, 1500);
