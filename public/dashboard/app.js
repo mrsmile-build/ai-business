@@ -3176,6 +3176,7 @@ async function renderAffiliate(){
       html += '<h3 style="margin:0 0 8px 0;font-size:17px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
       html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand scripts, social posts, and referral links.</p>';
 
+      const affCode = (typeof aff !== "undefined" && aff && aff.affiliate_code) ? aff.affiliate_code : "YOUR_CODE";
       const baseUrl = "https://ai-business-two-psi.vercel.app/auth?aff=" + affCode;
 
       // Accordion Generator Helper
