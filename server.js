@@ -1787,6 +1787,8 @@ app.post("/api/welcome-email", async (req, res) => {
 
 /* ---------------- FOLLOW-UP ASSISTANT ---------------- */
 app.get("/api/followup-assistant", authMiddleware, async (req, res) => {
+  if (req.user && req.user.id) { trackEvent(req.user.id, 'followup_generated'); }
+
   try {
     const uid = req.user.id;
     const { data: leads } = await supabase.from("leads").select("*")
