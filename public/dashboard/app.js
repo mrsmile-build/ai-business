@@ -3172,14 +3172,13 @@ async function renderAffiliate(){
       html += '<p style="margin:0;font-size:12px;color:rgba(255,255,255,0.6)">Min withdrawal &#8358;1,000</p>';
 
       // --- AFFILIATE RESOURCES UI SECTION ---
-      html += '<div style="margin-top:20px;background:#1e293b;border-radius:12px;padding:20px;border:1px solid #334155;">';
-      html += '<h3 style="margin:0 0 12px 0;font-size:18px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
-      html += '<p style="margin:0 0 16px 0;font-size:13px;color:#94a3b8;">Copy ready-to-use scripts, posts, and direct checkout links to start converting leads immediately.</p>';
+      html += '<div style="margin-top:20px;background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155;">';
+      html += '<h3 style="margin:0 0 8px 0;font-size:17px;color:#fff;display:flex;align-items:center;gap:8px;">🔥 Marketing Resources & Sales Kit</h3>';
+      html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand promotional scripts, posts, and direct referral links.</p>';
 
-      html += '<div id="affiliate-resources-container" style="color:#e2e8f0;font-size:14px;"><p style="color:#94a3b8;font-style:italic;">Loading promotional resources...</p></div>';
+      html += '<div id="affiliate-resources-container" style="color:#e2e8f0;font-size:13px;"><p style="color:#94a3b8;font-style:italic;">Loading promotional resources...</p></div>';
       html += '</div>';
 
-      // Fetch and render resources async
       setTimeout(async () => {
         try {
           const res = await fetch('/api/affiliate/resources', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') } });
@@ -3192,49 +3191,74 @@ async function renderAffiliate(){
           const cats = data.categories;
           let rHtml = '';
 
-          // 1. Referral Links Card
-          rHtml += '<div style="margin-bottom:16px;background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
-          rHtml += '<strong style="color:#38bdf8;display:block;margin-bottom:8px;">🔗 Targeted Referral Links</strong>';
+          // Accordion Helper Generator
+          const makeAccordion = (id, icon, title, contentHtml) => {
+            return `<div style="margin-bottom:10px;background:#0f172a;border-radius:8px;border:1px solid #1e293b;overflow:hidden;">
+              <button onclick="const el=document.getElementById('${id}'); el.style.display = el.style.display==='none'?'block':'none';" style="width:100%;text-align:left;background:#0f172a;color:#f8fafc;border:none;padding:12px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                <span>${icon} ${title}</span>
+                <span style="color:#64748b;">▼</span>
+              </button>
+              <div id="${id}" style="display:none;padding:12px;border-top:1px solid #1e293b;background:#1e293b;">${contentHtml}</div>
+            </div>`;
+          };
+
+          // 1. Links
+          let linksHtml = '';
           cats.links.forEach(l => {
-            rHtml += `<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#1e293b;padding:8px 12px;border-radius:6px;">
+            linksHtml += `<div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;background:#0f172a;padding:8px 10px;border-radius:6px;">
               <div>
-                <div style="font-weight:600;font-size:13px;color:#f8fafc;">${l.title}</div>
-                <div style="font-size:11px;color:#94a3b8;">${l.description}</div>
+                <div style="font-weight:600;font-size:12px;color:#f8fafc;">${l.title}</div>
+                <div style="font-size:10px;color:#94a3b8;">${l.description}</div>
               </div>
-              <button onclick="navigator.clipboard.writeText('${l.url}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:12px;cursor:pointer;font-weight:600;">Copy</button>
+              <button onclick="navigator.clipboard.writeText('${l.url}'); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy', 2000);" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:11px;cursor:pointer;font-weight:600;">Copy</button>
             </div>`;
           });
-          rHtml += '</div>';
+          rHtml += makeAccordion('aff-acc-links', '🔗', 'Targeted Referral Links', linksHtml);
 
           // 2. WhatsApp Scripts
-          rHtml += '<div style="margin-bottom:16px;background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
-          rHtml += '<strong style="color:#22c55e;display:block;margin-bottom:8px;">📱 WhatsApp Outreach Scripts</strong>';
-          
-          rHtml += '<div style="margin-bottom:8px;"><span style="font-size:12px;color:#a7f3d0;font-weight:600;">First Contact Message:</span></div>';
-          cats.whatsapp_scripts.first_contact.forEach(s => {
-            rHtml += `<div style="background:#1e293b;padding:10px;border-radius:6px;margin-bottom:8px;font-size:12px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">${s}
-              <button onclick="navigator.clipboard.writeText(\`${s}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:8px;background:#15803d;color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer;">Copy Script</button>
+          let waHtml = '';
+          cats.whatsapp_scripts.forEach(s => {
+            waHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">
+              <strong style="color:#22c55e;display:block;margin-bottom:4px;">${s.style}</strong>${s.text}
+              <button onclick="navigator.clipboard.writeText(\`${s.text}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
             </div>`;
           });
+          rHtml += makeAccordion('aff-acc-wa', '📱', 'WhatsApp Outreach Scripts', waHtml);
 
-          rHtml += '<div style="margin:12px 0 6px 0;"><span style="font-size:12px;color:#a7f3d0;font-weight:600;">Objection Handling Replies:</span></div>';
-          cats.whatsapp_scripts.objection_handling.forEach(o => {
-            rHtml += `<div style="background:#1e293b;padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:12px;">
+          // 3. Social Content
+          let socHtml = '';
+          cats.social_content.forEach(sc => {
+            socHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;white-space:pre-wrap;color:#cbd5e1;">
+              <strong style="color:#38bdf8;display:block;margin-bottom:4px;">${sc.platform} - ${sc.hook}</strong>${sc.content}
+              <button onclick="navigator.clipboard.writeText(\`${sc.content}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
+            </div>`;
+          });
+          rHtml += makeAccordion('aff-acc-soc', '📣', 'Social Media Posts', socHtml);
+
+          // 4. Objection Handling
+          let objHtml = '';
+          cats.objection_handling.forEach(o => {
+            objHtml += `<div style="background:#0f172a;padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:11px;">
               <strong style="color:#f43f5e;display:block;">Prospect: "${o.objection}"</strong>
               <span style="color:#e2e8f0;display:block;margin-top:2px;">Reply: ${o.response}</span>
             </div>`;
           });
-          rHtml += '</div>';
+          rHtml += makeAccordion('aff-acc-obj', '🛡️', 'Objection Handling Replies', objHtml);
 
-          // 3. Product Sales Kit
-          rHtml += '<div style="background:#0f172a;padding:12px;border-radius:8px;border:1px solid #1e293b;">';
-          rHtml += '<strong style="color:#a855f7;display:block;margin-bottom:6px;">📘 Product Sales Cheat Sheet</strong>';
-          rHtml += `<div style="font-size:12px;line-height:1.5;color:#94a3b8;">
-            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">What it is:</strong> ${cats.product_sales_kit.what_is_it}</p>
-            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">Target Audience:</strong> ${cats.product_sales_kit.target_audience}</p>
-            <p style="margin:0;"><strong style="color:#e2e8f0;">Key Value:</strong> ${cats.product_sales_kit.core_problems_solved}</p>
+          // 5. Sales Kit
+          let kitHtml = `<div style="font-size:11px;line-height:1.4;color:#94a3b8;">
+            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">What it is:</strong> ${cats.sales_kit.what_is_it}</p>
+            <p style="margin:0 0 4px 0;"><strong style="color:#e2e8f0;">Target Audience:</strong> ${cats.sales_kit.target_audience}</p>
+            <p style="margin:0;"><strong style="color:#e2e8f0;">Key Value:</strong> ${cats.sales_kit.core_problems_solved}</p>
           </div>`;
-          rHtml += '</div>';
+          rHtml += makeAccordion('aff-acc-kit', '📘', 'Product Sales Cheat Sheet', kitHtml);
+
+          // 6. Training & FAQ
+          let trnHtml = '';
+          cats.training.forEach(t => {
+            trnHtml += `<div style="margin-bottom:6px;font-size:11px;"><strong style="color:#a855f7;">${t.lesson}</strong><br><span style="color:#cbd5e1;">${t.content}</span></div>`;
+          });
+          rHtml += makeAccordion('aff-acc-trn', '🎓', 'Affiliate Training & FAQ', trnHtml);
 
           container.innerHTML = rHtml;
         } catch(e) {
