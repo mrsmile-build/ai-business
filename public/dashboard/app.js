@@ -3822,9 +3822,14 @@ function updateEpBizHidden(){
 
 
 // --- DEMO CREATOR / HELPER FRONTEND UI ---
+
+
+
 async function renderDemoCreatorUI(containerId = 'dashboard-content') {
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  const baseUrl = "https://ai-business-two-psi.vercel.app";
 
   container.innerHTML = `
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
@@ -3842,14 +3847,14 @@ async function renderDemoCreatorUI(containerId = 'dashboard-content') {
         </div>
         <div>
           <label style="font-size:12px; color:#cbd5e1;">Niche / Industry*</label>
-          <input type="text" id="demo_niche" placeholder="e.g. Dental Practice / Local Healthcare" required style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+          <input type="text" id="demo_niche" placeholder="e.g. Dental Practice" required style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
         </div>
         <div>
-          <label style="font-size:12px; color:#cbd5e1;">Key Pain Point to Solve</label>
-          <input type="text" id="demo_pain_point" placeholder="e.g. missed after-hours phone calls" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
+          <label style="font-size:12px; color:#cbd5e1;">Key Pain Point</label>
+          <input type="text" id="demo_pain_point" placeholder="e.g. missed after-hours calls" style="width:100%; padding:10px; border-radius:6px; background:#1e293b; border:1px solid #334155; color:#fff;" />
         </div>
         <div style="grid-column: span 2;">
-          <button type="submit" style="background:#2563eb; color:#fff; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">🚀 Generate Personal Demo Asset</button>
+          <button type="submit" style="background:#2563eb; color:#fff; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; cursor:pointer; width:100%;">🚀 Generate Shareable Demo Link</button>
         </div>
       </form>
 
@@ -3880,25 +3885,23 @@ async function renderDemoCreatorUI(containerId = 'dashboard-content') {
 
       if (data.success) {
         const d = data.demo;
+        const fullShareUrl = baseUrl + d.shareUrl;
+
         output.innerHTML = `
           <div style="background:#1e293b; border-radius:8px; padding:18px; border:1px solid #334155;">
             <h3 style="margin-top:0; color:#4ade80;">✅ Demo Ready for ${d.meta.prospectBusiness}</h3>
             
-            <div style="background:#0f172a; padding:12px; border-radius:6px; margin-bottom:14px;">
-              <strong style="color:#38bdf8; font-size:13px;">Copyable Outreach Message:</strong>
-              <p style="font-size:13px; color:#cbd5e1; white-space:pre-wrap; margin:8px 0;">${d.personalizedPitch.hook}
-
-${d.personalizedPitch.valueProp}
-
-${d.personalizedPitch.cta}</p>
+            <div style="background:#0f172a; padding:12px; border-radius:6px; margin-bottom:14px; border:1px solid #0284c7;">
+              <strong style="color:#38bdf8; font-size:13px;">🔗 Shareable Public Demo Link:</strong>
+              <div style="display:flex; gap:8px; margin-top:6px;">
+                <input type="text" readonly value="${fullShareUrl}" style="flex:1; background:#1e293b; color:#4ade80; border:1px solid #334155; padding:8px; border-radius:4px; font-weight:bold;" />
+                <button onclick="navigator.clipboard.writeText('${fullShareUrl}'); alert('Demo URL copied!');" style="background:#0284c7; color:#fff; border:none; padding:8px 14px; border-radius:4px; cursor:pointer; font-weight:bold;">Copy Link</button>
+              </div>
             </div>
 
             <div style="background:#0f172a; padding:12px; border-radius:6px;">
-              <strong style="color:#f43f5e; font-size:13px;">Simulated Client Interaction Preview:</strong>
-              <div style="margin-top:8px; font-size:12px;">
-                <div style="color:#94a3b8;"><strong>Customer:</strong> ${d.interactivePreview.simulatedInteraction[0].text}</div>
-                <div style="color:#38bdf8; margin-top:4px;"><strong>AI Assistant:</strong> ${d.interactivePreview.simulatedInteraction[1].text}</div>
-              </div>
+              <strong style="color:#38bdf8; font-size:13px;">Copyable Outreach Message:</strong>
+              <p style="font-size:13px; color:#cbd5e1; white-space:pre-wrap; margin:8px 0;">${d.personalizedPitch.hook}\n\n${d.personalizedPitch.valueProp}\n\nInteractive Demo Link: ${fullShareUrl}\n\n${d.personalizedPitch.cta}</p>
             </div>
           </div>
         `;

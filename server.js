@@ -2178,11 +2178,12 @@ app.get("/api/status", (req, res) => {
 /* ---------------- START ---------------- */
 const PORT = process.env.PORT || 3000;
 
-// ==========================================
-// DEMO CREATOR / HELPER & MARKETING APIs
-// ==========================================
 
-// 1. Demo Creator Helper Endpoint
+// ==========================================
+// PUBLIC DEMO PAGE ROUTE & STORE
+// ==========================================
+const publicDemos = new Map();
+
 app.post("/api/demo-creator", async (req, res) => {
   try {
     const { prospectName, prospectBusiness, niche, PainPoint } = req.body;
@@ -2193,8 +2194,10 @@ app.post("/api/demo-creator", async (req, res) => {
 
     const recipient = prospectName || "Team";
     const pain = PainPoint || "manual customer follow-ups and lead leakage";
+    const slug = prospectBusiness.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || "demo";
 
     const personalizedDemo = {
+      slug,
       meta: {
         prospectBusiness,
         prospectName: recipient,
@@ -2214,12 +2217,10 @@ app.post("/api/demo-creator", async (req, res) => {
         valueProp: `Instead of letting inbound leads cool off, this system responds instantly, qualifies prospects, and books them right into your calendar 24/7.`,
         cta: `Take a look at this customized live demo we built for ${prospectBusiness} and let me know if you'd like to try it on your live website for 7 days!`
       },
-      projectedImpact: {
-        estimatedTimeSaved: "12-18 hours/week",
-        leadResponseTime: "< 10 seconds",
-        conversionLift: "+25% to +40%"
-      }
+      shareUrl: `/demo/${slug}`
     };
+
+    publicDemos.set(slug, personalizedDemo);
 
     return res.json({ success: true, demo: personalizedDemo });
   } catch (err) {
@@ -2228,40 +2229,65 @@ app.post("/api/demo-creator", async (req, res) => {
   }
 });
 
-// 2. AI Followup Assistant Endpoint
-app.post("/api/followup-assistant", async (req, res) => {
-  try {
-    const { leadName, lastInteraction, objection } = req.body;
-    
-    const draftMessage = `Hi ${leadName || 'there'},
+app.get("/demo/:slug", (req, res) => {
+  const { slug } = req.params;
+  const demo = publicDemos.get(slug);
 
-I wanted to follow up on our last conversation regarding ${lastInteraction || 'our platform'}. ` +
-      (objection ? `I understand your concern about ${objection}, and I'd love to show you how we solve that exact challenge.` : `Let me know if you have any questions or if you're ready for a quick walk-through!`) +
-      `
-
-Best regards,
-The Team`;
-
-    return res.json({ success: true, followUpScript: draftMessage });
-  } catch (err) {
-    console.error("Followup Assistant Error:", err.message);
-    return res.status(500).json({ success: false, error: "Failed to generate follow-up." });
+  if (!demo) {
+    return res.status(404).send(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Demo Not Found</title></head>
+      <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
+        <h2>Demo Expired or Not Found</h2>
+        <p style="color:#94a3b8;">This custom interactive demonstration link is no longer active.</p>
+      </body>
+      </html>
+    `);
   }
+
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${demo.meta.prospectBusiness} - AI Assistant Demo</title>
+      <style>
+        body { margin: 0; font-family: sans-serif; background: #0f172a; color: #f8fafc; }
+        .container { max-width: 800px; margin: 40px auto; padding: 24px; }
+        .card { background: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155; }
+        .badge { background: #0284c7; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .chat-box { background: #0f172a; border-radius: 8px; padding: 16px; margin-top: 20px; border: 1px solid #334155; }
+        .msg { margin: 8px 0; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.4; max-width: 85%; }
+        .msg-customer { background: #334155; color: #fff; margin-left: auto; text-align: right; }
+        .msg-ai { background: #0284c7; color: #fff; }
+        .cta-btn { display: inline-block; width: 100%; text-align: center; background: #22c55e; color: #000; font-weight: bold; padding: 14px 0; border-radius: 8px; text-decoration: none; margin-top: 24px; font-size: 16px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="card">
+          <span class="badge">Interactive Preview</span>
+          <h1 style="color: #38bdf8; margin-top: 12px; font-size: 24px;">${demo.interactivePreview.bannerHeadline}</h1>
+          <p style="color: #cbd5e1; line-height: 1.6;">${demo.personalizedPitch.valueProp}</p>
+          
+          <div class="chat-box">
+            <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
+              💬 Live Simulation: ${demo.interactivePreview.mockWidgetTitle}
+            </div>
+            <div class="msg msg-customer">${demo.interactivePreview.simulatedInteraction[0].text}</div>
+            <div class="msg msg-ai">${demo.interactivePreview.simulatedInteraction[1].text}</div>
+          </div>
+
+          <a href="https://ai-business-two-psi.vercel.app/#pricing" class="cta-btn">🚀 Activate ${demo.meta.prospectBusiness} AI Assistant Now</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `);
 });
 
-// 3. Website & System Health Check Endpoint
-app.get("/api/website-health", (req, res) => {
-  return res.json({
-    success: true,
-    status: "healthy",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    services: {
-      database: "connected",
-      apiServer: "online"
-    }
-  });
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running...");
 });
-
-
-app.listen(PORT, () => console.log("AI SaaS running on port " + PORT));
