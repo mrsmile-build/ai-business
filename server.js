@@ -1651,24 +1651,101 @@ app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
 
 // --- AFFILIATE PROMOTIONAL RESOURCES API ---
 app.get("/api/affiliate/resources", authMiddleware, async (req, res) => {
-  const resources = {
-    whatsapp_status: [
-      "Stop losing client leads! AI Business helps agency owners, freelancers, and local SMBs find leads and generate proposals in seconds. Try it here: {ref_link}",
-      "I just generated a complete web pitch proposal in 30 seconds using AI Business. Check out how it works: {ref_link}"
-    ],
-    cold_emails: [
-      {
-        subject: "Close more client deals on autopilot with AI",
-        body: "Hi {name},\n\nIf you are spending hours searching for business leads and manually drafting quotes, AI Business automates the entire pipeline from discovery to payment collection.\n\nGet started here: {ref_link}\n\nBest regards,"
+  try {
+    // Retrieve user's affiliate referral code
+    const { data: profile } = await supabase
+      .from("users")
+      .select("referral_code")
+      .eq("id", req.user.id)
+      .single();
+
+    const affCode = profile?.referral_code || "YOUR_CODE";
+    const baseUrl = "https://ai-business-two-psi.vercel.app/auth?aff=" + affCode;
+
+    // Track resource viewing event
+    if (typeof trackEvent === 'function') {
+      trackEvent(req.user.id, 'affiliate_resources_viewed');
+    }
+
+    const payload = {
+      success: true,
+      affiliate_code: affCode,
+      referral_link: baseUrl,
+      pricing_verified: {
+        starter: { price: "₦6,000/mo", commission: "₦3,000" },
+        pro: { price: "₦15,000/mo", commission: "₦7,500" },
+        business: { price: "₦45,000/mo", commission: "₦22,500" },
+        terms: "50% commission credited 24h after payment. Free 7-day trial included."
+      },
+      categories: {
+        links: [
+          { title: "Main Signup Link", url: baseUrl, description: "Default onboarding link with 7-day free trial." },
+          { title: "Starter Plan Link", url: `${baseUrl}&plan=starter`, description: "Direct checkout link for ₦6,000/mo Starter Plan." },
+          { title: "Pro Plan Link", url: `${baseUrl}&plan=pro`, description: "Direct checkout link for ₦15,000/mo Pro Plan." },
+          { title: "Business Plan Link", url: `${baseUrl}&plan=business`, description: "Direct checkout link for ₦45,000/mo Business Plan." }
+        ],
+        whatsapp_scripts: {
+          first_contact: [
+            `Hi {name}! Quick question: How are you currently finding new local business clients? We built an AI tool called AI Business that extracts verified local leads and writes custom proposals in 30 seconds. Check out how it works here: ${baseUrl}`
+          ],
+          problem_pitch: [
+            `Are you struggling to find new paying clients or taking too much time writing manual quotes? AI Business helps freelancers and agencies find verified leads, run website health checks, and collect payments via Paystack. Try it free here: ${baseUrl}`
+          ],
+          feature_pitches: [
+            { feature: "Lead Finder", message: `Stop manually searching for clients. AI Business Lead Finder instantly extracts target business details, phone numbers, and location data. Test it here: ${baseUrl}` },
+            { feature: "AI Proposals", message: `Drafting quotes taking hours? AI Business generates professional sales proposals and connects directly to Paystack in seconds: ${baseUrl}` },
+            { feature: "Website Health Check", message: `Pitch clients by showing them what's broken on their website first! AI Business runs instant health audits you can send to prospects: ${baseUrl}` }
+          ],
+          objection_handling: [
+            { objection: "I already use ChatGPT", response: "ChatGPT is just a general chatbot. AI Business connects direct lead scraping, automated proposal generation, Paystack billing, and client follow-ups into one pipeline." },
+            { objection: "Is it expensive?", response: "Plans start at just ₦6,000/month with a 7-day free trial. Closing just one project pays for an entire year of subscription." },
+            { objection: "I'll think about it", response: "Totally understand! You can test all features completely free for 7 days without committing. Here is your free access link: " + baseUrl }
+          ]
+        },
+        social_posts: [
+          {
+            platform: "WhatsApp Status",
+            hook: "🔥 Stop losing client deals to slow follow-ups!",
+            content: `AI Business helps local agencies and freelancers find verified client leads and create Paystack-linked proposals in 30 seconds.
+
+Try it free: ${baseUrl}`
+          },
+          {
+            platform: "LinkedIn / Facebook",
+            hook: "The #1 bottleneck for freelancers isn't skill—it's customer acquisition.",
+            content: `Most agency owners spend 10+ hours a week searching for leads and writing proposals manually.
+
+AI Business automates lead discovery, website audits, and proposal creation so you can close clients faster.
+
+Test the 7-day free trial here: ${baseUrl}`
+          }
+        ],
+        email_templates: [
+          {
+            subject: "Automate your client acquisition on autopilot",
+            body: `Hi {name},
+
+If you are spending hours looking for new business clients or drafting proposals, AI Business automates your entire pipeline from discovery to Paystack payment collection.
+
+Get started with a 7-day free trial here: ${baseUrl}
+
+Best regards,`
+          }
+        ],
+        product_sales_kit: {
+          what_is_it: "An all-in-one client acquisition and management operating system for SMBs, agencies, and freelancers.",
+          target_audience: "Freelancers, Local Businesses, Digital Agencies, Consultants, and Nigerian SMEs.",
+          core_problems_solved: "Difficulty finding leads, slow proposal creation, lack of follow-up, and manual payment collection issues."
+        }
       }
-    ],
-    value_props: [
-      "Automated Lead Finder for local Nigerian & international businesses",
-      "Instant proposal & quote builder integrated with Paystack",
-      "AI Follow-up assistant to turn cold contacts into paying clients"
-    ]
-  };
-  res.json({ success: true, resources });
+    };
+
+    res.json(payload);
+  } catch (err) {
+    console.error("Error serving affiliate resources:", err.message);
+    res.status(500).json({ success: false, error: "Failed to load affiliate resources" });
+  }
+});
 });
 
 app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
