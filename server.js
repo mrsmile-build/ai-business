@@ -58,6 +58,36 @@ async function checkAndTriggerActivation(userId, featureName) {
 
 
 /* ---------------- PLAN LIMITS ---------------- */
+
+// --- MULTI-CURRENCY & PRICING CONFIG ---
+const EXCHANGE_RATE_USD_NGN = 1500; // $1 USD = 1,500 NGN Baseline
+
+function getFormattedPlanPricing(planKey) {
+  const plan = PLANS[planKey];
+  if (!plan) return null;
+  const priceUSD = Math.round(plan.price / EXCHANGE_RATE_USD_NGN);
+  return {
+    ...plan,
+    price_ngn: plan.price,
+    price_usd: priceUSD,
+    display_ngn: `₦${plan.price.toLocaleString()}`,
+    display_usd: `$${priceUSD}`
+  };
+}
+
+app.get("/api/config/pricing", (req, res) => {
+  const formattedPlans = {};
+  for (const key in PLANS) {
+    formattedPlans[key] = getFormattedPlanPricing(key);
+  }
+  res.json({
+    success: true,
+    exchange_rate: EXCHANGE_RATE_USD_NGN,
+    plans: formattedPlans
+  });
+});
+// ---------------------------------------
+
 const PLANS = {
   free:     { leads: 10,       ai_per_day: 3,        label: "Free",     price: 0 },
   starter:  { leads: 50,       ai_per_day: 15,       label: "Starter",  price: 6000 },
