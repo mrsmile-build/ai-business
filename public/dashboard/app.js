@@ -4005,3 +4005,12 @@ async function renderFollowupAssistantUI(containerId = 'dashboard-content') {
     }
   });
 }
+
+window.addEventListener("hashchange", () => {
+  if (window.location.hash === "#demo-creator" || window.location.hash === "#demo") {
+    if (typeof renderDemoCreatorUI === "function") renderDemoCreatorUI("app");
+  }
+});
+if (window.location.hash === "#demo-creator" || window.location.hash === "#demo") {
+  if (typeof renderDemoCreatorUI === "function") renderDemoCreatorUI("app");
+}
