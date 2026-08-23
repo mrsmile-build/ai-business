@@ -1908,7 +1908,92 @@ app.get("/api/followup-assistant", authMiddleware, async (req, res) => {
       .eq("user_id", uid)
       .not("status", "in", '("won","lost")')
       .order("created_at", { ascending: true });
+/* ---------------- MANUAL FOLLOW-UP ASSISTANT ---------------- */
+app.post("/api/followup-assistant", authMiddleware, async (req, res) => {
+  try {
+    const { leadName, lastInteraction, objection } = req.body;
 
+    if (!leadName || !lastInteraction) {
+      return res.status(400).json({
+        success: false,
+        error: "Lead name and last interaction are required."
+      });
+    }
+
+    const prompt = `You are a Nigerian sales follow-up assistant.
+
+Generate ONE short, natural WhatsApp follow-up message.
+
+Prospect name: ${leadName}
+Last interaction: ${lastInteraction}
+Objection: ${objection || "None provided"}
+
+Rules:
+- Sound human and conversational.
+- Do not sound robotic.
+- Do not mention AI.
+- Do not pressure the prospect.
+- Maximum 70 words.
+- Return ONLY the message text.`;
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
+      },
+      body: JSON.stringify({
+        model: "qwen/qwen3.6-27b",
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 200,
+        temperature: 0.7,
+        reasoning_effort: "none"
+      })
+    });
+
+    const groqData = await groqRes.json();
+
+    if (!groqRes.ok) {
+      console.error("Follow-up AI error:", groqData);
+      return res.status(500).json({
+        success: false,
+        error: "AI generation failed"
+      });
+    }
+
+    const followUpScript = cleanAIOutput(
+      groqData.choices?.[0]?.message?.content || ""
+    );
+
+    if (!followUpScript) {
+      return res.status(500).json({
+        success: false,
+        error: "AI returned an empty response"
+      });
+    }
+
+    trackEvent(req.user.id, "manual_followup_generated", {
+      lead_name: leadName
+    });
+
+    res.json({
+      success: true,
+      followUpScript
+    });
+
+  } catch (err) {
+    console.error("Manual Follow-Up Assistant error:", err);
+    res.status(500).json({
+      success: false,
+      error: "Failed to generate follow-up"
+    });
+  }
+});
     if(!leads || leads.length === 0) return res.json({ success: true, followups: [] });
 
     const today = new Date();
@@ -2182,110 +2267,263 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // PUBLIC DEMO PAGE ROUTE & STORE
 // ==========================================
-const publicDemos = new Map();
+// Public demos are persisted in Supabase public_demos
 
 app.post("/api/demo-creator", async (req, res) => {
   try {
-    const { prospectName, prospectBusiness, niche, PainPoint } = req.body;
-    
+    const { prospectName, prospectBusiness, niche, painPoint } = req.body;
+
     if (!prospectBusiness || !niche) {
-      return res.status(400).json({ success: false, error: "Prospect business name and niche are required." });
+      return res.status(400).json({
+        success: false,
+        error: "Prospect business name and niche are required."
+      });
     }
 
     const recipient = prospectName || "Team";
-    const pain = PainPoint || "manual customer follow-ups and lead leakage";
-    const slug = prospectBusiness.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || "demo";
+    const pain = painPoint || "manual customer follow-ups and lead leakage";
+
+    const baseSlug = prospectBusiness
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "demo";
+
+    // Unique slug so repeated demos never overwrite each other.
+    const slug = `${baseSlug}-${Date.now().toString(36)}`;
+
+    const demoData = {
+      interactivePreview: {
+        bannerHeadline:
+          `How ${prospectBusiness} Can Reclaim 15+ Hours Weekly With AI Automation`,
+
+        mockWidgetTitle:
+          `${prospectBusiness} AI Sales & Support Assistant`,
+
+        simulatedInteraction: [
+          {
+            role: "customer",
+            text:
+              `Hi! What are your current opening hours and pricing for ${niche} services?`
+          },
+          {
+            role: "ai_bot",
+            text:
+              `Hello! Welcome to ${prospectBusiness}. We are open Mon-Fri 8am-6pm. I can immediately schedule your initial consultation or share our pricing options!`
+          }
+        ]
+      },
+
+      personalizedPitch: {
+        hook:
+          `Hey ${recipient}, I put together a 60-second interactive preview showing how ${prospectBusiness} can automate ${pain} using AI Business.`,
+
+        valueProp:
+          `Instead of letting inbound leads cool off, this system responds instantly, qualifies prospects, and books them right into your calendar 24/7.`,
+
+        cta:
+          `Take a look at this customized live demo we built for ${prospectBusiness} and let me know if you'd like to try it on your live website for 7 days!`
+      }
+    };
+
+    // Demo remains available for 30 days.
+    const expiresAt = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    const { error } = await supabase
+      .from("public_demos")
+      .insert({
+        slug,
+        prospect_name: recipient,
+        prospect_business: prospectBusiness,
+        niche,
+        pain_point: pain,
+        demo_data: demoData,
+        expires_at: expiresAt
+      });
+
+    if (error) {
+      console.error("Demo persistence error:", error);
+      throw error;
+    }
 
     const personalizedDemo = {
       slug,
+
       meta: {
         prospectBusiness,
         prospectName: recipient,
         niche,
-        generatedAt: new Date().toISOString()
+        generatedAt: new Date().toISOString(),
+        expiresAt
       },
-      interactivePreview: {
-        bannerHeadline: `How ${prospectBusiness} Can Reclaim 15+ Hours Weekly With AI Automation`,
-        mockWidgetTitle: `${prospectBusiness} AI Sales & Support Assistant`,
-        simulatedInteraction: [
-          { role: "customer", text: `Hi! What are your current opening hours and pricing for ${niche} services?` },
-          { role: "ai_bot", text: `Hello! Welcome to ${prospectBusiness}. We are open Mon-Fri 8am-6pm. I can immediately schedule your initial consultation or share our pricing options!` }
-        ]
-      },
-      personalizedPitch: {
-        hook: `Hey ${recipient}, I put together a 60-second interactive preview showing how ${prospectBusiness} can automate ${pain} using AI Business.`,
-        valueProp: `Instead of letting inbound leads cool off, this system responds instantly, qualifies prospects, and books them right into your calendar 24/7.`,
-        cta: `Take a look at this customized live demo we built for ${prospectBusiness} and let me know if you'd like to try it on your live website for 7 days!`
-      },
+
+      interactivePreview: demoData.interactivePreview,
+      personalizedPitch: demoData.personalizedPitch,
       shareUrl: `/demo/${slug}`
     };
 
-    publicDemos.set(slug, personalizedDemo);
+    return res.json({
+      success: true,
+      demo: personalizedDemo
+    });
 
-    return res.json({ success: true, demo: personalizedDemo });
   } catch (err) {
-    console.error("Demo Creator Error:", err.message);
-    return res.status(500).json({ success: false, error: "Failed to generate personalized demo." });
+    console.error("Demo Creator Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      error: err.message || "Failed to generate personalized demo.",
+      details: err.code || null
+    });
   }
 });
 
-app.get("/demo/:slug", (req, res) => {
-  const { slug } = req.params;
-  const demo = publicDemos.get(slug);
+app.get("/api/debug/supabase-project", (req, res) => {
+  try {
+    const url = process.env.SUPABASE_URL || "";
+    let hostname = null;
 
-  if (!demo) {
-    return res.status(404).send(`
+    try {
+      hostname = new URL(url).hostname;
+    } catch (_) {}
+
+    res.json({
+      success: true,
+      supabaseHost: hostname,
+      hasServiceKey: Boolean(process.env.SUPABASE_SERVICE_KEY)
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+app.get("/demo/:slug", async (req, res) => {
+  const { slug } = req.params;
+
+  try {
+    const { data: storedDemo, error } = await supabase
+      .from("public_demos")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Demo lookup error:", error);
+      return res.status(500).send("Failed to load demo.");
+    }
+
+    if (!storedDemo) {
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Demo Not Found</title></head>
+        <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
+          <h2>Demo Not Found</h2>
+          <p style="color:#94a3b8;">This custom interactive demonstration link is no longer active.</p>
+        </body>
+        </html>
+      `);
+    }
+
+    if (
+      storedDemo.expires_at &&
+      new Date(storedDemo.expires_at) <= new Date()
+    ) {
+      return res.status(410).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Demo Expired</title></head>
+        <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
+          <h2>Demo Expired</h2>
+          <p style="color:#94a3b8;">This custom interactive demonstration has expired.</p>
+        </body>
+        </html>
+      `);
+    }
+
+    const demo = {
+      slug: storedDemo.slug,
+
+      meta: {
+        prospectBusiness: storedDemo.prospect_business,
+        prospectName: storedDemo.prospect_name || "Team",
+        niche: storedDemo.niche,
+        generatedAt: storedDemo.created_at,
+        expiresAt: storedDemo.expires_at
+      },
+
+      interactivePreview:
+        storedDemo.demo_data?.interactivePreview || {},
+
+      personalizedPitch:
+        storedDemo.demo_data?.personalizedPitch || {},
+
+      shareUrl: `/demo/${storedDemo.slug}`
+    };
+
+    res.send(`
       <!DOCTYPE html>
-      <html>
-      <head><title>Demo Not Found</title></head>
-      <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
-        <h2>Demo Expired or Not Found</h2>
-        <p style="color:#94a3b8;">This custom interactive demonstration link is no longer active.</p>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${demo.meta.prospectBusiness} - AI Assistant Demo</title>
+        <style>
+          body { margin: 0; font-family: sans-serif; background: #0f172a; color: #f8fafc; }
+          .container { max-width: 800px; margin: 40px auto; padding: 24px; }
+          .card { background: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155; }
+          .badge { background: #0284c7; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+          .chat-box { background: #0f172a; border-radius: 8px; padding: 16px; margin-top: 20px; border: 1px solid #334155; }
+          .msg { margin: 8px 0; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.4; max-width: 85%; }
+          .msg-customer { background: #334155; color: #fff; margin-left: auto; text-align: right; }
+          .msg-ai { background: #0284c7; color: #fff; }
+          .cta-btn { display: inline-block; width: 100%; text-align: center; background: #22c55e; color: #000; font-weight: bold; padding: 14px 0; border-radius: 8px; text-decoration: none; margin-top: 24px; font-size: 16px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="card">
+            <span class="badge">Interactive Preview</span>
+
+            <h1 style="color:#38bdf8; margin-top:12px; font-size:24px;">
+              ${demo.interactivePreview.bannerHeadline}
+            </h1>
+
+            <p style="color:#cbd5e1; line-height:1.6;">
+              ${demo.personalizedPitch.valueProp}
+            </p>
+
+            <div class="chat-box">
+              <div style="font-size:12px; color:#94a3b8; font-weight:bold; margin-bottom:12px; border-bottom:1px solid #334155; padding-bottom:8px;">
+                💬 Live Simulation: ${demo.interactivePreview.mockWidgetTitle}
+              </div>
+
+              <div class="msg msg-customer">
+                ${demo.interactivePreview.simulatedInteraction?.[0]?.text || ""}
+              </div>
+
+              <div class="msg msg-ai">
+                ${demo.interactivePreview.simulatedInteraction?.[1]?.text || ""}
+              </div>
+            </div>
+
+            <a href="/#pricing" class="cta-btn">
+              🚀 Activate ${demo.meta.prospectBusiness} AI Assistant Now
+            </a>
+          </div>
+        </div>
       </body>
       </html>
     `);
+
+  } catch (err) {
+    console.error("Public demo error:", err.message);
+    return res.status(500).send("Failed to load demo.");
   }
-
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${demo.meta.prospectBusiness} - AI Assistant Demo</title>
-      <style>
-        body { margin: 0; font-family: sans-serif; background: #0f172a; color: #f8fafc; }
-        .container { max-width: 800px; margin: 40px auto; padding: 24px; }
-        .card { background: #1e293b; border-radius: 12px; padding: 28px; border: 1px solid #334155; }
-        .badge { background: #0284c7; color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
-        .chat-box { background: #0f172a; border-radius: 8px; padding: 16px; margin-top: 20px; border: 1px solid #334155; }
-        .msg { margin: 8px 0; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.4; max-width: 85%; }
-        .msg-customer { background: #334155; color: #fff; margin-left: auto; text-align: right; }
-        .msg-ai { background: #0284c7; color: #fff; }
-        .cta-btn { display: inline-block; width: 100%; text-align: center; background: #22c55e; color: #000; font-weight: bold; padding: 14px 0; border-radius: 8px; text-decoration: none; margin-top: 24px; font-size: 16px; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="card">
-          <span class="badge">Interactive Preview</span>
-          <h1 style="color: #38bdf8; margin-top: 12px; font-size: 24px;">${demo.interactivePreview.bannerHeadline}</h1>
-          <p style="color: #cbd5e1; line-height: 1.6;">${demo.personalizedPitch.valueProp}</p>
-          
-          <div class="chat-box">
-            <div style="font-size: 12px; color: #94a3b8; font-weight: bold; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
-              💬 Live Simulation: ${demo.interactivePreview.mockWidgetTitle}
-            </div>
-            <div class="msg msg-customer">${demo.interactivePreview.simulatedInteraction[0].text}</div>
-            <div class="msg msg-ai">${demo.interactivePreview.simulatedInteraction[1].text}</div>
-          </div>
-
-          <a href="https://ai-business-two-psi.vercel.app/#pricing" class="cta-btn">🚀 Activate ${demo.meta.prospectBusiness} AI Assistant Now</a>
-        </div>
-      </div>
-    </body>
-    </html>
-  `);
 });
 
 app.listen(process.env.PORT || 3000, () => {
