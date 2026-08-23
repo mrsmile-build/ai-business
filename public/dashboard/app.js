@@ -171,7 +171,8 @@ function loadPage(page){
     blogadmin: 'renderBlogAdmin',
     testimonials: 'renderTestimonials',
     healthcheck: 'renderWebsiteHealth',
-    followup: 'renderFollowupAssistant',
+    followup: 'renderFollowupAssistantUI',
+    demoCreator: 'renderDemoCreatorUI',
     video: 'renderVideoCreator',
     appointments: 'renderAppointments',
     invoice: 'renderInvoice',
@@ -300,8 +301,6 @@ function renderDashboard(){
           <button onclick="loadPage('aiTools')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">🧠</div>
             <div style="font-size:12px;font-weight:600">AI Tools
-<a href="#" onclick="event.preventDefault(); renderDemoCreatorUI();" style="display:flex; align-items:center; gap:8px; padding:10px 16px; color:#38bdf8; font-weight:600; text-decoration:none;">⚡ Demo Creator</a>
-<a href="#" onclick="event.preventDefault(); renderFollowupAssistantUI();" style="display:flex; align-items:center; gap:8px; padding:10px 16px; color:#22c55e; font-weight:600; text-decoration:none;">🎯 Follow-Up Assistant</a></div>
             <div style="font-size:10px;color:#475569">${aiUsage}/${aiLimit} today</div>
           </button>
           <button onclick="loadPage('agents')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
@@ -3806,6 +3805,8 @@ if (typeof toggleMenu === "function") window.toggleMenu = toggleMenu;
 if (typeof showFeedbackPopup === "function") window.showFeedbackPopup = showFeedbackPopup;
 if (typeof toggleNotifications === "function") window.toggleNotifications = toggleNotifications;
 if (typeof loadPage === "function") window.loadPage = loadPage;
+if (typeof renderDemoCreatorUI === "function") window.renderDemoCreatorUI = renderDemoCreatorUI;
+if (typeof renderFollowupAssistantUI === "function") window.renderFollowupAssistantUI = renderFollowupAssistantUI;
 if (typeof logout === "function") window.logout = logout;
 console.log("APP.JS REACHED BOTTOM - exports attempted");
 
@@ -3827,11 +3828,11 @@ function updateEpBizHidden(){
 
 
 
-async function renderDemoCreatorUI(containerId = 'dashboard-content') {
+async function renderDemoCreatorUI(containerId = 'app') {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const baseUrl = "https://ai-business-two-psi.vercel.app";
+  const baseUrl = "https://ai-business-1-ok3x.onrender.com";
 
   container.innerHTML = `
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
@@ -3874,11 +3875,11 @@ async function renderDemoCreatorUI(containerId = 'dashboard-content') {
       prospectBusiness: document.getElementById('demo_biz_name').value,
       prospectName: document.getElementById('demo_prospect_name').value,
       niche: document.getElementById('demo_niche').value,
-      PainPoint: document.getElementById('demo_pain_point').value
+      painPoint: document.getElementById('demo_pain_point').value
     };
 
     try {
-      const res = await fetch('/api/demo-creator', {
+      const res = await apiFetch('/api/demo-creator', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
@@ -3929,7 +3930,7 @@ document.addEventListener("DOMContentLoaded", () => {
     demoBtn.innerHTML = "⚡ Demo Creator";
     demoBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      renderDemoCreatorUI();
+      renderDemoCreatorUI('app');
     });
     navContainer.appendChild(demoBtn);
   }
@@ -3938,7 +3939,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // --- AI FOLLOWUP ASSISTANT UI ---
-async function renderFollowupAssistantUI(containerId = 'dashboard-content') {
+async function renderFollowupAssistantUI(containerId = 'app') {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -3982,7 +3983,7 @@ async function renderFollowupAssistantUI(containerId = 'dashboard-content') {
     };
 
     try {
-      const res = await fetch('/api/followup-assistant', {
+      const res = await apiFetch('/api/followup-assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bodyData)
