@@ -4014,3 +4014,16 @@ window.addEventListener("hashchange", () => {
 if (window.location.hash === "#demo-creator" || window.location.hash === "#demo") {
   if (typeof renderDemoCreatorUI === "function") renderDemoCreatorUI("app");
 }
+
+
+    document.addEventListener("click", (e) => {
+      const target = e.target.closest('[data-route="demo-creator"], [href*="demo-creator"], [href*="demo"]');
+      if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof renderDemoCreatorUI === "function") {
+          renderDemoCreatorUI("app");
+        }
+      }
+    }, true);
+    
