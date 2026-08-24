@@ -1,3 +1,28 @@
+
+// Static Localization Helper
+window.i18n = {
+  currentLang: 'en',
+  translations: {},
+  async load(lang) {
+    this.currentLang = lang || 'en';
+    try {
+      const res = await fetch(`/locales/${this.currentLang}.json`);
+      if (res.ok) this.translations = await res.json();
+    } catch (e) {
+      console.warn('i18n load failed, fallback to default:', e);
+    }
+    this.apply();
+  },
+  t(key) {
+    return this.translations[key] || key;
+  },
+  apply() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (this.translations[key]) el.textContent = this.translations[key];
+    });
+  }
+};
 const NICHE_OPTIONS = [
   {value:"agency", label:"Agency/Freelancer", emoji:"💼"},
   {value:"salon", label:"Salon/Beauty", emoji:"💇"},

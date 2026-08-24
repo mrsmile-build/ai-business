@@ -1,0 +1,17 @@
+{
+  "nav.dashboard": "Tableau de bord",
+  "nav.profile": "Profil",
+  "nav.leads": "Clients (CRM)",
+  "nav.ai_tools": "Outils IA",
+  "nav.ai_agents": "Agents IA",
+  "nav.automation": "Automatisation",
+  "nav.lead_finder": "Recherche de Prospects",
+  "nav.demo_creator": "Créateur de Démo",
+  "nav.settings": "Paramètres",
+  "settings.title": "Langue et Localisation",
+  "settings.interface_language": "Langue de l'interface",
+  "settings.ai_response_language": "Langue de réponse IA",
+  "settings.same_as_interface": "Identique à l'interface",
+  "common.save": "Enregistrer les préférences",
+  "common.cancel": "Annuler"
+}

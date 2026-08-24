@@ -1,0 +1,17 @@
+{
+  "nav.dashboard": "Dashboard",
+  "nav.profile": "Profile",
+  "nav.leads": "Leads (CRM)",
+  "nav.ai_tools": "AI Tools",
+  "nav.ai_agents": "AI Agents",
+  "nav.automation": "Automation",
+  "nav.lead_finder": "Lead Finder",
+  "nav.demo_creator": "Demo Creator",
+  "nav.settings": "Settings",
+  "settings.title": "Language & Localization",
+  "settings.interface_language": "Interface Language",
+  "settings.ai_response_language": "AI Response Language",
+  "settings.same_as_interface": "Same as Interface",
+  "common.save": "Save Preferences",
+  "common.cancel": "Cancel"
+}
