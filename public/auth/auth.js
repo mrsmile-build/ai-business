@@ -209,10 +209,335 @@ window.signup = async () => {
 window.forgotPassword = async () => {
   const email = document.getElementById("email").value.trim();
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + "/auth" });
     if(error) throw error;
     alert("Password reset link sent to " + email + ". Check your inbox.");
   } catch(err) {
     alert("Error: " + (err.message||"Could not send reset email."));
   }
 };
+
+/* =========================================================
+   PASSWORD RECOVERY
+   ========================================================= */
+
+window.checkAndRenderRecoveryModal = async function () {
+  let recoveryActive = false;
+  let userEmail = "Account Recovery";
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      userEmail = session.user.email || userEmail;
+    }
+
+    recoveryActive =
+      window.__SUPABASE_RECOVERY_ACTIVE__ === true ||
+      sessionStorage.getItem("supabase_recovery_active") === "true";
+
+  } catch (e) {
+    console.error("Recovery session check failed:", e);
+  }
+
+  if (!recoveryActive) return;
+
+  if (document.getElementById("auth-fullscreen-recovery")) return;
+
+  const overlay = document.createElement("div");
+
+  overlay.id = "auth-fullscreen-recovery";
+
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    background:#080c14;
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      width:100%;
+      max-width:400px;
+      background:#111a2e;
+      border:1px solid #243451;
+      border-radius:16px;
+      padding:28px;
+      box-sizing:border-box;
+      color:white;
+      box-shadow:0 20px 50px rgba(0,0,0,.5);
+    ">
+
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="font-size:32px">📊</div>
+
+        <h2 style="
+          margin:10px 0 6px;
+          font-size:23px;
+        ">
+          Set New Password
+        </h2>
+
+        <p style="
+          margin:0;
+          color:#94a3b8;
+          font-size:13px;
+        ">
+          Create a new password for your AI Business account.
+        </p>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="
+          display:block;
+          color:#94a3b8;
+          font-size:12px;
+          margin-bottom:6px;
+        ">
+          Account Email
+        </label>
+
+        <input
+          type="email"
+          value="${userEmail.replace(/"/g, "&quot;")}"
+          disabled
+          style="
+            width:100%;
+            padding:12px;
+            box-sizing:border-box;
+            border-radius:8px;
+            border:1px solid #243451;
+            background:#0b1220;
+            color:#64748b;
+          "
+        >
+      </div>
+
+      <div id="recovery-message"
+        style="
+          display:none;
+          padding:10px;
+          border-radius:8px;
+          margin-bottom:15px;
+          font-size:13px;
+          text-align:center;
+        ">
+      </div>
+
+      <form id="recovery-form">
+
+        <div style="margin-bottom:16px">
+
+          <label style="
+            display:block;
+            color:#94a3b8;
+            font-size:12px;
+            margin-bottom:6px;
+          ">
+            New Password
+          </label>
+
+          <input
+            id="recovery-password"
+            type="password"
+            minlength="6"
+            required
+            placeholder="Enter new password"
+            style="
+              width:100%;
+              padding:12px;
+              box-sizing:border-box;
+              border-radius:8px;
+              border:1px solid #243451;
+              background:#0b1220;
+              color:white;
+            "
+          >
+
+        </div>
+
+        <div style="margin-bottom:20px">
+
+          <label style="
+            display:block;
+            color:#94a3b8;
+            font-size:12px;
+            margin-bottom:6px;
+          ">
+            Confirm New Password
+          </label>
+
+          <input
+            id="recovery-confirm"
+            type="password"
+            minlength="6"
+            required
+            placeholder="Confirm new password"
+            style="
+              width:100%;
+              padding:12px;
+              box-sizing:border-box;
+              border-radius:8px;
+              border:1px solid #243451;
+              background:#0b1220;
+              color:white;
+            "
+          >
+
+        </div>
+
+        <button
+          id="recovery-submit"
+          type="submit"
+          style="
+            width:100%;
+            padding:13px;
+            border:0;
+            border-radius:8px;
+            background:#2563eb;
+            color:white;
+            font-weight:bold;
+            cursor:pointer;
+          "
+        >
+          Save New Password
+        </button>
+
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  document
+    .getElementById("recovery-form")
+    .addEventListener("submit", window.handlePasswordRecovery);
+};
+
+
+window.handlePasswordRecovery = async function (event) {
+  event.preventDefault();
+
+  const password =
+    document.getElementById("recovery-password").value;
+
+  const confirm =
+    document.getElementById("recovery-confirm").value;
+
+  const message =
+    document.getElementById("recovery-message");
+
+  const button =
+    document.getElementById("recovery-submit");
+
+  if (password.length < 6) {
+    message.style.display = "block";
+    message.style.background = "rgba(239,68,68,.15)";
+    message.style.color = "#f87171";
+    message.textContent =
+      "Password must be at least 6 characters.";
+    return;
+  }
+
+  if (password !== confirm) {
+    message.style.display = "block";
+    message.style.background = "rgba(239,68,68,.15)";
+    message.style.color = "#f87171";
+    message.textContent =
+      "Passwords do not match.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Saving...";
+
+  try {
+
+    const { error } =
+      await supabase.auth.updateUser({
+        password: password
+      });
+
+    if (error) throw error;
+
+    message.style.display = "block";
+    message.style.background = "rgba(16,185,129,.15)";
+    message.style.color = "#34d399";
+    message.textContent =
+      "Password updated successfully.";
+
+    sessionStorage.removeItem("supabase_recovery_active");
+    sessionStorage.removeItem("supabase_recovery_email");
+
+    setTimeout(async () => {
+
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {}
+
+      window.location.href = "/auth";
+
+    }, 1500);
+
+  } catch (error) {
+
+    console.error("Password update error:", error);
+
+    message.style.display = "block";
+    message.style.background = "rgba(239,68,68,.15)";
+    message.style.color = "#f87171";
+    message.textContent =
+      error?.message ||
+      "Could not update password.";
+
+    button.disabled = false;
+    button.textContent = "Save New Password";
+  }
+};
+
+
+/*
+   Supabase may fire PASSWORD_RECOVERY before or after
+   auth.js finishes loading, so listen for it and also
+   perform an explicit startup check.
+*/
+
+supabase.auth.onAuthStateChange((event, session) => {
+
+  if (event === "PASSWORD_RECOVERY") {
+
+    window.__SUPABASE_RECOVERY_ACTIVE__ = true;
+
+    try {
+      sessionStorage.setItem(
+        "supabase_recovery_active",
+        "true"
+      );
+
+      if (session?.user?.email) {
+        sessionStorage.setItem(
+          "supabase_recovery_email",
+          session.user.email
+        );
+      }
+    } catch (e) {}
+
+    setTimeout(() => {
+      window.checkAndRenderRecoveryModal();
+    }, 100);
+  }
+
+});
+
+
+setTimeout(() => {
+  window.checkAndRenderRecoveryModal();
+}, 500);

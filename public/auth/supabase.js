@@ -2,5 +2,32 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 export const supabase = createClient(
   "https://qewmhaualndadheoaxkm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFld21oYXVhbG5kYWRoZW9heGttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxNDM3ODQsImV4cCI6MjA5NTcxOTc4NH0.go23TjvFYLJmUAxIZYU0fEqtHmUjJA3GVS0Ecu94k4E"
+  "sb_publishable_KXIU9BznTzvTdeOHT2w2NA_i8eQPTy5"
 );
+
+// Password recovery state.
+// IMPORTANT: Do not depend only on the URL hash because Supabase
+// consumes the recovery token during session initialization.
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    window.__SUPABASE_RECOVERY_ACTIVE__ = true;
+
+    try {
+      sessionStorage.setItem("supabase_recovery_active", "true");
+
+      if (session?.user?.email) {
+        sessionStorage.setItem(
+          "supabase_recovery_email",
+          session.user.email
+        );
+      }
+    } catch (e) {}
+
+    // Give auth.js time to finish loading before rendering the UI.
+    setTimeout(() => {
+      if (typeof window.checkAndRenderRecoveryModal === "function") {
+        window.checkAndRenderRecoveryModal();
+      }
+    }, 0);
+  }
+});
