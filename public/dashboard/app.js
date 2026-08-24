@@ -74,15 +74,92 @@ async function resolveBackend(){
   return _backendCheckPromise;
 }
 
+let _refreshPromise = null;
+
+async function refreshAccessToken(){
+  if(_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async function(){
+    try {
+      const rt = localStorage.getItem("refresh_token");
+      if(!rt) return null;
+
+      const backend = await resolveBackend();
+
+      const response = await fetch(backend + "/api/refresh", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({refresh_token: rt})
+      });
+
+      if(!response.ok) return null;
+
+      const data = await response.json();
+
+      if(!data.token) return null;
+
+      localStorage.setItem("token", data.token);
+
+      if(data.refresh_token){
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
+
+      return data.token;
+    } catch(e) {
+      console.error("Token refresh failed:", e);
+      return null;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
+
 async function apiFetch(path, options){
+  var requestOptions = options || {};
   var backend = await resolveBackend();
+
+  async function makeRequest(baseUrl, tokenOverride){
+    var headers = new Headers(requestOptions.headers || {});
+    var token = tokenOverride || localStorage.getItem("token");
+
+    if(token){
+      headers.set("Authorization", "Bearer " + token);
+    }
+
+    return fetch(baseUrl + path, {
+      ...requestOptions,
+      headers
+    });
+  }
+
   try {
-    return await fetch(backend + path, options);
+    var response = await makeRequest(backend);
+
+    if(response.status !== 401){
+      return response;
+    }
+
+    // Access token expired. Refresh it once, then retry the original request.
+    var newToken = await refreshAccessToken();
+
+    if(!newToken){
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      window.location.href = "/auth";
+      return response;
+    }
+
+    return await makeRequest(backend, newToken);
+
   } catch(e){
+    // Backend may be sleeping/unavailable. Try the alternate backend.
     _activeBackend = null;
     _backendCheckPromise = null;
+
     var backend2 = await resolveBackend();
-    return fetch(backend2 + path, options);
+    return makeRequest(backend2);
   }
 }
 
@@ -97,21 +174,6 @@ async function init(){
   try {
     let token = localStorage.getItem("token");
     let res = await apiFetch("/api/me", { headers: { Authorization: "Bearer " + token }});
-    if(res.status === 401){
-      const rt = localStorage.getItem("refresh_token");
-      if(rt){
-        const rr = await apiFetch("/api/refresh", {
-          method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({refresh_token: rt})
-        });
-        const rd = await rr.json();
-        if(rd.token){
-          localStorage.setItem("token", rd.token);
-          localStorage.setItem("refresh_token", rd.refresh_token);
-          res = await apiFetch("/api/me", { headers: { Authorization: "Bearer " + rd.token }});
-        } else { location.href="/auth"; return; }
-      } else { location.href="/auth"; return; }
-    }
     const data = await res.json();
     currentUser = data.user;
     currentSub = data.subscription;
