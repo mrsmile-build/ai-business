@@ -3,7 +3,7 @@ window.docGenerator = {
   renderReport(prospectData, companyInfo) {
     const title = prospectData.title || "Signal Customer Report";
     const dateStr = new Date().toLocaleDateString();
-    
+
     return `
       <div id="doc-preview" class="p-6 bg-white text-slate-800 rounded-lg shadow-md max-w-3xl mx-auto my-4 font-sans">
         <div class="border-b-2 border-slate-900 pb-4 mb-4 flex justify-between items-center">
@@ -16,7 +16,7 @@ window.docGenerator = {
             <p>${companyInfo.email || ""}</p>
           </div>
         </div>
-        
+
         <div class="mb-4">
           <h2 class="text-md font-bold text-slate-800 border-b pb-1 mb-2">Executive Summary</h2>
           <p class="text-sm text-slate-700">${prospectData.summary || "High-priority prospect identified via AI Lead Finder signal analysis."}</p>

@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- HOMEPAGE RECOVERY REDIRECT -->
+
+<script>
+(function () {
+  const hash = window.location.hash || "";
+  const search = window.location.search || "";
+
+  const isRecovery =
+    hash.includes("type=recovery") ||
+    hash.includes("access_token=") ||
+    search.includes("type=recovery");
+
+  if (isRecovery && !window.location.pathname.startsWith("/auth")) {
+    window.location.replace("/auth" + search + hash);
+  }
+})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI Business - Customer Management and Follow-Up Platform</title>

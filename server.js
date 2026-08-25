@@ -1653,14 +1653,14 @@ app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
 // --- AFFILIATE PROMOTIONAL RESOURCES API ---
 app.get("/api/affiliate/resources", authMiddleware, async (req, res) => {
   try {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("referral_code")
-      .eq("id", req.user.id)
-      .single();
+      const { data: affiliate } = await supabase
+        .from("affiliates")
+        .select("affiliate_code")
+        .eq("user_id", req.user.id)
+        .single();
 
-    const affCode = profile?.referral_code || "YOUR_CODE";
-    const baseUrl = "https://ai-business-two-psi.vercel.app/auth?aff=" + affCode;
+      const affCode = affiliate?.affiliate_code || "YOUR_CODE";
+      const baseUrl = (process.env.APP_URL || "https://ai-business-two-psi.vercel.app") + "/auth?aff=" + affCode;
 
     if (typeof trackEvent === 'function') {
       trackEvent(req.user.id, 'affiliate_resources_viewed');
