@@ -275,6 +275,121 @@ function loadPage(page){
 /* =========================
    DASHBOARD (CORE SAAS)
 ========================= */
+function startBusinessGoal(goal){
+  var goals = {
+    customers: {
+      title: "💰 Let's get you more customers",
+      text: "We'll help you find potential customers, create a message, track your conversations and follow up.",
+      steps: [
+        {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+        {label:"Create your outreach message", page:"aiTools", icon:"💬"},
+        {label:"Track your prospects", page:"leads", icon:"📩"},
+        {label:"Follow up", page:"automation", icon:"⚡"}
+      ]
+    },
+    bookings: {
+      title: "📅 Let's get you more bookings",
+      text: "We'll help you turn interested customers into scheduled appointments.",
+      steps: [
+        {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+        {label:"Manage your customers", page:"leads", icon:"📩"},
+        {label:"Set up bookings", page:"appointments", icon:"📅"}
+      ]
+    },
+    sales: {
+      title: "💵 Let's help you make more sales",
+      text: "We'll help you move prospects from interest to payment.",
+      steps: [
+        {label:"Find opportunities", page:"leadFinder", icon:"🎯"},
+        {label:"Create a proposal", page:"proposal", icon:"📄"},
+        {label:"Follow up with prospects", page:"automation", icon:"⚡"},
+        {label:"Create an invoice", page:"invoice", icon:"🧾"}
+      ]
+    },
+    followup: {
+      title: "🔄 Let's stop customers from slipping away",
+      text: "We'll help you keep track of conversations and follow up at the right time.",
+      steps: [
+        {label:"View your customers", page:"leads", icon:"📩"},
+        {label:"Set up follow-ups", page:"automation", icon:"⚡"}
+      ]
+    },
+    promotion: {
+      title: "📣 Let's promote your business",
+      text: "Create useful marketing content and get it in front of the right people.",
+      steps: [
+        {label:"Create marketing content", page:"aiTools", icon:"🧠"},
+        {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+        {label:"Create your business page", page:"bizpage", icon:"🌐"}
+      ]
+    },
+    growth: {
+      title: "📈 Let's grow your business",
+      text: "We'll help you find opportunities, win customers and organize your business.",
+      steps: [
+        {label:"Find new opportunities", page:"leadFinder", icon:"🎯"},
+        {label:"Manage customers", page:"leads", icon:"📩"},
+        {label:"Follow up", page:"automation", icon:"⚡"},
+        {label:"See your performance", page:"analytics", icon:"📊"}
+      ]
+    },
+    guide: {
+      title: "✨ Let's figure it out together",
+      text: "You don't need to know which tool you need. Start by telling us what you want your business to achieve.",
+      steps: [
+        {label:"Find customers", page:"leadFinder", icon:"🎯"},
+        {label:"Manage customers", page:"leads", icon:"📩"},
+        {label:"Create proposals", page:"proposal", icon:"📄"},
+        {label:"Follow up", page:"automation", icon:"⚡"}
+      ]
+    }
+  };
+
+  var selected = goals[goal] || goals.guide;
+
+  setView(`
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#0f172a,#172554);padding:20px 16px">
+        <button onclick="loadPage('dashboard')" style="background:none;border:0;color:#94a3b8;cursor:pointer;font-size:12px;padding:0;margin-bottom:18px">
+          ← Back to dashboard
+        </button>
+
+        <div style="font-size:22px;font-weight:800;color:white">${selected.title}</div>
+
+        <p style="font-size:13px;color:#94a3b8;line-height:1.6;margin:8px 0 0">
+          ${selected.text}
+        </p>
+      </div>
+
+      <div style="padding:16px">
+
+        <p style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin:0 0 12px">
+          Your suggested path
+        </p>
+
+        ${selected.steps.map(function(step,index){
+          return `
+            <button onclick="loadPage('${step.page}')" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 12px;margin-bottom:8px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;color:white;text-align:left;cursor:pointer">
+              <div style="font-size:20px">${step.icon}</div>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:700">Step ${index+1}: ${step.label}</div>
+                <div style="font-size:10px;color:#64748b;margin-top:3px">Open this step →</div>
+              </div>
+            </button>
+          `;
+        }).join("")}
+
+        <div style="margin-top:14px;padding:12px;background:#111827;border-radius:9px;border:1px solid #1e293b">
+          <div style="font-size:11px;font-weight:700;color:#60a5fa">💡 You don't have to understand all the tools.</div>
+          <div style="font-size:10px;color:#64748b;margin-top:4px;line-height:1.5">
+            AI Business is designed to help you move from what you want to achieve to the actions you need to take.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `);
+}
 function renderDashboard(){
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
@@ -321,9 +436,60 @@ function renderDashboard(){
         </div>
       </div>
 
-      <div id="followup_box" style="display:none"></div>
-      <div style="padding:0 14px">${renderOnboarding()}</div>
+        <div style="padding:0 14px">${renderOnboarding()}</div>
+        <div id="followup_box" style="display:none"></div>
 
+        <div style="padding:14px 14px 4px">
+          <div style="background:linear-gradient(135deg,#111c35,#172554);border:1px solid #3b82f655;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.18)">
+
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px">
+              <span style="font-size:24px">🎯</span>
+              <div>
+                <div style="font-size:15px;font-weight:800;color:white">What do you want to accomplish?</div>
+                <div style="font-size:11px;color:#94a3b8;margin-top:2px">Tell AI Business your goal. We'll help you take the next step.</div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+
+              <button onclick="startBusinessGoal('customers')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">💰</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Get more customers</div>
+              </button>
+
+              <button onclick="startBusinessGoal('bookings')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">📅</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Get more bookings</div>
+              </button>
+
+              <button onclick="startBusinessGoal('sales')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">💵</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Make more sales</div>
+              </button>
+
+              <button onclick="startBusinessGoal('followup')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">🔄</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Follow up with customers</div>
+              </button>
+
+              <button onclick="startBusinessGoal('promotion')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">📣</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Promote my business</div>
+              </button>
+
+              <button onclick="startBusinessGoal('growth')" style="padding:12px 10px;background:#0f172acc;border:1px solid #334155;border-radius:10px;color:white;text-align:left;cursor:pointer">
+                <div style="font-size:19px">📈</div>
+                <div style="font-size:12px;font-weight:700;margin-top:4px">Grow my business</div>
+              </button>
+
+            </div>
+
+            <button onclick="startBusinessGoal('guide')" style="width:100%;margin-top:10px;padding:11px;background:linear-gradient(135deg,#2563eb,#7c3aed);border:0;border-radius:9px;color:white;font-size:12px;font-weight:700;cursor:pointer">
+              ✨ I don't know what I need — guide me
+            </button>
+
+          </div>
+        </div>
       <div style="padding:14px">
         <div style="background:#0b1220;border-radius:8px;padding:10px 12px;margin-bottom:12px">
           <p style="margin:0 0 6px;font-size:11px;color:#3b82f6;font-weight:600">YOUR BUSINESS FLOW</p>
