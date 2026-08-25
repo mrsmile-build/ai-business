@@ -1607,11 +1607,17 @@ async function creditAffiliate(userId, plan, amountPaid){
     const commission = Math.round(amountPaid * rate);
     const clearanceTime = new Date(Date.now() + 24*60*60*1000); // matches "Pending 24h" already in the dashboard UI
 
-    await supabase.from("affiliate_conversions").insert({
-      affiliate_id: aff.user_id, converted_user_id: userId, plan: plan,
-      payment_amount: amountPaid, commission: commission,
-      status: "pending", clearance_time: clearanceTime
-    });
+      await supabase.from("affiliate_conversions").insert({
+        affiliate_id: aff.user_id,
+        converted_user_id: userId,
+        plan: plan,
+        payment_amount: amountPaid,
+        amount: commission,
+        commission: commission,
+        type: "first_payment",
+        status: "pending",
+        clearance_time: clearanceTime
+      });
     await supabase.from("affiliates").update({
       pending: (aff.pending || 0) + commission,
       total_conversions: (aff.total_conversions || 0) + 1
