@@ -504,21 +504,90 @@ function renderDashboard(){
 
           </div>
         </div>
+
       <div style="padding:14px">
-        <div style="background:#0b1220;border-radius:8px;padding:10px 12px;margin-bottom:12px">
-          <p style="margin:0 0 6px;font-size:11px;color:#3b82f6;font-weight:600">YOUR BUSINESS FLOW</p>
-          <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;flex-wrap:wrap">
-            <span onclick="loadPage('leadFinder')" style="cursor:pointer;color:#3b82f6">🎯 Find</span>
-            <span>→</span>
-            <span onclick="loadPage('aiTools')" style="cursor:pointer;color:#8b5cf6">💬 Message</span>
-            <span>→</span>
-            <span onclick="loadPage('leads')" style="cursor:pointer;color:#10b981">📩 Track</span>
-            <span>→</span>
-            <span onclick="loadPage('automation')" style="cursor:pointer;color:#f59e0b">⚡ Follow Up</span>
-            <span>→</span>
-            <span onclick="loadPage('proposal')" style="cursor:pointer;color:#ef4444">📄 Close</span>
-          </div>
-        </div>
+          ${(function(){
+            var GOAL_FLOW = {
+              customers: {
+                title:"YOUR CUSTOMER ACQUISITION FLOW",
+                steps:[
+                  ["leadFinder","🎯 Find"],
+                  ["aiTools","💬 Message"],
+                  ["leads","📩 Track"],
+                  ["automation","⚡ Follow Up"]
+                ]
+              },
+              bookings: {
+                title:"YOUR BOOKING FLOW",
+                steps:[
+                  ["leadFinder","🎯 Find"],
+                  ["leads","📩 Track"],
+                  ["appointments","📅 Book"],
+                  ["automation","⚡ Follow Up"]
+                ]
+              },
+              sales: {
+                title:"YOUR SALES FLOW",
+                steps:[
+                  ["leadFinder","🎯 Find"],
+                  ["proposal","📄 Proposal"],
+                  ["automation","⚡ Follow Up"],
+                  ["invoice","🧾 Invoice"]
+                ]
+              },
+              followup: {
+                title:"YOUR FOLLOW-UP FLOW",
+                steps:[
+                  ["leads","📩 Customers"],
+                  ["automation","⚡ Follow Up"],
+                  ["proposal","📄 Close"]
+                ]
+              },
+              promotion: {
+                title:"YOUR PROMOTION FLOW",
+                steps:[
+                  ["aiTools","🧠 Create"],
+                  ["leadFinder","🎯 Find"],
+                  ["bizpage","🌐 Promote"],
+                  ["leads","📩 Track"]
+                ]
+              },
+              growth: {
+                title:"YOUR GROWTH FLOW",
+                steps:[
+                  ["leadFinder","🎯 Find"],
+                  ["leads","📩 Manage"],
+                  ["automation","⚡ Follow Up"],
+                  ["analytics","📊 Measure"]
+                ]
+              },
+              guide: {
+                title:"YOUR BUSINESS FLOW",
+                steps:[
+                  ["leadFinder","🎯 Find"],
+                  ["aiTools","💬 Message"],
+                  ["leads","📩 Track"],
+                  ["automation","⚡ Follow Up"],
+                  ["proposal","📄 Close"]
+                ]
+              }
+            };
+
+            var goal = (currentProfile && currentProfile.primary_goal) || "guide";
+            var flow = GOAL_FLOW[goal] || GOAL_FLOW.guide;
+
+            var html = '<div style="background:#0b1220;border-radius:8px;padding:10px 12px;margin-bottom:12px">';
+            html += '<p style="margin:0 0 6px;font-size:11px;color:#3b82f6;font-weight:600">' + flow.title + '</p>';
+            html += '<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:#64748b;flex-wrap:wrap">';
+
+            flow.steps.forEach(function(step,index){
+              if(index > 0) html += '<span>→</span>';
+              html += '<span onclick="loadPage(&#39;' + step[0] + '&#39;)" style="cursor:pointer;color:#3b82f6">' + step[1] + '</span>';
+            });
+
+            html += '</div></div>';
+            return html;
+          })()}
         ${(function(){
           var NICHE_FEATURES = {
             salon: [{page:"appointments",icon:"📅",label:"Bookings"},{page:"agents",icon:"🤖",label:"AI Agents"},{page:"leadFinder",icon:"🎯",label:"Lead Finder"},{page:"invoice",icon:"🧾",label:"Invoice"}],
