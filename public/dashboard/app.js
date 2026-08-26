@@ -276,6 +276,20 @@ function loadPage(page){
    DASHBOARD (CORE SAAS)
 ========================= */
 function startBusinessGoal(goal){
+  currentProfile = currentProfile || {};
+  currentProfile.primary_goal = goal;
+
+  apiFetch("/api/profile", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({ primary_goal: goal })
+  }).catch(function(err){
+    console.warn("Could not save primary goal:", err);
+  });
+
   var goals = {
     customers: {
       title: "💰 Let's get you more customers",

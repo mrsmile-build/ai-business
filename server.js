@@ -390,11 +390,12 @@ app.post("/api/profile/seed-phone", authMiddleware, async (req, res) => {
 
 app.patch("/api/profile", authMiddleware, async (req, res) => {
   try {
-    const { display_name, avatar_url, phone, country } = req.body;
+    const { display_name, avatar_url, phone, country, primary_goal } = req.body;
     const updates = { user_id: req.user.id };
     if(phone !== undefined) updates.phone = phone;
     if(country !== undefined) updates.country = country;
     if(avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if(primary_goal !== undefined) updates.primary_goal = primary_goal;
     if(display_name !== undefined){
       const { data: existing } = await supabase.from("profiles").select("username_updated_at").eq("user_id", req.user.id).single();
       if(existing?.username_updated_at){
