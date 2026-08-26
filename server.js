@@ -390,20 +390,37 @@ app.post("/api/profile/seed-phone", authMiddleware, async (req, res) => {
 
 app.patch("/api/profile", authMiddleware, async (req, res) => {
   try {
-    const { display_name, avatar_url, phone, country, primary_goal } = req.body;
+    const { display_name, avatar_url, phone, country, primary_goal, business_type } = req.body;
+      console.log("PROFILE PATCH BODY:", req.body);
     const updates = { user_id: req.user.id };
     if(phone !== undefined) updates.phone = phone;
     if(country !== undefined) updates.country = country;
     if(avatar_url !== undefined) updates.avatar_url = avatar_url;
     if(primary_goal !== undefined) updates.primary_goal = primary_goal;
-    if(display_name !== undefined){
-      const { data: existing } = await supabase.from("profiles").select("username_updated_at").eq("user_id", req.user.id).single();
-      if(existing?.username_updated_at){
-        const days = (Date.now() - new Date(existing.username_updated_at).getTime())/(1000*60*60*24);
-        if(days < 30) return res.json({ success: false, error: "Username can only be changed every 30 days. "+Math.ceil(30-days)+" days remaining." });
+      if(business_type !== undefined) {
+        updates.business_type = business_type;
+        console.log("BUSINESS TYPE RECEIVED:", business_type);
       }
-      updates.display_name = display_name;
-      updates.username_updated_at = new Date();
+    if(display_name !== undefined){
+      const { data: existing } = await supabase.from("profiles").select("display_name, username_updated_at").eq("user_id", req.user.id).single();
+
+      const nameChanged = display_name !== (existing?.display_name || "");
+
+      if(nameChanged && existing?.username_updated_at){
+        const days = (Date.now() - new Date(existing.username_updated_at).getTime())/(1000*60*60*24);
+
+        if(days < 30){
+          return res.json({
+            success: false,
+            error: "Username can only be changed every 30 days. "+Math.ceil(30-days)+" days remaining."
+          });
+        }
+      }
+
+      if(nameChanged){
+        updates.display_name = display_name;
+        updates.username_updated_at = new Date();
+      }
     }
     const { data, error } = await supabase.from("profiles").upsert(updates, { onConflict: "user_id" }).select().single();
     if(error) throw error;
@@ -2405,6 +2422,30 @@ app.get("/api/debug/supabase-project", (req, res) => {
       success: false,
       error: err.message
     });
+  }
+});
+
+app.get("/api/debug/supabase-key-fingerprint", (req, res) => {
+  try {
+    const crypto = require("crypto");
+    const key = process.env.SUPABASE_SERVICE_KEY || "";
+
+    res.json({
+      success: true,
+      keyType: key.startsWith("sb_secret_")
+        ? "SECRET"
+        : key.startsWith("sb_publishable_")
+          ? "PUBLISHABLE"
+          : "UNKNOWN",
+      length: key.length,
+      fingerprint: crypto
+        .createHash("sha256")
+        .update(key)
+        .digest("hex")
+        .slice(0, 16)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
