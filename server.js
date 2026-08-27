@@ -422,7 +422,12 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
         updates.username_updated_at = new Date();
       }
     }
-    const { data, error } = await supabase.from("profiles").upsert(updates, { onConflict: "user_id" }).select().single();
+    const { data, error } = await supabase
+        .from("profiles")
+        .update(updates)
+        .eq("user_id", req.user.id)
+        .select()
+        .single();
     if(error) throw error;
     res.json({ success: true, profile: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
