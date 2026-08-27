@@ -162,3 +162,496 @@ Note: automation-pattern document (Trigger -> AI analyzes -> score -> action -> 
 ### LATER — Vision 2 direction (Command Center, Business Memory, Sales Intelligence, Workflow Automation)
 Multiple sessions converged on one throughline, not four separate ideas: Command Center (natural-language "what are you trying to accomplish" front door, routes to existing features via loadPage()-style logic), Business Memory (natural-language sales/expense/receivables tracking, explicitly NOT positioned as accountant-replacement), Sales Intelligence (help qualify/understand a lead, not just store it), Workflow Automation (n8n-inspired architecture, but ships ready-made business workflows rather than a general automation builder). All genuinely Vision 2 (business operating infrastructure) - explicitly deferred, not started.
 Exception: Command Center Phase 1 (simple intent-to-existing-feature routing, zero new AI/backend needed) is near-term buildable, not long-term - worth its own scoped NEXT item whenever picked up, not buried with the rest.
+
+
+---
+
+# MASTER BUILD PRIORITY — 2026-08-27
+
+This section defines the practical build order for the next major AI Business releases.
+Existing DONE items above remain historical record. Do not remove them.
+
+## CURRENT BUILD ORDER
+
+### NOW — Activity & Performance System
+
+Turn existing activity tracking into a useful business-performance layer.
+
+Goals:
+- Collect meaningful business actions already happening inside AI Business
+- Show activity/performance indicators inside the hamburger menu
+- Make indicators feel different from normal notifications
+- Examples:
+  - 5 businesses searched
+  - 3 leads followed up
+  - 4 messages sent
+  - 2 new leads captured
+  - 1 booking received
+- Show useful counts/indicators beside relevant menu items
+- Clicking the item opens a weekly performance view
+- Show daily/weekly activity in a simple timeline
+- Show progress and useful comparisons
+- Generate plain-English AI insights from real activity data
+- Suggest the next useful action
+- Do not fabricate metrics
+- Keep this separate from the existing general notification system
+
+UX principle:
+The menu should quietly communicate "you have something to look at" without confusing performance indicators with notifications.
+
+---
+
+### NEXT — Appointment / Booking System
+
+Build booking into a complete business workflow.
+
+Scope:
+- Services
+- Availability
+- Booking form
+- Customer booking
+- Booking management
+- Booking status
+- Confirmation
+- Reminders
+- Business owner view
+- AI-assisted booking
+- Connect bookings to leads/customers
+- Track booking activity for Analytics
+
+Existing booking work is already shipped; this item means completing and strengthening the full workflow rather than rebuilding what already works.
+
+---
+
+### NEXT — Invoice & Receipt System
+
+Scope:
+- Create invoices
+- Customer information
+- Products/services
+- Amounts
+- Due dates
+- Invoice status
+- Send/share invoice
+- Payment status
+- Generate receipts
+- Connect invoices to customers/leads
+- Track financial activity
+
+Do not position this as replacing an accountant.
+
+---
+
+### NEXT — Business Page Builder
+
+Turn the existing public business-page capability into a stronger customer-facing page.
+
+Scope:
+- Business information
+- Services/products
+- Contact information
+- WhatsApp/contact CTA
+- Lead capture
+- Booking
+- Shareable business URL
+- Better mobile experience
+- Basic customization
+- SEO-friendly public page
+
+---
+
+### NEXT — AI Workforce / AI Agents
+
+Build AI assistance around real workflows rather than generic chatbots.
+
+Initial modules:
+- AI Receptionist
+- Follow-Up Assistant
+- Sales Assistant
+- Social Assistant
+- Reports/Analytics Assistant
+
+Principle:
+AI should assist with real business work and clearly show what requires human approval.
+
+---
+
+### NEXT — Lead Finder 2.0 / Signal System
+
+Evolution of Lead Finder:
+
+FIND → UNDERSTAND → CONTACT → FOLLOW UP → CONVERT
+
+Build around honest signals from available data.
+
+Initial buildable signals:
+- Review count
+- Low-review/new-listing framing
+- Business information quality
+- Contact availability
+- Website/contact weaknesses where actually verified
+
+Do not invent buying signals or business intelligence.
+
+Future paid/restricted data sources may add:
+- Hiring
+- Funding
+- LinkedIn activity
+- Ad activity
+
+---
+
+### NEXT — Smart Analytics
+
+Turn existing business data into decisions.
+
+Scope:
+- Leads
+- Follow-ups
+- Messages
+- Bookings
+- Conversions
+- Revenue where available
+- Weekly/monthly summaries
+- Plain-English insights
+- Trends
+- Suggested actions
+
+Example:
+"Most of your enquiries this week came from WhatsApp."
+
+Only use real stored data.
+
+---
+
+### NEXT — AI Business Command Center
+
+Near-term phase of the larger Vision 2 direction.
+
+Instead of forcing users to understand which feature they need, ask:
+
+"What are you trying to accomplish?"
+
+Examples:
+- Get more customers
+- Get more bookings
+- Increase sales
+- Follow up with customers
+- Promote my business
+- Organize my customers
+
+AI Business should route the user into the appropriate existing workflow.
+
+Phase 1:
+Simple intent → existing feature/workflow routing.
+
+Do not rebuild the entire platform for this.
+
+---
+
+### LATER — Multilingual AI Business
+
+Allow users to select a preferred language and translate the application experience.
+
+Scope:
+- Menu
+- Dashboard
+- Buttons
+- Forms
+- Notifications
+- Settings
+- Onboarding
+- AI responses
+
+Architecture should use translation keys rather than hard-coded translations throughout the application.
+
+---
+
+### LATER — Business Memory
+
+Remember useful customer/business context.
+
+Examples:
+- Customer preferences
+- Important dates
+- Payment promises
+- Notes
+- Follow-up context
+- Previous interactions
+
+Memory must be structured, explainable, and connected to actual customer records.
+
+---
+
+### LATER — AI Inbox
+
+Different from the existing outbound Follow-Up Assistant.
+
+Purpose:
+- Receive inbound customer message
+- AI understands message
+- Draft response
+- Human reviews/edits
+- Human approves sending
+
+Blocked until a reliable inbound messaging source is available.
+
+---
+
+### LATER — Voice Receptionist
+
+Phase 1:
+- Browser "Talk to AI"
+- Speech-to-text
+- AI response
+- Text-to-speech
+
+Phase 2:
+- WhatsApp voice
+
+Phase 3:
+- Phone/telephony
+
+Do not build paid telephony infrastructure before there is a business case.
+
+---
+
+### LATER — AI Meeting / Voice / OCR Assistant
+
+Potential capabilities:
+- Record meeting
+- Transcribe
+- Summarize
+- Extract action items
+- Create reminders
+- Create quotations
+- Voice commands
+- OCR receipts
+- OCR price lists
+- OCR business cards
+
+Large scope; defer until core product has stronger usage.
+
+---
+
+### LATER — Opportunity Feed
+
+Evolution of Lead Finder.
+
+Potential real/free source:
+- Google News RSS
+- Publicly available business/news signals
+
+Future paid/restricted sources may add stronger signals.
+
+Never fabricate opportunities.
+
+---
+
+### LATER — Industry-Specific Intelligence
+
+Examples:
+- Real estate → property matching
+- Phone shop → phone recommendation
+- Travel agency → package matching
+- Hotel → room/package matching
+
+Premium capability after real users and stronger onboarding.
+
+---
+
+### LATER — Advanced Vision 2
+
+Long-term direction:
+- Business Digital Twin
+- Business Relationship Engine
+- AI Business Scientist
+- Risk Prediction
+- AI CEO
+- Cause-and-effect analysis
+- Advanced experimentation
+- Business Memory
+- Sales Intelligence
+- Workflow Automation
+
+These are research-grade/large-scale ideas.
+
+Do not allow the vision to delay shipping the core product.
+
+---
+
+## PRODUCT NORTH STAR
+
+AI Business should evolve from:
+
+"Here are a collection of business tools."
+
+into:
+
+"What are you trying to accomplish?"
+
+Then AI Business should guide the user through the right workflow using the tools already available.
+
+The product should help businesses:
+
+1. Get more customers
+2. Convert more leads into sales
+3. Keep customers coming back
+4. Save significant time
+5. Make better business decisions
+
+Standing filter:
+If a feature does not materially help with at least one of these five outcomes, question whether it belongs in the product yet.
+
+---
+
+## BUILD RULE
+
+Do not build everything simultaneously.
+
+For each feature:
+1. Define the smallest useful version
+2. Build it
+3. Test the real workflow
+4. Fix actual bugs
+5. Deploy
+6. Mark it DONE
+7. Move to the next priority
+
+The roadmap is the source of truth for product direction.
+
+---
+
+## NEXT — Menu Activity Signals / Weekly Performance
+
+Make the hamburger menu communicate useful business activity, not just navigation.
+
+The menu should collect lightweight activity counts from existing product data and show small number badges beside relevant features, creating a "there is something here for me" feeling.
+
+Examples:
+- Analytics `2` → 2 useful performance insights available
+- Leads `5` → 5 leads added/received recently
+- Follow-Up `3` → 3 follow-ups due
+- Messages `4` → 4 messages/actions recorded
+- Bookings `2` → 2 upcoming/recent bookings
+- Other existing tools can surface meaningful counts where appropriate
+
+When the user opens Analytics, show a simple weekly performance view in plain language, for example:
+
+- Found 5 businesses
+- Added 3 leads
+- Sent 4 messages
+- Followed up with 3 prospects
+- Won 1 customer
+- Received 2 enquiries
+- Had 2 bookings
+
+Important distinction:
+These activity badges are NOT the same as real notifications.
+
+Notifications = events/messages that need attention.
+
+Activity signals = evidence of what the business has been doing and what useful information is available inside each feature.
+
+UX goal:
+Make the menu feel alive and useful without creating fake urgency or meaningless numbers.
+
+Build rule:
+Use existing database/activity data where possible. Do not create a complicated analytics system first. Start with a small reliable weekly activity summary, test it, deploy it, then expand.
+
+---
+
+## NEXT — Command Center Phase 1
+
+Evolve AI Business from a collection of tools toward:
+
+"What are you trying to accomplish?"
+
+Phase 1 should be simple and use existing features.
+
+Examples:
+- "I want more customers" → Lead Finder
+- "I want to follow up with my leads" → Follow-Up
+- "I want to get more bookings" → Booking
+- "I want to promote my business" → appropriate promotion workflow
+- "I want to see how my business is doing" → Analytics
+- "I want to organize my customers" → Leads/Customers
+
+No major new AI infrastructure required initially. The first version should route the user's intent to existing workflows.
+
+---
+
+## NEXT — Landing Page Outcome Positioning
+
+Rewrite the homepage around business outcomes rather than a collection of features.
+
+Core positioning:
+
+"AI Business helps you get more customers, convert more leads, save time, keep customers coming back, and make better business decisions."
+
+Requirements:
+- 5-second clarity test
+- Outcome-focused headline
+- Before/After explanation
+- One primary CTA repeated throughout the page
+- Features should support the outcome story rather than lead it
+
+---
+
+## NEXT — Website Health Checker
+
+Smallest useful version:
+User enters a website URL.
+
+Check for:
+- Mobile-friendly viewport
+- WhatsApp/contact option
+- Clear CTA
+- Booking/enquiry form
+- Basic business information
+
+Then AI produces a simple prioritized improvement report.
+
+Must use real checks and must not invent results.
+
+---
+
+## NEXT — Smart Analytics
+
+Use existing leads, bookings, enquiries, follow-ups and other activity data to generate plain-English business insights.
+
+Examples:
+- "You received most enquiries this week on Friday."
+- "You added 8 leads but only followed up with 3."
+- "Your follow-up activity increased compared with last week."
+
+Start with deterministic calculations from real data. AI can explain the results, but it must not invent statistics.
+
+---
+
+## NEXT — Testimonials Collection
+
+Add a simple way for existing users/customers to submit testimonials.
+
+Requirements:
+- Submission form
+- Store testimonial
+- Basic moderation/approval
+- Approved testimonials can later appear on the landing page
+
+---
+
+## PRODUCT PRIORITY
+
+Near-term priority order after the current profile/RLS fix:
+
+1. Verify profile onboarding on the real frontend
+2. Landing Page Rewrite
+3. Menu Activity Signals / Weekly Performance
+4. Smart Analytics
+5. Command Center Phase 1
+6. Website Health Checker
+7. Testimonials Collection
+
+Do not start multiple items simultaneously. Finish, test, deploy and mark each DONE before moving to the next priority.
+
