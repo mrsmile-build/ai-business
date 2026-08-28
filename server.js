@@ -402,7 +402,13 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
         console.log("BUSINESS TYPE RECEIVED:", business_type);
       }
     if(display_name !== undefined){
-      const { data: existing } = await supabase.from("profiles").select("display_name, username_updated_at").eq("user_id", req.user.id).single();
+      const { data: existing, error: existingError } = await supabase
+        .from("profiles")
+        .select("display_name, username_updated_at")
+        .eq("user_id", req.user.id)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
 
       const nameChanged = display_name !== (existing?.display_name || "");
 
@@ -427,8 +433,9 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
         .update(updates)
         .eq("user_id", req.user.id)
         .select()
-        .single();
-    if(error) throw error;
+        .maybeSingle();
+
+    if (error) throw error;
     res.json({ success: true, profile: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
