@@ -179,13 +179,23 @@ async function init(){
     currentSub = data.subscription;
     if(currentUser && currentUser.email === "mrsmile4569@gmail.com"){
       var menuEl = document.getElementById("menu");
-      if(menuEl && !document.getElementById("blog_admin_link")){
+      if(menuEl){
+      if(!document.getElementById("blog_admin_link")){
         var blogLink = document.createElement("div");
         blogLink.id = "blog_admin_link";
         blogLink.setAttribute("onclick", "loadPage('blogadmin')");
         blogLink.textContent = "📝 Manage Blog";
         menuEl.insertBefore(blogLink, menuEl.firstChild);
       }
+
+      if(!document.getElementById("testimonials_admin_link")){
+        var testimonialLink = document.createElement("div");
+        testimonialLink.id = "testimonials_admin_link";
+        testimonialLink.setAttribute("onclick", "loadPage('testimonials')");
+        testimonialLink.textContent = "💬 Testimonials";
+        menuEl.insertBefore(testimonialLink, menuEl.firstChild);
+      }
+    }
     }
   } catch(e) {}
   // Load profile
@@ -2925,37 +2935,532 @@ async function runWebsiteHealthCheck(){
 }
 
 async function renderTestimonials(){
-  setView(`<div class="card">${header("💬 Testimonials","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
-  try {
-    var res = await apiFetch("/api/testimonials", {headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
-    var data = await res.json();
-    var items = data.testimonials || [];
+  setView(`
+    <div class="card">
+      ${header("💬 Testimonials","dashboard")}
+      <p style="color:#94a3b8;font-size:13px">Manage the testimonials displayed publicly on AI Business.</p>
+      <button onclick="showAddTestimonialForm()"
+        style="padding:9px 14px;background:#2563eb;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:600">
+        ➕ Add Testimonial
+      </button>
+    </div>
+  `);
 
-    var html = '<div class="card">' + header("💬 Testimonials","dashboard");
-    html += '<p style="font-size:13px;color:#94a3b8;margin-bottom:16px">People who agreed to be featured, from 4-5 star feedback.</p>';
+  try {
+    const res = await apiFetch("/api/testimonials", {
+      headers:{ Authorization:"Bearer "+localStorage.getItem("token") }
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      setView('<div class="card">' +
+        header("💬 Testimonials","dashboard") +
+        '<p style="color:#ef4444;text-align:center;padding:20px">' +
+        (data.error || "Unable to load testimonials") +
+        '</p></div>');
+      return;
+    }
+
+    const items = data.testimonials || [];
+
+    let html = '<div class="card">' +
+      header("💬 Testimonials","dashboard");
+
+    html += `
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:14px">
+        Add and manage customer testimonials that appear on the public AI Business website.
+      </p>
+
+      <button onclick="showAddTestimonialForm()"
+        style="padding:9px 14px;background:#2563eb;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:600;margin-bottom:18px">
+        ➕ Add Testimonial
+      </button>
+    `;
 
     if(items.length === 0){
-      html += '<div style="text-align:center;padding:30px"><p style="color:#64748b;font-size:13px">No testimonials yet. They will show up here once users opt in from the feedback popup.</p></div>';
+      html += `
+        <div style="text-align:center;padding:35px 15px">
+          <div style="font-size:40px;margin-bottom:10px">💬</div>
+          <p style="color:#cbd5e1;font-size:14px;font-weight:600">No testimonials yet</p>
+          <p style="color:#64748b;font-size:12px">
+            Add your first customer testimonial above.
+          </p>
+        </div>
+      `;
     } else {
       items.forEach(function(t){
-        var name = (t.profiles && t.profiles.display_name) ? t.profiles.display_name : "A user";
-        var stars = "⭐".repeat(t.rating || 5);
-        var msg = t.message || "";
-        var escapedMsg = msg.replace(/'/g, "\\\\'").replace(/\\n/g, " ");
-        html += '<div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:10px">';
-        html += '<p style="margin:0 0 4px;font-size:13px">' + stars + '</p>';
-        html += '<p style="margin:0 0 8px;font-size:13px;color:#cbd5e1;line-height:1.5">"' + msg + '"</p>';
-        html += '<p style="margin:0 0 10px;font-size:11px;color:#475569">— ' + name + '</p>';
-        html += '<button data-text="' + escapedMsg + ' — ' + name + '" onclick="navigator.clipboard.writeText(this.getAttribute(&quot;data-text&quot;)).then(function(){alert(&quot;Copied!&quot;);})" style="padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">📋 Copy</button>';
-        html += '</div>';
+        const id = String(t.id).replace(/'/g,"\\\\'");
+        const name = t.name || "Customer";
+        const business = t.business_name || "";
+        const message = t.message || "";
+        const rating = Math.min(5, Math.max(1, Number(t.rating) || 5));
+        const status = t.status || "draft";
+
+        let statusColor = "#f59e0b";
+        let statusBg = "rgba(245,158,11,0.12)";
+        let statusLabel = "⏳ Draft";
+
+        if(status === "published"){
+          statusColor = "#10b981";
+          statusBg = "rgba(16,185,129,0.12)";
+          statusLabel = "✅ Published";
+        } else if(status === "rejected"){
+          statusColor = "#ef4444";
+          statusBg = "rgba(239,68,68,0.12)";
+          statusLabel = "❌ Rejected";
+        }
+
+        html += `
+          <div style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:12px">
+
+              ${
+                t.avatar_url
+                ? `<img src="${t.avatar_url}"
+                    style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid #334155">`
+                : `<div style="width:48px;height:48px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>`
+              }
+
+              <div style="flex:1">
+                <p style="margin:0;font-size:14px;font-weight:700;color:#f8fafc">${name}</p>
+                ${business ? `<p style="margin:3px 0 0;color:#64748b;font-size:11px">${business}</p>` : ""}
+              </div>
+
+              <span style="font-size:10px;padding:5px 8px;border-radius:6px;background:${statusBg};color:${statusColor}">
+                ${statusLabel}
+              </span>
+            </div>
+
+            <p style="margin:12px 0 7px;font-size:13px">${"⭐".repeat(rating)}</p>
+
+            <p style="margin:0 0 12px;color:#cbd5e1;font-size:13px;line-height:1.6">
+              "${message}"
+            </p>
+
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
+              <button onclick="editTestimonial('${id}')"
+                style="padding:7px 11px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">
+                ✏️ Edit
+              </button>
+
+              ${
+                status !== "published"
+                ? `<button onclick="publishTestimonial('${id}')"
+                    style="padding:7px 11px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">
+                    ✅ Publish
+                  </button>`
+                : `<button onclick="rejectTestimonial('${id}')"
+                    style="padding:7px 11px;background:#7f1d1d;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">
+                    ❌ Unpublish
+                  </button>`
+              }
+
+              <button onclick="deleteTestimonial('${id}')"
+                style="padding:7px 11px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:6px;cursor:pointer;font-size:11px">
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        `;
       });
     }
+
     html += '</div>';
     setView(html);
+
   } catch(e){
-    setView('<div class="card">' + header("💬 Testimonials","dashboard") + '<p style="color:red">' + e.message + '</p></div>');
+    setView(
+      '<div class="card">' +
+      header("💬 Testimonials","dashboard") +
+      '<p style="color:#ef4444;text-align:center;padding:20px">' +
+      e.message +
+      '</p></div>'
+    );
   }
 }
+
+
+/* ---------------- ADD TESTIMONIAL ---------------- */
+
+window.showAddTestimonialForm = function(){
+  setView(`
+    <div class="card">
+      ${header("➕ Add Testimonial","dashboard")}
+
+      <div style="text-align:center;margin-bottom:18px">
+        <div id="testimonial_avatar_preview"
+          style="width:80px;height:80px;border-radius:50%;background:#1e293b;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:30px;overflow:hidden">
+          👤
+        </div>
+
+        <input id="testimonial_avatar_file"
+          type="file"
+          accept="image/*"
+          style="width:100%;margin-bottom:6px"
+          onchange="previewTestimonialAvatar(this)">
+
+        <p style="font-size:11px;color:#64748b;margin:0">
+          Choose a customer image from your Gallery or device.
+        </p>
+      </div>
+
+      <input id="testimonial_name"
+        placeholder="Customer name"
+        style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+
+      <input id="testimonial_business"
+        placeholder="Business name (optional)"
+        style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+
+      <select id="testimonial_rating"
+        style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+        <option value="5">⭐⭐⭐⭐⭐ — 5 stars</option>
+        <option value="4">⭐⭐⭐⭐ — 4 stars</option>
+        <option value="3">⭐⭐⭐ — 3 stars</option>
+        <option value="2">⭐⭐ — 2 stars</option>
+        <option value="1">⭐ — 1 star</option>
+      </select>
+
+      <textarea id="testimonial_message"
+        placeholder="Write the customer's testimonial..."
+        rows="6"
+        style="width:100%;padding:11px;margin-bottom:12px;box-sizing:border-box;resize:vertical"></textarea>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="saveTestimonial('draft')"
+          style="padding:10px 14px;background:#334155;color:white;border:none;border-radius:7px;cursor:pointer">
+          💾 Save Draft
+        </button>
+
+        <button onclick="saveTestimonial('published')"
+          style="padding:10px 14px;background:#10b981;color:white;border:none;border-radius:7px;cursor:pointer">
+          🚀 Save & Publish
+        </button>
+
+        <button onclick="renderTestimonials()"
+          style="padding:10px 14px;background:#475569;color:white;border:none;border-radius:7px;cursor:pointer">
+          Cancel
+        </button>
+      </div>
+    </div>
+  `);
+};
+
+
+/* ---------------- AVATAR PREVIEW ---------------- */
+
+window.previewTestimonialAvatar = function(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+
+  if(!file.type.startsWith("image/")){
+    alert("Please choose an image.");
+    input.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    const preview = document.getElementById("testimonial_avatar_preview");
+    if(preview){
+      preview.innerHTML =
+        '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover">';
+    }
+  };
+
+  reader.readAsDataURL(file);
+};
+
+
+/* ---------------- SAVE TESTIMONIAL ---------------- */
+
+window.saveTestimonial = async function(status){
+  const name = document.getElementById("testimonial_name")?.value.trim();
+  const business_name = document.getElementById("testimonial_business")?.value.trim();
+  const message = document.getElementById("testimonial_message")?.value.trim();
+  const rating = Number(document.getElementById("testimonial_rating")?.value || 5);
+  const file = document.getElementById("testimonial_avatar_file")?.files?.[0];
+
+  if(!name) return alert("Please enter the customer name.");
+  if(!message) return alert("Please enter the testimonial.");
+
+  try {
+    let avatar_url = null;
+
+    if(file){
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const uploadRes = await apiFetch("/api/testimonials/upload", {
+        method:"POST",
+        headers:{
+          Authorization:"Bearer "+localStorage.getItem("token")
+        },
+        body:formData
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if(!uploadRes.ok || !uploadData.success){
+        return alert(uploadData.error || "Image upload failed.");
+      }
+
+      avatar_url = uploadData.avatar_url;
+    }
+
+    const res = await apiFetch("/api/testimonials", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        Authorization:"Bearer "+localStorage.getItem("token")
+      },
+      body:JSON.stringify({
+        name,
+        business_name,
+        message,
+        rating,
+        avatar_url,
+        status
+      })
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      return alert(data.error || "Could not save testimonial.");
+    }
+
+    alert(status === "published"
+      ? "Testimonial published successfully."
+      : "Testimonial saved as draft.");
+
+    renderTestimonials();
+
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+};
+
+
+/* ---------------- EDIT TESTIMONIAL ---------------- */
+
+window.editTestimonial = async function(id){
+  try {
+    const res = await apiFetch("/api/testimonials", {
+      headers:{Authorization:"Bearer "+localStorage.getItem("token")}
+    });
+
+    const data = await res.json();
+    const t = (data.testimonials || []).find(x => String(x.id) === String(id));
+
+    if(!t) return alert("Testimonial not found.");
+
+    setView(`
+      <div class="card">
+        ${header("✏️ Edit Testimonial","dashboard")}
+
+        <input id="edit_testimonial_name"
+          value="${String(t.name || "").replace(/"/g,"&quot;")}"
+          placeholder="Customer name"
+          style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+
+        <input id="edit_testimonial_business"
+          value="${String(t.business_name || "").replace(/"/g,"&quot;")}"
+          placeholder="Business name"
+          style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+
+        <select id="edit_testimonial_rating"
+          style="width:100%;padding:11px;margin-bottom:9px;box-sizing:border-box">
+          ${[5,4,3,2,1].map(r =>
+            `<option value="${r}" ${Number(t.rating)===r?"selected":""}>${"⭐".repeat(r)}</option>`
+          ).join("")}
+        </select>
+
+        <textarea id="edit_testimonial_message"
+          rows="6"
+          style="width:100%;padding:11px;margin-bottom:12px;box-sizing:border-box">${String(t.message || "")}</textarea>
+
+        <p style="font-size:11px;color:#64748b">
+          Current avatar: ${t.avatar_url ? "Uploaded" : "None"}
+        </p>
+
+        <input id="edit_testimonial_avatar_file"
+          type="file"
+          accept="image/*"
+          style="width:100%;margin-bottom:12px">
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="updateTestimonial('${String(id).replace(/'/g,"\\\\'")}')"
+            style="padding:10px 14px;background:#2563eb;color:white;border:none;border-radius:7px;cursor:pointer">
+            💾 Save Changes
+          </button>
+
+          <button onclick="renderTestimonials()"
+            style="padding:10px 14px;background:#475569;color:white;border:none;border-radius:7px;cursor:pointer">
+            Cancel
+          </button>
+        </div>
+      </div>
+    `);
+
+  } catch(e){
+    alert("Could not load testimonial: " + e.message);
+  }
+};
+
+
+/* ---------------- UPDATE TESTIMONIAL ---------------- */
+
+window.updateTestimonial = async function(id){
+  const name = document.getElementById("edit_testimonial_name")?.value.trim();
+  const business_name = document.getElementById("edit_testimonial_business")?.value.trim();
+  const message = document.getElementById("edit_testimonial_message")?.value.trim();
+  const rating = Number(document.getElementById("edit_testimonial_rating")?.value || 5);
+  const file = document.getElementById("edit_testimonial_avatar_file")?.files?.[0];
+
+  if(!name || !message){
+    return alert("Name and testimonial are required.");
+  }
+
+  try {
+    let avatar_url;
+
+    if(file){
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const uploadRes = await apiFetch("/api/testimonials/upload", {
+        method:"POST",
+        headers:{
+          Authorization:"Bearer "+localStorage.getItem("token")
+        },
+        body:formData
+      });
+
+      const uploadData = await uploadRes.json();
+
+      if(!uploadRes.ok || !uploadData.success){
+        return alert(uploadData.error || "Image upload failed.");
+      }
+
+      avatar_url = uploadData.avatar_url;
+    }
+
+    const body = {
+      name,
+      business_name,
+      message,
+      rating
+    };
+
+    if(avatar_url) body.avatar_url = avatar_url;
+
+    const res = await apiFetch("/api/testimonials/" + encodeURIComponent(id), {
+      method:"PATCH",
+      headers:{
+        "Content-Type":"application/json",
+        Authorization:"Bearer "+localStorage.getItem("token")
+      },
+      body:JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      return alert(data.error || "Could not update testimonial.");
+    }
+
+    alert("Testimonial updated.");
+    renderTestimonials();
+
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+};
+
+
+/* ---------------- PUBLISH ---------------- */
+
+window.publishTestimonial = async function(id){
+  if(!confirm("Publish this testimonial on the public AI Business website?")) return;
+
+  try {
+    const res = await apiFetch("/api/testimonials/" + encodeURIComponent(id) + "/publish", {
+      method:"PATCH",
+      headers:{
+        Authorization:"Bearer "+localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      return alert(data.error || "Could not publish testimonial.");
+    }
+
+    renderTestimonials();
+
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+};
+
+
+/* ---------------- REJECT / UNPUBLISH ---------------- */
+
+window.rejectTestimonial = async function(id){
+  if(!confirm("Unpublish this testimonial?")) return;
+
+  try {
+    const res = await apiFetch("/api/testimonials/" + encodeURIComponent(id) + "/reject", {
+      method:"PATCH",
+      headers:{
+        Authorization:"Bearer "+localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      return alert(data.error || "Could not unpublish testimonial.");
+    }
+
+    renderTestimonials();
+
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+};
+
+
+/* ---------------- DELETE ---------------- */
+
+window.deleteTestimonial = async function(id){
+  if(!confirm("Delete this testimonial permanently?")) return;
+
+  try {
+    const res = await apiFetch("/api/testimonials/" + encodeURIComponent(id), {
+      method:"DELETE",
+      headers:{
+        Authorization:"Bearer "+localStorage.getItem("token")
+      }
+    });
+
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      return alert(data.error || "Could not delete testimonial.");
+    }
+
+    renderTestimonials();
+
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+};
+
 
 async function renderBlogAdmin(){
   setView(`<div class="card">${header("📝 Manage Blog","dashboard")}<p style="color:#64748b">Loading...</p></div>`);

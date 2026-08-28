@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { createClient } = require("@supabase/supabase-js");
+const multer = require("multer");
 
 const app = express();
 
@@ -1113,27 +1114,350 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+const BLOG_ADMIN_EMAIL = "mrsmile4569@gmail.com";
+
 /* ---------------- FEEDBACK ---------------- */
 app.post("/api/feedback", authMiddleware, async (req, res) => {
   try {
     const { rating, message, feature_ok } = req.body;
-    await supabase.from("feedback").insert({ user_id: req.user.id, rating, message, feature_ok: !!feature_ok });
+    await supabase.from("feedback").insert({
+      user_id: req.user.id,
+      rating,
+      message,
+      feature_ok: !!feature_ok,
+      testimonial_status: feature_ok ? "pending" : null
+    });
     res.json({ success: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- TESTIMONIAL CMS ---------------- */
+
+function isBlogAdmin(req) {
+  return req.user && req.user.email === BLOG_ADMIN_EMAIL;
+}
+
+/* ADMIN: list testimonials */
+
+/* ---------------- TESTIMONIAL IMAGE UPLOAD ---------------- */
+
+const testimonialUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype || !file.mimetype.startsWith("image/")) {
+      return cb(new Error("Only image files are allowed."));
+    }
+    cb(null, true);
+  }
+});
+
+app.post("/api/testimonials/upload", authMiddleware, testimonialUpload.single("avatar"), async (req, res) => {
+  try {
+    if (req.user.email !== BLOG_ADMIN_EMAIL) {
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized"
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: "No image uploaded."
+      });
+    }
+
+    const extension =
+      (req.file.originalname.split(".").pop() || "jpg")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+
+    const fileName =
+      "avatar-" +
+      Date.now() +
+      "-" +
+      Math.random().toString(36).slice(2, 10) +
+      "." +
+      extension;
+
+    const filePath = "avatars/" + fileName;
+
+    const { error: uploadError } = await supabase
+      .storage
+      .from("testimonials")
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error("Testimonial avatar upload error:", uploadError.message);
+      return res.status(500).json({
+        success: false,
+        error: uploadError.message
+      });
+    }
+
+    const { data } = supabase
+      .storage
+      .from("testimonials")
+      .getPublicUrl(filePath);
+
+    res.json({
+      success: true,
+      avatar_url: data.publicUrl
+    });
+
+  } catch(err) {
+    console.error("Testimonial upload error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
 app.get("/api/testimonials", authMiddleware, async (req, res) => {
   try {
-    const { data } = await supabase.from("feedback")
-      .select("*, profiles(display_name)")
-      .eq("feature_ok", true)
-      .gte("rating", 4)
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("*")
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
     res.json({ success: true, testimonials: data || [] });
-  } catch(err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    console.error("Admin testimonials error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ADMIN: create testimonial */
+app.post("/api/testimonials", authMiddleware, async (req, res) => {
+  try {
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const {
+      name,
+      business_name,
+      message,
+      rating,
+      avatar_url,
+      status,
+      display_order
+    } = req.body;
+
+    if (!name || !message) {
+      return res.status(400).json({
+        success: false,
+        error: "Name and testimonial message are required."
+      });
+    }
+
+    const safeRating = Math.min(5, Math.max(1, Number(rating) || 5));
+
+    const { data, error } = await supabase
+      .from("testimonials")
+      .insert({
+        name: String(name).trim(),
+        business_name: business_name ? String(business_name).trim() : null,
+        message: String(message).trim(),
+        rating: safeRating,
+        avatar_url: avatar_url || null,
+        status: status === "published" ? "published" : "draft",
+        display_order: Number(display_order) || 0
+      })
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, testimonial: data });
+  } catch (err) {
+    console.error("Create testimonial error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ADMIN: edit testimonial */
+app.patch("/api/testimonials/:id", authMiddleware, async (req, res) => {
+  try {
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const {
+      name,
+      business_name,
+      message,
+      rating,
+      avatar_url,
+      status,
+      display_order
+    } = req.body;
+
+    const update = {};
+
+    if (name !== undefined) update.name = String(name).trim();
+    if (business_name !== undefined) {
+      update.business_name = business_name ? String(business_name).trim() : null;
+    }
+    if (message !== undefined) update.message = String(message).trim();
+    if (rating !== undefined) {
+      update.rating = Math.min(5, Math.max(1, Number(rating) || 5));
+    }
+    if (avatar_url !== undefined) update.avatar_url = avatar_url || null;
+
+    if (status !== undefined) {
+      update.status = ["draft", "published", "rejected"].includes(status)
+        ? status
+        : "draft";
+    }
+
+    if (display_order !== undefined) {
+      update.display_order = Number(display_order) || 0;
+    }
+
+    const { data, error } = await supabase
+      .from("testimonials")
+      .update(update)
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, testimonial: data });
+  } catch (err) {
+    console.error("Update testimonial error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ADMIN: publish testimonial */
+app.patch("/api/testimonials/:id/publish", authMiddleware, async (req, res) => {
+  try {
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const { data, error } = await supabase
+      .from("testimonials")
+      .update({ status: "published" })
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, testimonial: data });
+  } catch (err) {
+    console.error("Publish testimonial error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ADMIN: reject testimonial */
+app.patch("/api/testimonials/:id/reject", authMiddleware, async (req, res) => {
+  try {
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const { data, error } = await supabase
+      .from("testimonials")
+      .update({ status: "rejected" })
+      .eq("id", req.params.id)
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.json({ success: true, testimonial: data });
+  } catch (err) {
+    console.error("Reject testimonial error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* ADMIN: delete testimonial */
+app.delete("/api/testimonials/:id", authMiddleware, async (req, res) => {
+  try {
+    if (!isBlogAdmin(req)) {
+      return res.status(403).json({ success: false, error: "Not authorized" });
+    }
+
+    const { error } = await supabase
+      .from("testimonials")
+      .delete()
+      .eq("id", req.params.id);
+
+    if (error) throw error;
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Delete testimonial error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+/* PUBLIC: published testimonials */
+app.get("/api/testimonials/public", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("testimonials")
+      .select("id, name, business_name, message, rating, avatar_url, created_at")
+      .eq("status", "published")
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      testimonials: data || []
+    });
+  } catch (err) {
+    console.error("Public testimonials error:", err.message);
+    res.status(500).json({
+      success: false,
+      error: "Unable to load testimonials"
+    });
+  }
 });
 
 /* ---------------- CHAT WIDGET (public) ---------------- */
+
+
 app.post("/api/widget/chat", async (req, res) => {
   try {
     const { user_id, question, visitor_name, visitor_phone } = req.body;
@@ -2166,7 +2490,7 @@ app.post("/api/website-health", authMiddleware, async (req, res) => {
   }
 });
 
-const BLOG_ADMIN_EMAIL = "mrsmile4569@gmail.com";
+
 
 function slugify(title){
   return title.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
