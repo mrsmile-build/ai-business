@@ -558,8 +558,50 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, { headers: { "x-api-key": process.env.HASDATA_KEY } }),
       fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, { headers: { "x-api-key": process.env.HASDATA_KEY } })
     ]);
-    const searchData = await serpRes.json().catch(()=>({}));
-    const mapsData = await mapsRes.json().catch(()=>({}));
+
+    // Do not silently turn HasData API errors into "No leads found".
+    const serpText = await serpRes.text();
+    const mapsText = await mapsRes.text();
+
+    if (!serpRes.ok || !mapsRes.ok) {
+      console.error("Lead Finder HasData error:", {
+        serpStatus: serpRes.status,
+        mapsStatus: mapsRes.status,
+        serpResponse: serpText.slice(0, 1000),
+        mapsResponse: mapsText.slice(0, 1000)
+      });
+
+      const combinedError = (serpText + " " + mapsText).toLowerCase();
+
+      if (combinedError.includes("not_enough_credits") ||
+          combinedError.includes("insufficient credits") ||
+          combinedError.includes("run out of credits")) {
+        return res.status(503).json({
+          success: false,
+          error: "Lead Finder is temporarily unavailable because the lead search provider has run out of credits."
+        });
+      }
+
+      return res.status(503).json({
+        success: false,
+        error: "Lead search provider is temporarily unavailable. Please try again later."
+      });
+    }
+
+    let searchData = {};
+    let mapsData = {};
+
+    try {
+      searchData = JSON.parse(serpText);
+    } catch (e) {
+      console.error("Lead Finder SERP JSON parse error:", e.message);
+    }
+
+    try {
+      mapsData = JSON.parse(mapsText);
+    } catch (e) {
+      console.error("Lead Finder Maps JSON parse error:", e.message);
+    }
 
     // Maps first - it returns far more real contacts with phone numbers than SERP
     const serpLocal = (searchData.localResults?.places || []);
