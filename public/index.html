@@ -327,6 +327,19 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:28px
   </div>
 </section>
 
+<section id="testimonials" class="fade">
+  <div class="sec-lbl">What Business Owners Say</div>
+  <h2 class="sec-h">Built for businesses.<br>Loved by people.</h2>
+  <p class="sec-sub">See what people using AI Business have to say.</p>
+
+  <div id="public-testimonials-grid"
+       style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:900px;margin:28px auto 0;">
+    <div style="text-align:center;color:var(--muted);font-size:13px;padding:25px">
+      Loading testimonials...
+    </div>
+  </div>
+</section>
+
 <div class="hr"></div>
 
 <section id="pricing" class="fade">
@@ -392,6 +405,94 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:28px
 </footer>
 
 <script>
+async function loadPublicTestimonials(){
+  const grid = document.getElementById("public-testimonials-grid");
+  if(!grid) return;
+
+  try {
+    const res = await fetch("/api/testimonials/public");
+    const data = await res.json();
+
+    if(!res.ok || !data.success){
+      throw new Error(data.error || "Unable to load testimonials");
+    }
+
+    const testimonials = data.testimonials || [];
+
+    if(!testimonials.length){
+      grid.innerHTML = "";
+      return;
+    }
+
+    grid.innerHTML = testimonials.map(t => {
+      const rating = Math.min(5, Math.max(1, Number(t.rating) || 5));
+      const stars = "⭐".repeat(rating);
+
+      const avatar = t.avatar_url
+        ? `<img src="${escapeTestimonialHtml(t.avatar_url)}"
+             alt="${escapeTestimonialHtml(t.name || "Customer")}"
+             style="width:52px;height:52px;border-radius:50%;object-fit:cover;flex-shrink:0">`
+        : `<div style="width:52px;height:52px;border-radius:50%;background:#1e293b;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">👤</div>`;
+
+      return `
+        <article style="
+          background:rgba(15,23,42,.65);
+          border:1px solid #1e293b;
+          border-radius:14px;
+          padding:22px;
+          text-align:left;
+          box-sizing:border-box;
+        ">
+          <div style="font-size:13px;margin-bottom:12px;letter-spacing:1px">
+            ${stars}
+          </div>
+
+          <p style="
+            color:#cbd5e1;
+            font-size:14px;
+            line-height:1.7;
+            margin:0 0 20px;
+            white-space:pre-line;
+          ">
+            "${escapeTestimonialHtml(t.message || "")}"
+          </p>
+
+          <div style="display:flex;align-items:center;gap:12px">
+            ${avatar}
+
+            <div style="min-width:0">
+              <div style="font-size:14px;font-weight:700;color:#f8fafc">
+                ${escapeTestimonialHtml(t.name || "Customer")}
+              </div>
+
+              ${t.business_name ? `
+                <div style="font-size:12px;color:#94a3b8;margin-top:3px">
+                  ${escapeTestimonialHtml(t.business_name)}
+                </div>
+              ` : ""}
+            </div>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+  } catch(err) {
+    console.error("Public testimonials error:", err.message);
+    grid.innerHTML = "";
+  }
+}
+
+function escapeTestimonialHtml(value){
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+loadPublicTestimonials();
+
 const obs = new IntersectionObserver(e=>{
   e.forEach(el=>{if(el.isIntersecting) el.target.classList.add("on")});
 },{threshold:0.1});

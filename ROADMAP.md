@@ -629,15 +629,24 @@ Start with deterministic calculations from real data. AI can explain the results
 
 ---
 
-## NEXT — Testimonials Collection
+## DONE — Testimonials Collection
 
-Add a simple way for existing users/customers to submit testimonials.
+Added and tested the testimonial system.
 
-Requirements:
-- Submission form
-- Store testimonial
-- Basic moderation/approval
-- Approved testimonials can later appear on the landing page
+Completed:
+- Dashboard testimonial management
+- Add testimonial
+- Edit testimonial
+- Publish / unpublish moderation
+- Delete testimonial
+- Testimonial storage
+- Public testimonials API
+- Homepage automatically loads published testimonials from the API
+- Avatar support
+- Confirmed homepage displays the testimonial correctly
+- Confirmed avatar URL returns HTTP 200
+
+The homepage is data-driven — future published testimonials are loaded automatically and are not hardcoded into the landing page.
 
 ---
 
@@ -651,7 +660,272 @@ Near-term priority order after the current profile/RLS fix:
 4. Smart Analytics
 5. Command Center Phase 1
 6. Website Health Checker
-7. Testimonials Collection
+7. Testimonials Collection — DONE
 
 Do not start multiple items simultaneously. Finish, test, deploy and mark each DONE before moving to the next priority.
+
+
+---
+
+# MASTER PRODUCT VISION — LONG-TERM EVOLUTION
+
+AI Business should evolve beyond a collection of business tools into business infrastructure.
+
+The long-term direction is:
+
+AI Business 1.0
+Customer Acquisition Infrastructure
+- Find customers
+- Capture leads
+- Understand leads
+- Contact prospects
+- Follow up
+- Convert prospects
+
+AI Business 2.0
+Business Operating System
+- Customers
+- Leads
+- Suppliers
+- Products
+- Inventory
+- Orders
+- Payments
+- Appointments
+- Invoices
+- Marketing
+- Analytics
+- AI Workforce
+
+AI Business 3.0
+B2B Marketplace
+- Businesses can find suppliers
+- Businesses can request products/services
+- Compare suppliers
+- Request quotations
+- Negotiate
+- Place orders
+- Track orders
+- Rate suppliers
+- Suppliers can receive buyer requests
+- Suppliers can manage products and orders
+- Potential future transaction fees
+
+AI Business 4.0
+Business Verification & Trust Infrastructure
+- Business verification
+- Supplier verification
+- Business reputation
+- Response/activity signals
+- Business profiles
+- Trust/reputation data
+- Verified supplier discovery
+- Future support for procurement, partnerships and financing decisions
+
+AI Business 5.0
+Business Transaction Infrastructure
+Connect:
+- Businesses
+- Customers
+- Suppliers
+- Payments
+- Services
+- Products
+- Business intelligence
+
+Long-term network vision:
+
+Business A needs a supplier
+→ AI Business finds suitable suppliers
+
+Business B needs customers
+→ AI Business helps find and qualify them
+
+Business C needs a website
+→ AI Business can connect them with an appropriate provider
+
+Business D needs a service/product
+→ AI Business helps discover suitable businesses
+
+The long-term goal is for AI Business to become infrastructure that businesses use to discover, manage, transact and build relationships with other businesses and customers.
+
+---
+
+## LONG-TERM BUSINESS NETWORK MOAT
+
+The moat should NOT depend primarily on having the "best AI model."
+
+AI models can change and AI Business should be able to switch models.
+
+The long-term moat should come from:
+
+- Businesses using the platform
+- Business data
+- Verified businesses
+- Business reputation
+- Customer relationships
+- Supplier relationships
+- Workflow history
+- Transactions
+- Integrations
+- Network effects
+
+The objective is to build a network and infrastructure layer that becomes increasingly difficult to replace as more businesses participate.
+
+---
+
+## LONG-TERM END-TO-END BUSINESS WORKFLOW
+
+Potential future journey:
+
+Find customers
+↓
+Understand / score opportunities
+↓
+Contact customers
+↓
+Qualify leads
+↓
+Book appointments
+↓
+Generate proposals
+↓
+Invoice
+↓
+Collect payment
+↓
+Follow up
+↓
+Retain customers
+↓
+Analyze business
+↓
+Find suppliers / partners
+↓
+Request products or services
+↓
+Verify counterparties
+↓
+Transact
+↓
+Build reputation
+↓
+Repeat
+
+This is a long-term direction, not a requirement to build all components immediately.
+
+BUILD RULE:
+Do not allow this vision to delay shipping the core product.
+
+Build the smallest useful version of each layer only when the current product has enough usage, revenue, data or validated demand to justify it.
+
+---
+
+## LONG-TERM NORTH STAR
+
+AI Business should ultimately answer:
+
+"What are you trying to accomplish?"
+
+Instead of requiring the business owner to understand which tool to open, AI Business should guide them through the appropriate workflow.
+
+Examples:
+
+"I need customers."
+→ Lead Finder / Signal System
+
+"I need to follow up."
+→ Follow-Up Assistant
+
+"I need more bookings."
+→ Booking
+
+"I need to send a quotation."
+→ Proposal
+
+"I need to invoice someone."
+→ Invoicing
+
+"I need to understand my business."
+→ Smart Analytics
+
+"I need a supplier."
+→ Future Business Marketplace
+
+"I need to know whether this supplier is trustworthy."
+→ Future Verification / Trust System
+
+"I need to buy something for my business."
+→ Future B2B Marketplace
+
+The interface should become increasingly outcome-driven rather than feature-driven.
+
+---
+
+## LONG-TERM LAYERED ARCHITECTURE
+
+AI Business should evolve through these layers:
+
+1. Customer acquisition
+2. Customer management
+3. Sales conversion
+4. Business operations
+5. Business intelligence
+6. Supplier discovery
+7. Business verification
+8. B2B transactions
+9. Business network
+10. AI-powered business infrastructure
+
+Each layer should build on the data, workflows and relationships created by the previous layers.
+
+Do not build the network or marketplace prematurely.
+
+---
+
+## IDEAS THAT BELONG UNDER THIS VISION
+
+These ideas should be treated as long-term extensions rather than separate immediate projects:
+
+- Business Marketplace
+- Supplier discovery
+- Supplier verification
+- Business reputation
+- Business trust infrastructure
+- B2B procurement
+- Business-to-business matching
+- Business transaction infrastructure
+- Financing/financial-partner connections
+- Business relationship network
+- Business Digital Twin
+- Business Relationship Engine
+- AI Business Scientist
+- Risk Prediction
+- AI CEO
+- Cause-and-effect analysis
+- Advanced experimentation
+- Sales Intelligence
+- Workflow Automation
+- Business Memory
+
+Where an existing roadmap item already covers one of these concepts, do not duplicate the implementation task. Use this section as the architectural destination.
+
+---
+
+## ROADMAP GOVERNANCE
+
+Every new product idea or major conclusion should be evaluated against the existing roadmap.
+
+When a new idea appears:
+
+1. Determine whether it is already represented.
+2. If already represented, refine the existing entry instead of duplicating it.
+3. If genuinely new, add it to the appropriate NOW / NEXT / LATER section.
+4. Define the smallest useful version.
+5. Build and test it.
+6. Deploy it.
+7. Mark it DONE or RESOLVED with test evidence.
+8. Preserve the historical entry rather than deleting it.
+
+ROADMAP.md remains the single source of truth.
 
