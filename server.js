@@ -551,26 +551,63 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     const { service, location, context } = req.body;
     if(!service || !location) return res.status(400).json({ error: "Service and location required" });
 
-    // Search HasData - SERP (3-pack) + real Maps listings (up to 20 with phone numbers)
+    // Search HasData - rotate through all configured API keys.
     const searchQuery = (req.body.industry && req.body.industry !== req.body.service) ? req.body.industry + " " + location : service + " " + location;
     const countryCode = detectCountryCode(location);
-    const [serpRes, mapsRes] = await Promise.all([
-      fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, { headers: { "x-api-key": process.env.HASDATA_KEY } }),
-      fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, { headers: { "x-api-key": process.env.HASDATA_KEY } })
-    ]);
+
+    const hasDataKeys = [
+      process.env.HASDATA_KEY_1,
+      process.env.HASDATA_KEY_2,
+      process.env.HASDATA_KEY_3
+    ].filter(Boolean);
+
+    let serpRes = null;
+    let mapsRes = null;
+    let serpText = "";
+    let mapsText = "";
+    let hasDataSuccess = false;
+
+    for (let i = 0; i < hasDataKeys.length; i++) {
+      const key = hasDataKeys[i];
+
+      try {
+        const [testSerpRes, testMapsRes] = await Promise.all([
+          fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, {
+            headers: { "x-api-key": key }
+          }),
+          fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, {
+            headers: { "x-api-key": key }
+          })
+        ]);
+
+        const testSerpText = await testSerpRes.text();
+        const testMapsText = await testMapsRes.text();
+
+        if (testSerpRes.ok && testMapsRes.ok) {
+          serpRes = testSerpRes;
+          mapsRes = testMapsRes;
+          serpText = testSerpText;
+          mapsText = testMapsText;
+          hasDataSuccess = true;
+
+          console.log(`Lead Finder HasData: key ${i + 1} succeeded.`);
+          break;
+        }
+
+        console.error(`Lead Finder HasData: key ${i + 1} failed`, {
+          serpStatus: testSerpRes.status,
+          mapsStatus: testMapsRes.status,
+          serpResponse: testSerpText.slice(0, 500),
+          mapsResponse: testMapsText.slice(0, 500)
+        });
+
+      } catch (err) {
+        console.error(`Lead Finder HasData: key ${i + 1} request error:`, err.message);
+      }
+    }
 
     // Do not silently turn HasData API errors into "No leads found".
-    const serpText = await serpRes.text();
-    const mapsText = await mapsRes.text();
-
-    if (!serpRes.ok || !mapsRes.ok) {
-      console.error("Lead Finder HasData error:", {
-        serpStatus: serpRes.status,
-        mapsStatus: mapsRes.status,
-        serpResponse: serpText.slice(0, 1000),
-        mapsResponse: mapsText.slice(0, 1000)
-      });
-
+    if (!hasDataSuccess) {
       const combinedError = (serpText + " " + mapsText).toLowerCase();
 
       if (combinedError.includes("not_enough_credits") ||
