@@ -46,7 +46,8 @@ function formatBizTypes(biz){
 
 const API_BACKENDS = [
   "https://ai-business-1-ok3x.onrender.com",
-  "https://ai-business-1orz.onrender.com"
+  "https://ai-business-1orz.onrender.com",
+  "https://ai-business-90n6.onrender.com"
 ];
 let _activeBackend = null;
 let _backendCheckPromise = null;
