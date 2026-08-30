@@ -425,7 +425,7 @@ function renderDashboard(){
   var leadsCount = (currentSub && currentSub.leads_count) ? currentSub.leads_count : 0;
   var leadsLimit = (currentSub && currentSub.limits && currentSub.limits.leads) ? currentSub.limits.leads : 10;
   var aiUsage = (currentSub && currentSub.ai_usage) ? currentSub.ai_usage : 0;
-  var aiLimitRaw = (currentSub && currentSub.limits) ? currentSub.limits.ai_per_day : 3;
+  var aiLimitRaw = (currentSub && currentSub.limits) ? currentSub.limits.ai_per_month : 20;
   var aiLimit = (!aiLimitRaw || aiLimitRaw > 1000) ? "Unlimited" : aiLimitRaw;
   var email = currentUser ? (currentUser.email || "") : "";
   var name = (currentProfile && currentProfile.display_name) ? currentProfile.display_name : (email.split("@")[0] || "Welcome");
@@ -1165,7 +1165,7 @@ async function renderSubscription(){
   const plan = currentSub?.plan || "free";
   const usage = currentSub?.ai_usage || 0;
   const leadsCount = currentSub?.leads_count || 0;
-  const limits = currentSub?.limits || { leads: 10, ai_per_day: 3 };
+  const limits = currentSub?.limits || { leads: 10, ai_per_month: 20 };
   const colorMap = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
   const color = colorMap[plan] || "#64748b";
 
@@ -1183,9 +1183,9 @@ async function renderSubscription(){
 
   const fmt = (n) => currency==="NGN" ? "₦"+n.toLocaleString() : symbol+(n*rate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,",");
   const allPlans = [
-    {key:"starter",label:"🌟 Starter",color:"#10b981",leads:"50 leads",ai:"15 AI/day",price:6000,features:"Basic AI tools"},
-    {key:"pro",label:"⭐ Pro",color:"#3b82f6",leads:"500 leads",ai:"50 AI/day",price:15000,features:"CSV export · Full AI tools"},
-    {key:"business",label:"🚀 Business",color:"#8b5cf6",leads:"Unlimited",ai:"Unlimited AI",price:45000,features:"Team access · Weekly report"},
+    {key:"starter",label:"🌟 Starter",color:"#10b981",leads:"50 leads",ai:"40 AI/month",price:6000,features:"Basic AI tools"},
+    {key:"pro",label:"⭐ Pro",color:"#3b82f6",leads:"500 leads",ai:"80 AI/month",price:15000,features:"CSV export · Full AI tools"},
+    {key:"business",label:"🚀 Business",color:"#8b5cf6",leads:"Unlimited",ai:"200 AI/month",price:45000,features:"Team access · Weekly report"},
   ];
   const order = ["free","starter","pro","business"];
   const upgrades = allPlans.filter(p=>order.indexOf(p.key)>order.indexOf(plan));
@@ -1198,7 +1198,7 @@ async function renderSubscription(){
         <p style="margin:0;font-size:12px;color:#94a3b8">Current Plan</p>
         <h3 style="margin:5px 0;color:${color}">${plan.toUpperCase()}</h3>
         <p style="margin:4px 0;font-size:13px">📩 Leads: ${leadsCount} / ${limits.leads === Infinity ? "Unlimited" : limits.leads}</p>
-        <p style="margin:4px 0;font-size:13px">🧠 AI Uses: ${usage} / ${limits.ai_per_day === Infinity ? "Unlimited" : limits.ai_per_day} per day</p>
+        <p style="margin:4px 0;font-size:13px">🧠 AI Uses: ${usage} / ${limits.ai_per_month === Infinity ? "Unlimited" : limits.ai_per_month} per month</p>
       </div>
 
       ${currency !== "NGN" ? `<p style="font-size:11px;color:#64748b;margin-bottom:10px">Prices shown in ${currency}</p>` : ""}
@@ -1296,7 +1296,7 @@ function renderSupport(){
       ${[
         ["How do I upgrade my plan?","Go to Menu → Subscription → choose a plan → pay via Paystack."],
         ["How many leads can I add?","Free: 10. Starter: 50. Pro: 500. Business: Unlimited."],
-        ["How many AI uses do I get?","Free: 3/day. Starter: 15/day. Pro: 50/day. Business: Unlimited."],
+        ["How many AI uses do I get?","Free: 20/month. Starter: 40/month. Pro: 80/month. Business: 200/month."],
         ["Why is my email showing Loading?","Log out and log back in to refresh your session."],
         ["Can I export my leads?","CSV export is available on Pro and Business plans."],
         ["How do I delete my account?","Go to Settings → Delete Account."]

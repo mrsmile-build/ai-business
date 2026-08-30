@@ -90,10 +90,10 @@ app.get("/api/config/pricing", (req, res) => {
 // ---------------------------------------
 
 const PLANS = {
-  free:     { leads: 10,       ai_per_day: 3,        label: "Free",     price: 0 },
-  starter:  { leads: 50,       ai_per_day: 15,       label: "Starter",  price: 6000 },
-  pro:      { leads: 500,      ai_per_day: 50,       label: "Pro",      price: 15000 },
-  business: { leads: Infinity, ai_per_day: Infinity, label: "Business", price: 45000 }
+  free:     { leads: 10,       ai_per_month: 20,      label: "Free",     price: 0 },
+  starter:  { leads: 50,       ai_per_month: 40,      label: "Starter",  price: 6000 },
+  pro:      { leads: 500,      ai_per_month: 80,      label: "Pro",      price: 15000 },
+  business: { leads: Infinity, ai_per_month: 200,     label: "Business", price: 45000 }
 };
 
 /* ---------------- AUTH MIDDLEWARE ---------------- */
@@ -119,15 +119,15 @@ async function getSubscription(user) {
     .eq("user_id", user.id)
     .single();
   if(data){
-    const today = new Date().toDateString();
-    if(data.usage_date !== today){
+    const thisMonth = new Date().toISOString().slice(0, 7);
+    if(data.usage_date !== thisMonth){
       await supabase.from("subscriptions")
-        .update({ ai_usage: 0, usage_date: today })
+        .update({ ai_usage: 0, usage_date: thisMonth })
         .eq("user_id", user.id);
-      return { ...data, ai_usage: 0, usage_date: today };
+      return { ...data, ai_usage: 0, usage_date: thisMonth };
     }
   }
-  return data || { user_id: user.id, plan: "free", ai_usage: 0, status: "free" };
+  return data || { user_id: user.id, plan: "free", ai_usage: 0, usage_date: new Date().toISOString().slice(0, 7), status: "free" };
 }
 
 /* ---------------- ME ---------------- */
@@ -239,10 +239,19 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
     const sub = await getSubscription(req.user);
     const limits = PLANS[sub.plan] || PLANS.free;
     const usage = sub.ai_usage || 0;
-    if (limits.ai_per_day !== Infinity && usage >= limits.ai_per_day) {
-      return res.json({ success: false, reply: "Daily AI limit reached. Upgrade your plan." });
+    const monthlyLimit = limits.ai_per_month ?? 20;
+
+    if (usage >= monthlyLimit) {
+      return res.json({
+        success: false,
+        reply: `Monthly AI request limit reached (${monthlyLimit} requests). Upgrade your plan.`
+      });
     }
-    await supabase.from("subscriptions").update({ ai_usage: usage + 1 }).eq("user_id", req.user.id);
+
+    await supabase
+      .from("subscriptions")
+      .update({ ai_usage: usage + 1 })
+      .eq("user_id", req.user.id);
     const { message, tool, history } = req.body;
     const systemPrompts = {
       idea: "You are the Business Ideas engine inside AI Business. Answer the user's request directly; never introduce yourself, acknowledge the request, explain your reasoning, or describe what the user is looking for. Do not say things like 'I understand your concern', 'you are looking for', 'as a business consultant', or 'here are some ideas'. Give practical, realistic and actionable business ideas for the user's market. When the user asks for multiple ideas, use numbered items. For each idea, give: a clear business name, what the business does, why it is resilient or attractive, how to start, and an estimated startup cost in Naira when relevant. Never claim that a business is guaranteed or impossible to disrupt; use terms such as 'highly resilient', 'essential', or 'likely to remain in demand'. Keep the answer concise, practical, and useful rather than turning each idea into a long article. Match startup costs to the scale requested; do not automatically recommend large-capital businesses when a smaller version is realistic. Do not invent statistics, prices, market sizes, or other factual claims. When exact figures are uncertain, give a reasonable range or clearly state that costs vary by location and scale. Prioritize businesses that can realistically be started at the user’s implied budget. Do not reveal internal reasoning. Use clean plain text/Markdown suitable for direct display in the AI Business dashboard.",
@@ -531,21 +540,17 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
   try {
     const sub = await getSubscription(req.user);
     const plan = sub.plan || "free";
-    const limits = { free: 3, starter: 15, pro: 50, business: 999 };
-    const monthlyLimit = limits[plan] || 3;
-
-    // Monthly reset
-    const thisMonth = new Date().toISOString().slice(0, 7);
-    let usage = sub.lead_finder_usage || 0;
-    if(sub.lead_finder_reset_date !== thisMonth){
-      usage = 0;
-      await supabase.from("subscriptions")
-        .update({ lead_finder_usage: 0, lead_finder_reset_date: thisMonth })
-        .eq("user_id", req.user.id);
-    }
+    const limits = PLANS[plan] || PLANS.free;
+    const monthlyLimit = limits.ai_per_month ?? 20;
+    const usage = sub.ai_usage || 0;
 
     if(usage >= monthlyLimit){
-      return res.json({ success: false, error: `Monthly limit reached (${monthlyLimit} searches). Upgrade your plan.`, usage, limit: monthlyLimit });
+      return res.json({
+        success: false,
+        error: `Monthly AI request limit reached (${monthlyLimit} requests). Upgrade your plan.`,
+        usage,
+        limit: monthlyLimit
+      });
     }
 
     const { service, location, context } = req.body;
@@ -907,10 +912,15 @@ ${allLeads.map((l,i) => {
     }));
 
     await supabase.from("subscriptions")
-      .update({ lead_finder_usage: usage + 1 })
+      .update({ ai_usage: usage + 1 })
       .eq("user_id", req.user.id);
 
-    res.json({ success: true, leads, usage: usage + 1, limit: monthlyLimit });
+    res.json({
+      success: true,
+      leads,
+      usage: usage + 1,
+      limit: monthlyLimit
+    });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
