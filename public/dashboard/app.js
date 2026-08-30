@@ -66,7 +66,17 @@ async function resolveBackend(){
         var t = setTimeout(function(){ ctrl.abort(); }, 4000);
         var res = await fetch(url + "/api/status", { signal: ctrl.signal });
         clearTimeout(t);
-        if(res.ok){ _activeBackend = url; return url; }
+
+        if(res.ok){
+          var contentType = res.headers.get("content-type") || "";
+          if(contentType.includes("application/json")){
+            var health = await res.json();
+            if(health && health.success === true){
+              _activeBackend = url;
+              return url;
+            }
+          }
+        }
       } catch(e){}
     }
     _activeBackend = API_BACKENDS[0];
