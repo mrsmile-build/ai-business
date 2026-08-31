@@ -658,7 +658,7 @@ function renderDashboard(){
           <button onclick="loadPage('aiTools')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">🧠</div>
             <div style="font-size:12px;font-weight:600">AI Tools
-            <div style="font-size:10px;color:#475569">${aiUsage}/${aiLimit} today</div>
+            <div style="font-size:10px;color:#475569">${aiUsage}/${aiLimit} this month</div>
           </button>
           <button onclick="loadPage('agents')" style="padding:13px 10px;background:#0f172a;border:1px solid #1e293b;color:white;border-radius:9px;cursor:pointer;text-align:left">
             <div style="font-size:18px;margin-bottom:3px">🤖</div>
@@ -1727,9 +1727,12 @@ function renderLeadFinder(){
 
 function renderLeadFinderB2B(){
   const plan = currentSub?.plan || "free";
-  const usage = currentSub?.subscription?.lead_finder_usage || 0;
-  const limits = { free:3, starter:15, pro:50, business:999 };
-  const limit = limits[plan] || 3;
+  const usage = currentSub?.ai_usage || 0;
+  const limits = currentSub?.limits || {
+    leads: 10,
+    ai_per_month: 20
+  };
+  const limit = limits.ai_per_month ?? 20;
   const isPro = plan === "pro" || plan === "business";
 
   setView(`
@@ -1739,10 +1742,10 @@ function renderLeadFinderB2B(){
 
       <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;color:#94a3b8">Searches this month</span>
-        <span style="font-size:13px;font-weight:bold;color:${usage>=limit?"#ef4444":"#10b981"}">${usage} / ${limit===999?"Unlimited":limit}</span>
+        <span style="font-size:13px;font-weight:bold;color:${usage>=limit?"#ef4444":"#10b981"}">${usage} / ${limit===Infinity?"Unlimited":limit}</span>
       </div>
 
-      ${usage >= limit && limit !== 999 ? `
+      ${usage >= limit && limit !== Infinity ? `
         <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:14px;text-align:center;margin-bottom:15px">
           <p style="margin:0 0 8px;font-size:13px;color:#ef4444">Monthly search limit reached</p>
           <button onclick="loadPage('subscription')" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Upgrade Plan</button>
@@ -2267,7 +2270,7 @@ async function renderAnalytics(){
           </div>
           <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #8b5cf6">
             <p style="margin:0;font-size:22px;font-weight:800;color:#8b5cf6">${aiUsage}</p>
-            <p style="margin:4px 0 0;font-size:12px;color:#64748b">AI Uses Today</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#64748b">AI Uses This Month</p>
           </div>
         </div>
 

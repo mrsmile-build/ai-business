@@ -130,6 +130,35 @@ async function getSubscription(user) {
   return data || { user_id: user.id, plan: "free", ai_usage: 0, usage_date: new Date().toISOString().slice(0, 7), status: "free" };
 }
 
+/* ---------------- SHARED AI MONTHLY QUOTA ---------------- */
+async function consumeAIQuota(user) {
+  const sub = await getSubscription(user);
+  const limits = PLANS[sub.plan] || PLANS.free;
+  const monthlyLimit = limits.ai_per_month ?? 20;
+  const usage = sub.ai_usage || 0;
+
+  if (monthlyLimit !== Infinity && usage >= monthlyLimit) {
+    return {
+      allowed: false,
+      usage,
+      limit: monthlyLimit
+    };
+  }
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({ ai_usage: usage + 1 })
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+
+  return {
+    allowed: true,
+    usage: usage + 1,
+    limit: monthlyLimit
+  };
+}
+
 /* ---------------- ME ---------------- */
 app.get("/api/me", authMiddleware, async (req, res) => {
   try {
@@ -236,22 +265,16 @@ app.delete("/api/leads/:id", authMiddleware, async (req, res) => {
 /* ---------------- AI REPLY ---------------- */
 app.post("/api/ai-reply", authMiddleware, async (req, res) => {
   try {
-    const sub = await getSubscription(req.user);
-    const limits = PLANS[sub.plan] || PLANS.free;
-    const usage = sub.ai_usage || 0;
-    const monthlyLimit = limits.ai_per_month ?? 20;
+    const quota = await consumeAIQuota(req.user);
 
-    if (usage >= monthlyLimit) {
+    if (!quota.allowed) {
       return res.json({
         success: false,
-        reply: `Monthly AI request limit reached (${monthlyLimit} requests). Upgrade your plan.`
+        reply: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
       });
     }
-
-    await supabase
-      .from("subscriptions")
-      .update({ ai_usage: usage + 1 })
-      .eq("user_id", req.user.id);
     const { message, tool, history } = req.body;
     const systemPrompts = {
       idea: "You are the Business Ideas engine inside AI Business. Answer the user's request directly; never introduce yourself, acknowledge the request, explain your reasoning, or describe what the user is looking for. Do not say things like 'I understand your concern', 'you are looking for', 'as a business consultant', or 'here are some ideas'. Give practical, realistic and actionable business ideas for the user's market. When the user asks for multiple ideas, use numbered items. For each idea, give: a clear business name, what the business does, why it is resilient or attractive, how to start, and an estimated startup cost in Naira when relevant. Never claim that a business is guaranteed or impossible to disrupt; use terms such as 'highly resilient', 'essential', or 'likely to remain in demand'. Keep the answer concise, practical, and useful rather than turning each idea into a long article. Match startup costs to the scale requested; do not automatically recommend large-capital businesses when a smaller version is realistic. Do not invent statistics, prices, market sizes, or other factual claims. When exact figures are uncertain, give a reasonable range or clearly state that costs vary by location and scale. Prioritize businesses that can realistically be started at the user’s implied budget. Do not reveal internal reasoning. Use clean plain text/Markdown suitable for direct display in the AI Business dashboard.",
@@ -538,20 +561,19 @@ app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
 app.post("/api/lead-finder", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'lead_finder_searched'); checkAndTriggerActivation(req.user.id, 'lead_finder');
   try {
-    const sub = await getSubscription(req.user);
-    const plan = sub.plan || "free";
-    const limits = PLANS[plan] || PLANS.free;
-    const monthlyLimit = limits.ai_per_month ?? 20;
-    const usage = sub.ai_usage || 0;
+    const quota = await consumeAIQuota(req.user);
 
-    if(usage >= monthlyLimit){
+    if (!quota.allowed) {
       return res.json({
         success: false,
-        error: `Monthly AI request limit reached (${monthlyLimit} requests). Upgrade your plan.`,
-        usage,
-        limit: monthlyLimit
+        error: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
       });
     }
+
+    const usage = quota.usage;
+    const monthlyLimit = quota.limit;
 
     const { service, location, context } = req.body;
     if(!service || !location) return res.status(400).json({ error: "Service and location required" });
@@ -911,14 +933,10 @@ ${allLeads.map((l,i) => {
       message: messages[i] || `Hi ${l.name}, I offer ${userOffer} and would love to connect.`
     }));
 
-    await supabase.from("subscriptions")
-      .update({ ai_usage: usage + 1 })
-      .eq("user_id", req.user.id);
-
     res.json({
       success: true,
       leads,
-      usage: usage + 1,
+      usage,
       limit: monthlyLimit
     });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -959,6 +977,17 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   try {
+    const quota = await consumeAIQuota(req.user);
+
+    if (!quota.allowed) {
+      return res.json({
+        success: false,
+        error: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
+      });
+    }
+
     const { client_name, service, price, details, your_name, your_business } = req.body;
     const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
 
@@ -1115,6 +1144,17 @@ app.post("/api/campaigns/:id/prepare", authMiddleware, async (req, res) => {
     if(!leads || leads.length === 0) return res.json({ success: true, messages: [] });
 
     // Generate personalized messages using AI
+    const quota = await consumeAIQuota(req.user);
+
+    if (!quota.allowed) {
+      return res.json({
+        success: false,
+        error: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
+      });
+    }
+
     const prompt = `You are personalizing a WhatsApp message template for different contacts.
 Template: "${campaign.message_template}"
 
@@ -2366,6 +2406,17 @@ app.post("/api/followup-assistant", authMiddleware, async (req, res) => {
       return res.status(400).json({
         success: false,
         error: "Lead name and last interaction are required."
+      });
+    }
+
+    const quota = await consumeAIQuota(req.user);
+
+    if (!quota.allowed) {
+      return res.json({
+        success: false,
+        error: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
       });
     }
 
