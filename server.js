@@ -2388,16 +2388,181 @@ app.post("/api/welcome-email", async (req, res) => {
 
 
 /* ---------------- FOLLOW-UP ASSISTANT ---------------- */
+
 app.get("/api/followup-assistant", authMiddleware, async (req, res) => {
-  if (req.user && req.user.id) { trackEvent(req.user.id, 'followup_generated'); }
+  if (req.user && req.user.id) {
+    trackEvent(req.user.id, "followup_generated");
+  }
 
   try {
     const uid = req.user.id;
-    const { data: leads } = await supabase.from("leads").select("*")
+
+    const { data: leads } = await supabase
+      .from("leads")
+      .select("*")
       .eq("user_id", uid)
       .not("status", "in", '("won","lost")')
       .order("created_at", { ascending: true });
+
+    if (!leads || leads.length === 0) {
+      return res.json({
+        success: true,
+        followups: []
+      });
+    }
+
+    const today = new Date();
+
+    const needsFollowup = leads
+      .filter((l) => {
+        const created = new Date(l.created_at);
+        const daysSince = Math.floor(
+          (today - created) / (1000 * 60 * 60 * 24)
+        );
+
+        const hasOverdueDate =
+          l.follow_up_date &&
+          new Date(l.follow_up_date) <= today;
+
+        const isLongSilent =
+          daysSince >= 3 && !l.follow_up_date;
+
+        return hasOverdueDate || isLongSilent;
+      })
+      .slice(0, 8);
+
+    if (needsFollowup.length === 0) {
+      return res.json({
+        success: true,
+        followups: []
+      });
+    }
+
+    const quota = await consumeAIQuota(req.user);
+
+    if (!quota.allowed) {
+      return res.json({
+        success: false,
+        error: `Monthly AI request limit reached (${quota.limit} requests). Upgrade your plan.`,
+        usage: quota.usage,
+        limit: quota.limit
+      });
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name,business_type")
+      .eq("user_id", uid)
+      .single();
+
+    const bizName = profile?.display_name || "our business";
+
+    const prompt = `You are a Nigerian business follow-up assistant. Generate short, warm WhatsApp follow-up messages.
+
+Business: ${bizName}
+Business type: ${profile?.business_type || "service business"}
+
+For each customer below, write ONE short follow-up WhatsApp message (max 40 words).
+Sound human and friendly, not robotic. Do not mention AI.
+Return ONLY a JSON array of strings in the same order.
+
+Customers:
+${needsFollowup
+  .map((l, i) => {
+    const days = Math.floor(
+      (today - new Date(l.created_at)) /
+        (1000 * 60 * 60 * 24)
+    );
+
+    return `${i + 1}. ${l.name} (${l.business || "customer"}, ${days} days since first contact, status: ${l.status})`;
+  })
+  .join("\n")}
+
+Example output: ["Hi Mary, just checking if you're still interested in our service. We have availability this week!", "Hello James from ABC Store, following up on our earlier conversation. Can I answer any questions?"]
+
+Return ONLY the JSON array, no markdown.`;
+
+    const groqRes = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":
+            "Bearer " + process.env.GROQ_API_KEY_1
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3.6-27b",
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 600,
+          temperature: 0.7,
+          reasoning_effort: "none"
+        })
+      }
+    );
+
+    const groqData = await groqRes.json();
+
+    let messages = [];
+
+    try {
+      const raw = (
+        groqData.choices?.[0]?.message?.content || ""
+      )
+        .trim()
+        .replace(/```json|```/g, "")
+        .trim();
+
+      messages = JSON.parse(raw);
+
+      if (!Array.isArray(messages)) {
+        throw new Error("AI response was not an array");
+      }
+    } catch (e) {
+      messages = needsFollowup.map(
+        (l) =>
+          `Hi ${l.name}, just checking if you are still interested in our services. We would love to help you.`
+      );
+    }
+
+    const followups = needsFollowup.map((l, i) => ({
+      id: l.id,
+      name: l.name,
+      phone: l.phone,
+      business: l.business,
+      status: l.status,
+      days: Math.floor(
+        (today - new Date(l.created_at)) /
+          (1000 * 60 * 60 * 24)
+      ),
+      follow_up_date: l.follow_up_date,
+      message:
+        messages[i] ||
+        `Hi ${l.name}, just checking if you are still interested. We have availability this week!`
+    }));
+
+    res.json({
+      success: true,
+      followups
+    });
+  } catch (err) {
+    console.error("Follow-Up Assistant error:", err);
+
+    res.status(500).json({
+      success: false,
+      error: err.message
+    });
+  }
+});
+
+
 /* ---------------- MANUAL FOLLOW-UP ASSISTANT ---------------- */
+
 app.post("/api/followup-assistant", authMiddleware, async (req, res) => {
   try {
     const { leadName, lastInteraction, objection } = req.body;
@@ -2436,30 +2601,35 @@ Rules:
 - Maximum 70 words.
 - Return ONLY the message text.`;
 
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
-      },
-      body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        max_tokens: 200,
-        temperature: 0.7,
-        reasoning_effort: "none"
-      })
-    });
+    const groqRes = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":
+            "Bearer " + process.env.GROQ_API_KEY_1
+        },
+        body: JSON.stringify({
+          model: "qwen/qwen3.6-27b",
+          messages: [
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 200,
+          temperature: 0.7,
+          reasoning_effort: "none"
+        })
+      }
+    );
 
     const groqData = await groqRes.json();
 
     if (!groqRes.ok) {
       console.error("Follow-up AI error:", groqData);
+
       return res.status(500).json({
         success: false,
         error: "AI generation failed"
@@ -2485,76 +2655,19 @@ Rules:
       success: true,
       followUpScript
     });
-
   } catch (err) {
-    console.error("Manual Follow-Up Assistant error:", err);
+    console.error(
+      "Manual Follow-Up Assistant error:",
+      err
+    );
+
     res.status(500).json({
       success: false,
       error: "Failed to generate follow-up"
     });
   }
 });
-    if(!leads || leads.length === 0) return res.json({ success: true, followups: [] });
 
-    const today = new Date();
-    const needsFollowup = leads.filter(l => {
-      const created = new Date(l.created_at);
-      const daysSince = Math.floor((today - created) / (1000 * 60 * 60 * 24));
-      const hasOverdueDate = l.follow_up_date && new Date(l.follow_up_date) <= today;
-      const isLongSilent = daysSince >= 3 && !l.follow_up_date;
-      return hasOverdueDate || isLongSilent;
-    }).slice(0, 8);
-
-    if(needsFollowup.length === 0) return res.json({ success: true, followups: [] });
-
-    const { data: profile } = await supabase.from("profiles").select("display_name,business_type").eq("user_id", uid).single();
-    const bizName = profile?.display_name || "our business";
-
-    const prompt = `You are a Nigerian business follow-up assistant. Generate short, warm WhatsApp follow-up messages.
-
-Business: ${bizName}
-Business type: ${profile?.business_type || "service business"}
-
-For each customer below, write ONE short follow-up WhatsApp message (max 40 words). 
-Sound human and friendly, not robotic. Do not mention AI.
-Return ONLY a JSON array of strings in the same order.
-
-Customers:
-${needsFollowup.map((l, i) => {
-  const days = Math.floor((today - new Date(l.created_at)) / (1000 * 60 * 60 * 24));
-  return `${i+1}. ${l.name} (${l.business || "customer"}, ${days} days since first contact, status: ${l.status})`;
-}).join("\n")}
-
-Example output: ["Hi Mary, just checking if you're still interested in our service. We have availability this week!", "Hello James from ABC Store, following up on our earlier conversation. Can I answer any questions?"]
-
-Return ONLY the JSON array, no markdown.`;
-
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7, reasoning_effort: "none" })
-    });
-    const groqData = await groqRes.json();
-    let messages = [];
-    try {
-      const raw = groqData.choices?.[0]?.message?.content?.trim().replace(/```json|```/g, "").trim();
-      messages = JSON.parse(raw);
-    } catch(e) { messages = needsFollowup.map(l => `Hi ${l.name}, just checking if you are still interested in our services. We would love to help you.`); }
-
-    const followups = needsFollowup.map((l, i) => ({
-      id: l.id,
-      name: l.name,
-      phone: l.phone,
-      business: l.business,
-      status: l.status,
-      days: Math.floor((today - new Date(l.created_at)) / (1000 * 60 * 60 * 24)),
-      follow_up_date: l.follow_up_date,
-      message: messages[i] || `Hi ${l.name}, just checking if you are still interested. We have availability this week!`
-    }));
-
-    res.json({ success: true, followups });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
 
 function detectCountryCode(location){
   var loc = (location || "").toLowerCase();
