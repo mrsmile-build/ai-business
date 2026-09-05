@@ -1636,13 +1636,18 @@ app.get("/api/book/:userId/services", async (req, res) => {
 
 app.post("/api/book/:userId", async (req, res) => {
   try {
-    const { service_id, customer_name, customer_phone, customer_email, booking_date, booking_time, notes } = req.body;
+    const { service_ids, customer_name, customer_phone, customer_email, booking_date, booking_time, notes } = req.body;
+    if(!service_ids || !Array.isArray(service_ids) || service_ids.length === 0){
+      return res.status(400).json({ success: false, error: "At least one service must be selected." });
+    }
     await pushNotification(req.params.userId, "booking", "New booking from " + customer_name).catch(()=>{});
-    const { data } = await supabase.from("bookings").insert({
-      user_id: req.params.userId, service_id, customer_name,
+    const bookClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: servicesData } = await bookClient.from("services").select("id, name, price, duration_minutes").in("id", service_ids);
+    const { data } = await bookClient.from("bookings").insert({
+      user_id: req.params.userId, service_id: service_ids[0], service_ids, customer_name,
       customer_phone, customer_email, booking_date, booking_time, notes, status: "pending"
-    }).select("*, services(name, price)").single();
-    res.json({ success: true, booking: data });
+    }).select().single();
+    res.json({ success: true, booking: data, services: servicesData || [] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -1954,7 +1959,8 @@ input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid
 
 <script>
 var uid = location.pathname.split("/book/")[1];
-var selectedService = null;
+var selectedServices = [];
+var allServices = [];
 
 function loadServices(){
   document.getElementById("services_list").innerHTML = "<p style='color:#64748b;font-size:13px'>Loading services...</p>";
@@ -1972,21 +1978,21 @@ function loadServices(){
       clearTimeout(timeoutId);
       if(data.biz) document.getElementById("biz_name").textContent = data.biz.business_name || "Book your appointment";
       var list = document.getElementById("services_list");
-      if(!data.services || !data.services.length){
+      allServices = data.services || [];
+      if(!allServices.length){
         list.innerHTML = "<p style='color:#64748b;font-size:13px'>No services listed yet.</p>";
         return;
       }
-      list.innerHTML = data.services.map(function(s){
-        return "<div class='service-card' id='svc_"+s.id+"' onclick='selectService(\"+s.id+\",this)'>"+
-          "<div><div style='font-size:14px;font-weight:600'>"+s.name+"</div>"+
+      list.innerHTML = allServices.map(function(s, idx){
+        return "<div class='service-card' id='svc_"+s.id+"' onclick='toggleService("+idx+")' style='display:flex;align-items:center;gap:10px'>"+
+          "<input type='checkbox' id='chk_"+s.id+"' style='width:18px;height:18px;pointer-events:none'>"+
+          "<div style='flex:1'><div style='font-size:14px;font-weight:600'>"+s.name+"</div>"+
           "<div style='font-size:11px;color:#64748b'>"+s.duration_minutes+" mins</div></div>"+
           "<div style='font-size:16px;font-weight:800;color:#3b82f6'>₦"+parseFloat(s.price||0).toLocaleString()+"</div>"+
         "</div>";
       }).join("");
-      if(data.services.length === 1){
-        selectedService = data.services[0].id;
-        var onlyCard = document.getElementById("svc_" + data.services[0].id);
-        if(onlyCard) onlyCard.classList.add("selected");
+      if(allServices.length === 1){
+        toggleService(0);
       }
     })
     .catch(function(){
@@ -1997,10 +2003,34 @@ function loadServices(){
 }
 loadServices();
 
-function selectService(id, el){
-  selectedService = id;
-  document.querySelectorAll(".service-card").forEach(function(c){ c.classList.remove("selected"); });
-  el.classList.add("selected");
+function toggleService(idx){
+  var s = allServices[idx];
+  if(!s) return;
+  var pos = selectedServices.indexOf(s.id);
+  var card = document.getElementById("svc_"+s.id);
+  var chk = document.getElementById("chk_"+s.id);
+  if(pos > -1){
+    selectedServices.splice(pos, 1);
+    if(card) card.classList.remove("selected");
+    if(chk) chk.checked = false;
+  } else {
+    selectedServices.push(s.id);
+    if(card) card.classList.add("selected");
+    if(chk) chk.checked = true;
+  }
+  updateServiceTotal();
+}
+
+function updateServiceTotal(){
+  var totalEl = document.getElementById("service_total");
+  if(!totalEl) return;
+  if(selectedServices.length === 0){ totalEl.textContent = ""; return; }
+  var totalPrice = 0, totalMins = 0;
+  selectedServices.forEach(function(id){
+    var s = allServices.find(function(x){ return x.id === id; });
+    if(s){ totalPrice += parseFloat(s.price||0); totalMins += parseInt(s.duration_minutes||0); }
+  });
+  totalEl.textContent = selectedServices.length + " service" + (selectedServices.length>1?"s":"") + " selected · " + totalMins + " mins · ₦" + totalPrice.toLocaleString();
 }
 
 async function submitBooking(){
@@ -2009,13 +2039,13 @@ async function submitBooking(){
   var date = document.getElementById("b_date").value;
   var time = document.getElementById("b_time").value;
   if(!name||!phone||!date||!time) return alert("Please fill all required fields.");
-  if(!selectedService) return alert("Please select a service.");
+  if(!selectedServices || selectedServices.length === 0) return alert("Please select at least one service.");
   var btn = document.querySelector(".btn");
   btn.disabled=true; btn.textContent="Booking...";
   try {
     var res = await fetch("/api/book/"+uid,{
       method:"POST", headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({service_id:selectedService, customer_name:name, customer_phone:phone,
+      body: JSON.stringify({service_ids:selectedServices, customer_name:name, customer_phone:phone,
         customer_email:document.getElementById("b_email").value,
         booking_date:date, booking_time:time, notes:document.getElementById("b_notes").value})
     });
@@ -2655,7 +2685,9 @@ app.get("/api/admin/metrics", authMiddleware, async (req, res) => {
 app.get("/api/admin/blog", authMiddleware, async (req, res) => {
   try {
     if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
-    const { data } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false });
+    const blogListClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await blogListClient.from("blog_posts").select("*").order("created_at", { ascending: false });
+    if(error) console.error("Admin blog list error:", error);
     res.json({ success: true, posts: data || [] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -2671,7 +2703,8 @@ app.post("/api/admin/blog", authMiddleware, async (req, res) => {
       status: status || "draft", author: "AI Business",
       published_at: status === "published" ? new Date() : null
     };
-    const { data, error } = await supabase.from("blog_posts").insert(insert).select().single();
+    const blogClient1 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await blogClient1.from("blog_posts").insert(insert).select().single();
     if(error) throw error;
     res.json({ success: true, post: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -2683,7 +2716,8 @@ app.patch("/api/admin/blog/:id", authMiddleware, async (req, res) => {
     const updates = { ...req.body, updated_at: new Date() };
     if(req.body.title) updates.slug = slugify(req.body.title);
     if(req.body.status === "published") updates.published_at = new Date();
-    const { data, error } = await supabase.from("blog_posts").update(updates).eq("id", req.params.id).select().single();
+    const blogClient2 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await blogClient2.from("blog_posts").update(updates).eq("id", req.params.id).select().single();
     if(error) throw error;
     res.json({ success: true, post: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -2692,7 +2726,8 @@ app.patch("/api/admin/blog/:id", authMiddleware, async (req, res) => {
 app.delete("/api/admin/blog/:id", authMiddleware, async (req, res) => {
   try {
     if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
-    await supabase.from("blog_posts").delete().eq("id", req.params.id);
+    const blogClient3 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    await blogClient3.from("blog_posts").delete().eq("id", req.params.id);
     res.json({ success: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -2772,7 +2807,8 @@ app.post("/api/demo-creator", async (req, res) => {
       Date.now() + 30 * 24 * 60 * 60 * 1000
     ).toISOString();
 
-    const { error } = await supabase
+    const demoClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { error } = await demoClient
       .from("public_demos")
       .insert({
         slug,
