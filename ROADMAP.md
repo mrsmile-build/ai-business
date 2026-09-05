@@ -932,3 +932,10 @@ ROADMAP.md remains the single source of truth.
 
 ### Organizing framework for LATER items (not new scope)
 Repeated sessions have proposed richer versions of the same LATER ideas (Signal System, Business Strength Score, Activation flow, Proof of Work, Reputation, Partnership Readiness, Business Network, Transactions). A useful way to think about how these relate, if/when any get built: Identity -> Trust -> Opportunity -> Relationship -> Action -> Outcome -> Intelligence -> Network layers, each building on the one before. This is a lens for prioritizing existing LATER items, not a new list of features to add.
+
+### LATER — genuinely new specifics from recent vision docs (not covered elsewhere)
+- Business Strength Score with real dimensions (visibility, reputation, proof, responsiveness, transaction/partnership readiness) - more structured than a single opportunity score
+- Proof of Work as its own feature: structured completed-project records (client, service, date, result, photos) - distinct from a single testimonial quote
+- Outcome funnel tracking: Contacted -> Replied -> Interested -> Quote -> Booking -> Paid -> Reviewed, richer than current New/Contacted/Won lead statuses
+
+Note: "Goal-Aware Dashboard" and "Business Activation System" already exist in smaller real form (first-win onboarding screen). "Business Intelligence" already exists in smaller real form (Smart Analytics insights). Not re-listing as future work.
