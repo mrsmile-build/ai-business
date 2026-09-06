@@ -939,3 +939,9 @@ Repeated sessions have proposed richer versions of the same LATER ideas (Signal 
 - Outcome funnel tracking: Contacted -> Replied -> Interested -> Quote -> Booking -> Paid -> Reviewed, richer than current New/Contacted/Won lead statuses
 
 Note: "Goal-Aware Dashboard" and "Business Activation System" already exist in smaller real form (first-win onboarding screen). "Business Intelligence" already exists in smaller real form (Smart Analytics insights). Not re-listing as future work.
+
+### LATER — Next Best Action / Proactive layer
+Explicit principle from direction discussions: "Don't make the user come to AI Business to use a tool. Make AI Business come to the user with what their business needs next." Distinct from existing features - none currently push unprompted. Retention loop as described: business activity -> AI observes -> identifies opportunity/problem -> tells user -> user acts -> result -> AI learns -> better recommendation -> user returns. This is the connective layer that would make the whole product feel proactive rather than tool-shaped.
+
+### STANDING PRINCIPLE — no fabricated numbers, ever
+Any AI-generated score, insight, or recommendation (Opportunity Score, Business Strength Score, "potential revenue" estimates, etc.) must be backed by real, defensible data actually available to the system. Never present an invented number with false precision (e.g. "₦850,000 in potential revenue" without a real calculation behind it). This applies retroactively to every LATER item above involving a score or AI-generated insight - if the underlying data doesn't genuinely exist yet, don't fake the output, say so or don't build that piece yet.
