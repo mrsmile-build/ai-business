@@ -376,7 +376,8 @@ app.get("/api/paystack/verify", async (req, res) => {
 app.post("/api/refresh", async (req, res) => {
   try {
     const { refresh_token } = req.body;
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+    const refreshClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await refreshClient.auth.refreshSession({ refresh_token });
     if(error) return res.status(401).json({ error: "Session expired" });
     res.json({ token: data.session.access_token, refresh_token: data.session.refresh_token });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -457,14 +458,15 @@ app.patch("/api/profile", authMiddleware, async (req, res) => {
 app.post("/api/change-password", authMiddleware, async (req, res) => {
   try {
     const { current_password, password } = req.body;
+    const passwordClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     // Verify current password
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await passwordClient.auth.signInWithPassword({
       email: req.user.email,
       password: current_password
     });
     if(signInError) return res.json({ success: false, error: "Current password is incorrect." });
     // Change password
-    const { error } = await supabase.auth.admin.updateUserById(req.user.id, { password });
+    const { error } = await passwordClient.auth.admin.updateUserById(req.user.id, { password });
     if(error) throw error;
     res.json({ success: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -1613,14 +1615,16 @@ app.delete("/api/services/:id", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/bookings", authMiddleware, async (req, res) => {
-  const { data } = await supabase.from("bookings").select("*, services(name, price, duration_minutes)")
+  const bookingsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  const { data } = await bookingsClient.from("bookings").select("*, services(name, price, duration_minutes)")
     .eq("user_id", req.user.id).order("booking_date", { ascending: true });
   res.json({ success: true, bookings: data || [] });
 });
 
 app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
   const { status } = req.body;
-  await supabase.from("bookings").update({ status }).eq("id", req.params.id).eq("user_id", req.user.id);
+  const bookingsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  await bookingsClient.from("bookings").update({ status }).eq("id", req.params.id).eq("user_id", req.user.id);
   res.json({ success: true });
 });
 
@@ -2364,8 +2368,11 @@ app.post("/api/notifications/read-all", authMiddleware, async (req, res) => {
 });
 
 async function pushNotification(userId, type, message){
-  try { await supabase.from("notifications").insert({ user_id: userId, type, message }); }
-  catch(e){ console.log("Notification error:", e.message); }
+  try {
+    const notifClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    await notifClient.from("notifications").insert({ user_id: userId, type, message });
+  }
+  catch(e){ console.error("Notification error:", e.message); }
 }
 
 /* ---------------- EMAIL (Resend) ---------------- */
