@@ -945,3 +945,12 @@ Explicit principle from direction discussions: "Don't make the user come to AI B
 
 ### STANDING PRINCIPLE — no fabricated numbers, ever
 Any AI-generated score, insight, or recommendation (Opportunity Score, Business Strength Score, "potential revenue" estimates, etc.) must be backed by real, defensible data actually available to the system. Never present an invented number with false precision (e.g. "₦850,000 in potential revenue" without a real calculation behind it). This applies retroactively to every LATER item above involving a score or AI-generated insight - if the underlying data doesn't genuinely exist yet, don't fake the output, say so or don't build that piece yet.
+
+### Lead Finder quota never incremented — FIXED
+Found via real evidence: usage check existed but the actual +1 update was missing from this route entirely (a different route at a different line had an increment, unrelated). Fixed by adding the missing update call using an isolated service-role client. Needs one real test to fully confirm: run a search, reload, confirm usage count actually goes up.
+
+### Affiliate routes (join, track-click, track-signup) — shared client vulnerability FIXED
+Same root cause as blog_posts/demo-creator: routes used the shared supabase client instead of an isolated one, vulnerable to session contamination. Fixed for join, track-click, track-signup using the same proven pattern (fresh createClient() per route).
+
+### KNOWN GAP — affiliates table RLS still disabled, do not enable blind
+/api/affiliate/stats and /api/affiliate/withdraw have NOT yet been checked for the same shared-client issue. Enabling RLS on the affiliates table before these two are verified could silently break the affiliate dashboard. Check these two routes first, using the same pattern as the other three, before touching RLS on this table.
