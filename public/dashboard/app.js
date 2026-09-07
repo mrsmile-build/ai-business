@@ -1727,7 +1727,7 @@ function renderLeadFinder(){
 
 function renderLeadFinderB2B(){
   const plan = currentSub?.plan || "free";
-  const usage = currentSub?.subscription?.lead_finder_usage || 0;
+  const usage = currentSub?.ai_usage || 0;
   const limits = { free:20, starter:40, pro:80, business:200 };
   const limit = limits[plan] || 3;
   const isPro = plan === "pro" || plan === "business";
@@ -1739,7 +1739,7 @@ function renderLeadFinderB2B(){
 
       <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;color:#94a3b8">Searches this month</span>
-        <span style="font-size:13px;font-weight:bold;color:${usage>=limit?"#ef4444":"#10b981"}">${usage} / ${limit===999?"Unlimited":limit}</span>
+        <span id="lf_usage_counter" style="font-size:13px;font-weight:bold;color:${usage>=limit?"#ef4444":"#10b981"}">${usage} / ${limit===999?"Unlimited":limit}</span>
       </div>
 
       ${usage >= limit && limit !== 999 ? `
@@ -1817,7 +1817,14 @@ async function searchLeads(){
       return;
     }
 
-    if(currentSub) currentSub.subscription = { ...currentSub.subscription, lead_finder_usage: data.usage };
+    if(currentSub) currentSub.ai_usage = data.usage;
+        const currentLimit = currentSub?.limits?.ai_per_month || 20;
+        const limitText = currentLimit > 1000 ? "Unlimited" : currentLimit;
+        const usageCounter = document.getElementById("lf_usage_counter");
+        if(usageCounter) {
+          usageCounter.textContent = `${data.usage} / ${limitText}`;
+          usageCounter.style.color = data.usage >= currentLimit ? "#ef4444" : "#10b981";
+        }
 
     const leads = data.leads || [];
     if(leads.length === 0){

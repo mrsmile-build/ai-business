@@ -113,17 +113,21 @@ async function authMiddleware(req, res, next) {
 
 /* ---------------- GET SUBSCRIPTION ---------------- */
 async function getSubscription(user) {
-  const { data } = await supabase
+  const localSubClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  const { data, error } = await localSubClient
     .from("subscriptions")
     .select("*")
     .eq("user_id", user.id)
     .single();
+  if(error && error.code !== 'PGRST116') console.error("getSubscription select error:", error.message);
+
   if(data){
     const thisMonth = new Date().toISOString().slice(0, 7);
     if(data.usage_date !== thisMonth){
-      await supabase.from("subscriptions")
+      const { error: updErr } = await localSubClient.from("subscriptions")
         .update({ ai_usage: 0, usage_date: thisMonth })
         .eq("user_id", user.id);
+      if(updErr) console.error("getSubscription update error:", updErr.message);
       return { ...data, ai_usage: 0, usage_date: thisMonth };
     }
   }
@@ -553,6 +557,10 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       });
     }
 
+    const leadFinderQuotaClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { error: quotaErr } = await leadFinderQuotaClient.rpc('increment_ai_usage', { p_user_id: req.user.id, p_increment: 1 });
+    if (quotaErr) console.error("Lead Finder quota RPC error:", quotaErr.message);
+
     const { service, location, context } = req.body;
     if(!service || !location) return res.status(400).json({ error: "Service and location required" });
 
@@ -574,40 +582,38 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
 
     for (let i = 0; i < hasDataKeys.length; i++) {
       const key = hasDataKeys[i];
+      let testSerpRes, testMapsRes, testSerpText, testMapsText;
 
       try {
-        const [testSerpRes, testMapsRes] = await Promise.all([
-          fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, {
-            headers: { "x-api-key": key }
-          }),
-          fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, {
-            headers: { "x-api-key": key }
-          })
-        ]);
-
-        const testSerpText = await testSerpRes.text();
-        const testMapsText = await testMapsRes.text();
-
-        if (testSerpRes.ok && testMapsRes.ok) {
-          serpRes = testSerpRes;
-          mapsRes = testMapsRes;
-          serpText = testSerpText;
-          mapsText = testMapsText;
-          hasDataSuccess = true;
-
-          console.log(`Lead Finder HasData: key ${i + 1} succeeded.`);
-          break;
-        }
-
-        console.error(`Lead Finder HasData: key ${i + 1} failed`, {
-          serpStatus: testSerpRes.status,
-          mapsStatus: testMapsRes.status,
-          serpResponse: testSerpText.slice(0, 500),
-          mapsResponse: testMapsText.slice(0, 500)
+        // Run sequentially to prevent hitting "Concurrency limit reached" when a key only allows 1 concurrent request
+        testSerpRes = await fetch(`https://api.hasdata.com/scrape/google/serp?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}&hl=en`, {
+          headers: { "x-api-key": key }
         });
+        testSerpText = await testSerpRes.text();
+        if (!testSerpRes.ok) throw new Error("SERP failed");
 
+        testMapsRes = await fetch(`https://api.hasdata.com/scrape/google-maps/search?q=${encodeURIComponent(searchQuery)}&gl=${countryCode}`, {
+          headers: { "x-api-key": key }
+        });
+        testMapsText = await testMapsRes.text();
+        if (!testMapsRes.ok) throw new Error("Maps failed");
+
+        serpRes = testSerpRes;
+        mapsRes = testMapsRes;
+        serpText = testSerpText;
+        mapsText = testMapsText;
+        hasDataSuccess = true;
+
+        console.log(`Lead Finder HasData: key ${i + 1} succeeded.`);
+        break;
       } catch (err) {
-        console.error(`Lead Finder HasData: key ${i + 1} request error:`, err.message);
+        console.error(`Lead Finder HasData: key ${i + 1} failed`, {
+          serpStatus: testSerpRes ? testSerpRes.status : 'N/A',
+          mapsStatus: testMapsRes ? testMapsRes.status : 'N/A',
+          serpResponse: testSerpText ? testSerpText.slice(0, 500) : 'N/A',
+          mapsResponse: testMapsText ? testMapsText.slice(0, 500) : 'N/A',
+          error: err.message
+        });
       }
     }
 
@@ -820,20 +826,26 @@ ${allLeads.map((l,i) => {
     async function generateLeadMessages(extraInstruction = "") {
       const aiPrompt = compactPrompt + (extraInstruction ? "\n" + extraInstruction : "");
 
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
-        },
-        body: JSON.stringify({
-          model: "qwen/qwen3.6-27b",
-          messages: [{ role: "user", content: aiPrompt }],
-          max_tokens: 2200,
-          temperature: 0.3,
-          reasoning_effort: "none"
-        })
-      });
+      let response;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
+          },
+          body: JSON.stringify({
+            model: "qwen/qwen3.6-27b",
+            messages: [{ role: "user", content: aiPrompt }],
+            max_tokens: 800,
+            temperature: 0.3,
+            reasoning_effort: "none"
+          })
+        });
+        if (response.status !== 429) break;
+        console.log(`Groq 429 rate limit hit on attempt ${attempt+1}, waiting ${(attempt+1)*7}s...`);
+        await new Promise(r => setTimeout(r, 7000 * (attempt + 1)));
+      }
 
       const data = await response.json();
 
@@ -910,10 +922,6 @@ ${allLeads.map((l,i) => {
       ...l,
       message: messages[i] || `Hi ${l.name}, I offer ${userOffer} and would love to connect.`
     }));
-
-    await supabase.from("subscriptions")
-      .update({ ai_usage: usage + 1 })
-      .eq("user_id", req.user.id);
 
     res.json({
       success: true,
@@ -2118,10 +2126,11 @@ async function clearMaturedCommissions(affiliateUserId){
 app.post("/api/affiliate/join", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
-    const { data: existing, error: selErr } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    const affClient1 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: existing, error: selErr } = await affClient1.from("affiliates").select("*").eq("user_id", uid).single();
     if(existing) return res.json({ success: true, affiliate: existing });
     const code = "AFF-" + uid.substring(0,6).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
-    const { data, error: insErr } = await supabase.from("affiliates").insert({ user_id: uid, affiliate_code: code }).select().single();
+    const { data, error: insErr } = await affClient1.from("affiliates").insert({ user_id: uid, affiliate_code: code }).select().single();
     if(insErr){ console.log("Affiliate insert error:", insErr.message); return res.status(500).json({ error: insErr.message }); }
     res.json({ success: true, affiliate: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -2214,7 +2223,8 @@ app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
     await clearMaturedCommissions(uid).catch(function(){});
-    const { data: aff } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    const affStatsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: aff } = await affStatsClient.from("affiliates").select("*").eq("user_id", uid).single();
     if(!aff) return res.json({ success: false, error: "Not enrolled yet" });
     const { data: convs } = await supabase.from("affiliate_conversions").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
     const { data: withdrawals } = await supabase.from("affiliate_withdrawals").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
@@ -2226,12 +2236,13 @@ app.post("/api/affiliate/withdraw", authMiddleware, async (req, res) => {
   try {
     const uid = req.user.id;
     const { bank_name, account_number, account_name } = req.body;
-    const { data: aff } = await supabase.from("affiliates").select("*").eq("user_id", uid).single();
+    const affWithdrawClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: aff } = await affWithdrawClient.from("affiliates").select("*").eq("user_id", uid).single();
     if(!aff) return res.json({ success: false, error: "Not an affiliate" });
     const balance = parseFloat(aff.balance||0);
     if(balance < 1000) return res.json({ success: false, error: "Minimum withdrawal is 1,000. Your balance: " + balance });
-    await supabase.from("affiliate_withdrawals").insert({ affiliate_id: uid, amount: balance, bank_name, account_number, account_name, status: "pending" });
-    await supabase.from("affiliates").update({ balance: 0 }).eq("user_id", uid);
+    await affWithdrawClient.from("affiliate_withdrawals").insert({ affiliate_id: uid, amount: balance, bank_name, account_number, account_name, status: "pending" });
+    await affWithdrawClient.from("affiliates").update({ balance: 0 }).eq("user_id", uid);
     res.json({ success: true, message: "Withdrawal of " + balance.toLocaleString() + " submitted. Payment within 24-48 hours." });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -2240,9 +2251,10 @@ app.post("/api/affiliate/track-click", async (req, res) => {
   try {
     const { affiliate_code } = req.body;
     if(!affiliate_code) return res.json({ success: false });
-    const { data: aff } = await supabase.from("affiliates").select("user_id, clicks").eq("affiliate_code", affiliate_code).single();
+    const affClient2 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: aff } = await affClient2.from("affiliates").select("user_id, clicks").eq("affiliate_code", affiliate_code).single();
     if(!aff) return res.json({ success: false });
-    await supabase.from("affiliates").update({ clicks: (aff.clicks || 0) + 1 }).eq("user_id", aff.user_id);
+    await affClient2.from("affiliates").update({ clicks: (aff.clicks || 0) + 1 }).eq("user_id", aff.user_id);
     res.json({ success: true });
   } catch(err) { res.json({ success: false }); }
 });
@@ -2251,18 +2263,19 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
   try {
     const { affiliate_code, user_id } = req.body;
     if(!affiliate_code || !user_id) return res.json({ success: false });
-    const { data: aff } = await supabase.from("affiliates").select("user_id").eq("affiliate_code", affiliate_code).single();
+    const affClient3 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: aff } = await affClient3.from("affiliates").select("user_id").eq("affiliate_code", affiliate_code).single();
     if(!aff || aff.user_id === user_id) return res.json({ success: false });
 
-    const { data: existingProfile } = await supabase.from("profiles").select("referred_by_affiliate").eq("user_id", user_id).single();
+    const { data: existingProfile } = await affClient3.from("profiles").select("referred_by_affiliate").eq("user_id", user_id).single();
     if(existingProfile?.referred_by_affiliate) return res.json({ success: false, error: "Already attributed" });
 
-    const { data: existingSub } = await supabase.from("subscriptions").select("user_id").eq("user_id", user_id).limit(1);
+    const { data: existingSub } = await affClient3.from("subscriptions").select("user_id").eq("user_id", user_id).limit(1);
     if(existingSub && existingSub.length > 0) return res.json({ success: false, error: "Trial already used" });
 
-    await supabase.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
+    await affClient3.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
     const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await supabase.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
+    await affClient3.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
     res.json({ success: true, trial: true, message: "30-day free trial activated!" });
   } catch(err) { res.json({ success: false }); }
 });
