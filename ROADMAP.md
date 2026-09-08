@@ -48,12 +48,11 @@ The moat is not "we have business data." It is: AI Business knows who businesses
 ## NOW
 
 ### Appointment System Hardening (active)
-Continuation of the verified booking lifecycle:
-1. Server-side slot integrity: working hours, breaks, unavailable dates; dynamic slots; server-side validation; double-booking prevention.
-2. Rescheduling and cancellation flows.
-3. Reminders.
-4. Booking → customer/lead linkage; status transitions tracked for Analytics.
-First step before any code: read-only inspection of services/bookings schema and current validation.
+Continuation of the verified booking lifecycle. Slice 1 is DONE (see DONE section).
+2. Working hours, breaks, unavailable dates; dynamic slot generation; server-side enforcement (requires schema addition — current step).
+3. Rescheduling and cancellation flows.
+4. Reminders.
+5. Booking → customer/lead linkage; status transitions tracked for Analytics.
 
 ---
 
@@ -151,6 +150,7 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 - **Testimonials collection** — full CRUD + moderation + public API + homepage auto-load, verified incl. avatar HTTP 200.
 - **Public business page + enquiry form** — creates real leads; slug-taken error surfacing.
 - **Booking page earlier fixes** — services loader timeout/retry, single-service auto-select, multi-service selection.
+- **Appointment hardening slice 1 — server-side slot integrity (verified across all 3 Render backends).** Past-date rejection proven by direct API call bypassing the UI on ok3x, 1orz, and 90n6; HH:MM time-format validation; duration-aware double-booking overlap prevention proven by a real conflicting attempt; specific error surfacing on the public booking page; isolated service-role client on the public services endpoint. Rejected bookings no longer trigger owner notifications. Working hours / dynamic slots remain in the NOW trajectory (slice 2).
 
 ---
 
