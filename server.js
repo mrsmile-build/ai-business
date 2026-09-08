@@ -1637,8 +1637,9 @@ app.get("/api/book/:userId/services", async (req, res) => {
     ]);
   }
   try {
-    const r1 = await withTimeout(supabase.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true), 8000);
-    const r2 = await withTimeout(supabase.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single(), 8000);
+    const servicesClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const r1 = await withTimeout(servicesClient.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true), 8000);
+    const r2 = await withTimeout(servicesClient.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single(), 8000);
     res.json({ success: true, services: r1.data || [], biz: r2.data || {} });
   } catch(err) {
     console.log("Booking services lookup failed/timed out:", err.message);
@@ -1652,9 +1653,51 @@ app.post("/api/book/:userId", async (req, res) => {
     if(!service_ids || !Array.isArray(service_ids) || service_ids.length === 0){
       return res.status(400).json({ success: false, error: "At least one service must be selected." });
     }
-    await pushNotification(req.params.userId, "booking", "New booking from " + customer_name).catch(()=>{});
+    
+    // Validate date is not in the past (local ISO date-string compare, timezone-safe)
+    const now = new Date();
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(booking_date) || booking_date < todayStr) {
+      return res.status(400).json({ success: false, error: "Cannot book past dates" });
+    }
+    
+    // Validate time format
+    if (!/^\d{2}:\d{2}$/.test(booking_time)) {
+      return res.status(400).json({ success: false, error: "Invalid time format" });
+    }
+    
     const bookClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const { data: servicesData } = await bookClient.from("services").select("id, name, price, duration_minutes").in("id", service_ids);
+    
+    // Duration map for all owner services (sizes existing multi-service bookings correctly)
+    const { data: ownerServices } = await bookClient.from("services").select("id, duration_minutes").eq("user_id", req.params.userId);
+    const durMap = {};
+    (ownerServices || []).forEach(function(s){ durMap[s.id] = s.duration_minutes || 60; });
+    
+    // Double-booking prevention: existing non-cancelled bookings on that date
+    const { data: existingBookings } = await bookClient
+      .from("bookings")
+      .select("booking_time, service_ids")
+      .eq("user_id", req.params.userId)
+      .eq("booking_date", booking_date)
+      .neq("status", "cancelled");
+    
+    const requestedMinutes = (servicesData || []).reduce((sum, s) => sum + (s.duration_minutes || 60), 0);
+    const [reqHour, reqMin] = booking_time.split(":").map(Number);
+    const reqStart = reqHour * 60 + reqMin;
+    const reqEnd = reqStart + requestedMinutes;
+    
+    for (const booking of (existingBookings || [])) {
+      const [bHour, bMin] = String(booking.booking_time || "00:00").split(":").map(Number);
+      const bStart = bHour * 60 + bMin;
+      const bDuration = (booking.service_ids || []).reduce((sum, sid) => sum + (durMap[sid] || 60), 0);
+      const bEnd = bStart + bDuration;
+      if (reqStart < bEnd && reqEnd > bStart) {
+        return res.status(409).json({ success: false, error: "That time slot conflicts with an existing booking" });
+      }
+    }
+    
+    await pushNotification(req.params.userId, "booking", "New booking from " + customer_name).catch(()=>{});
     const { data } = await bookClient.from("bookings").insert({
       user_id: req.params.userId, service_id: service_ids[0], service_ids, customer_name,
       customer_phone, customer_email, booking_date, booking_time, notes, status: "pending"
@@ -2065,7 +2108,7 @@ async function submitBooking(){
     if(data.success){
       document.getElementById("booking_form").style.display="none";
       document.getElementById("success").style.display="block";
-    } else { alert("Booking failed. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
+    } else { alert(data.error || "Booking failed. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
   } catch(e){ alert("Network error. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
 }
 </script>
