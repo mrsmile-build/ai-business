@@ -48,8 +48,8 @@ The moat is not "we have business data." It is: AI Business knows who businesses
 ## NOW
 
 ### Appointment System Hardening (active)
-Continuation of the verified booking lifecycle. Slice 1 and Slice 2 are DONE (see DONE section).
-3. Rescheduling and cancellation flows.
+Continuation of the verified booking lifecycle. Slices 1–3 are DONE (see DONE section).
+4. Reminders.
 3. Rescheduling and cancellation flows.
 4. Reminders.
 5. Booking → customer/lead linkage; status transitions tracked for Analytics.
@@ -152,6 +152,7 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 - **Booking page earlier fixes** — services loader timeout/retry, single-service auto-select, multi-service selection.
 - **Appointment hardening slice 1 — server-side slot integrity (verified across all 3 Render backends).** Past-date rejection proven by direct API call bypassing the UI on ok3x, 1orz, and 90n6; HH:MM time-format validation; duration-aware double-booking overlap prevention proven by a real conflicting attempt; specific error surfacing on the public booking page; isolated service-role client on the public services endpoint. Rejected bookings no longer trigger owner notifications.
 - **Appointment hardening slice 2 — working hours, breaks, blocked dates (verified on localhost).** Schema: `booking_hours` jsonb + `blocked_dates` jsonb on `biz_pages` (null preserves legacy 08:00–18:00). Owner UI: per-day hours with closed toggle + break + unavailable-date chips, labeled columns, plain-English helpers, wipe-safe init. Customer UI: time dropdown dynamically generated from saved hours minus breaks and duration overrun; closed/blocked days show explicit messages. Server enforcement: blocked dates, closed days, open/close window, break intersection all reject with specific errors before the overlap check. Verified: exact Monday slot list (10/11/12/14/15 for 10:00–16:00 with 13:00–14:00 break), closed-day and blocked-date messages, chip persistence, success path with hours set.
+- **Appointment hardening slice 3 — rescheduling and cancellation (verified on localhost).** PATCH /api/bookings/:id extended with full validation chain (past date, time format, blocked date, closed day, hours/breaks, overlap excluding self). Owner UI: Reschedule button opens inline date + time inputs generated from saved availability; closed/blocked days show inline messages; Save New Time triggers validation and updates. Status-only PATCH unchanged. Verified: overlap rejection, closed-day rejection, blocked-date rejection, valid reschedule, vacated slot immediately rebookable, cancellation frees slot for rebooking. Customer-side reschedule/cancel deferred (requires secure-token mechanism). Schema: `booking_hours` jsonb + `blocked_dates` jsonb on `biz_pages` (null preserves legacy 08:00–18:00). Owner UI: per-day hours with closed toggle + break + unavailable-date chips, labeled columns, plain-English helpers, wipe-safe init. Customer UI: time dropdown dynamically generated from saved hours minus breaks and duration overrun; closed/blocked days show explicit messages. Server enforcement: blocked dates, closed days, open/close window, break intersection all reject with specific errors before the overlap check. Verified: exact Monday slot list (10/11/12/14/15 for 10:00–16:00 with 13:00–14:00 break), closed-day and blocked-date messages, chip persistence, success path with hours set.
 
 ---
 
