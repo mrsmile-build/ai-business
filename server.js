@@ -1622,9 +1622,101 @@ app.get("/api/bookings", authMiddleware, async (req, res) => {
 });
 
 app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
-  const { status } = req.body;
+  const { status, booking_date, booking_time } = req.body;
   const bookingsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-  await bookingsClient.from("bookings").update({ status }).eq("id", req.params.id).eq("user_id", req.user.id);
+  
+  // If rescheduling (date or time provided), validate and update
+  if (booking_date || booking_time) {
+    // Load the booking being modified
+    const { data: booking } = await bookingsClient.from("bookings").select("*, services(duration_minutes)").eq("id", req.params.id).eq("user_id", req.user.id).single();
+    if (!booking) return res.status(404).json({ success: false, error: "Booking not found" });
+    
+    const newDate = booking_date || booking.booking_date;
+    const newTime = booking_time || booking.booking_time;
+    
+    // Validate date is not in the past
+    const now = new Date();
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate) || newDate < todayStr) {
+      return res.status(400).json({ success: false, error: "Cannot reschedule to past dates" });
+    }
+    
+    // Validate time format
+    if (!/^\d{2}:\d{2}$/.test(newTime)) {
+      return res.status(400).json({ success: false, error: "Invalid time format" });
+    }
+    
+    // Load service durations
+    const serviceIds = booking.service_ids || [booking.service_id];
+    const { data: servicesData } = await bookingsClient.from("services").select("id, duration_minutes").in("id", serviceIds);
+    const requestedMinutes = (servicesData || []).reduce((sum, s) => sum + (s.duration_minutes || 60), 0);
+    
+    // Load owner services for duration map
+    const { data: ownerServices } = await bookingsClient.from("services").select("id, duration_minutes").eq("user_id", req.user.id);
+    const durMap = {};
+    (ownerServices || []).forEach(function(s){ durMap[s.id] = s.duration_minutes || 60; });
+    
+    // Working-hours enforcement
+    const { data: bizRow } = await bookingsClient.from("biz_pages").select("booking_hours, blocked_dates").eq("user_id", req.user.id).single();
+    const blockedDates = (bizRow && Array.isArray(bizRow.blocked_dates)) ? bizRow.blocked_dates : [];
+    if (blockedDates.indexOf(newDate) > -1) {
+      return res.status(409).json({ success: false, error: "The business is not accepting bookings on that date" });
+    }
+    const bh = bizRow && bizRow.booking_hours ? bizRow.booking_hours : null;
+    if (bh) {
+      const dayKey = ["sun","mon","tue","wed","thu","fri","sat"][new Date(newDate + "T12:00:00").getDay()];
+      const day = bh[dayKey];
+      if (!day || day.closed) {
+        return res.status(409).json({ success: false, error: "The business is closed on the selected day" });
+      }
+      const toMin = function(t){ const p = String(t||"").split(":"); return (+p[0])*60 + (+p[1]); };
+      const [reqHour, reqMin] = newTime.split(":").map(Number);
+      const reqStart = reqHour * 60 + reqMin;
+      const reqEnd = reqStart + requestedMinutes;
+      if (reqStart < toMin(day.open) || reqEnd > toMin(day.close)) {
+        return res.status(409).json({ success: false, error: "That time is outside the business working hours" });
+      }
+      for (const br of (Array.isArray(day.breaks) ? day.breaks : [])) {
+        if (reqStart < toMin(br[1]) && reqEnd > toMin(br[0])) {
+          return res.status(409).json({ success: false, error: "That time falls within a break period" });
+        }
+      }
+    }
+    
+    // Overlap check (excluding the booking itself)
+    const { data: existingBookings } = await bookingsClient
+      .from("bookings")
+      .select("booking_time, service_ids")
+      .eq("user_id", req.user.id)
+      .eq("booking_date", newDate)
+      .neq("status", "cancelled")
+      .neq("id", req.params.id);
+    
+    const [reqHour2, reqMin2] = newTime.split(":").map(Number);
+    const reqStart2 = reqHour2 * 60 + reqMin2;
+    const reqEnd2 = reqStart2 + requestedMinutes;
+    
+    for (const other of (existingBookings || [])) {
+      const [bHour, bMin] = String(other.booking_time || "00:00").split(":").map(Number);
+      const bStart = bHour * 60 + bMin;
+      const bDuration = (other.service_ids || []).reduce((sum, sid) => sum + (durMap[sid] || 60), 0);
+      const bEnd = bStart + bDuration;
+      if (reqStart2 < bEnd && reqEnd2 > bStart) {
+        return res.status(409).json({ success: false, error: "That time slot conflicts with an existing booking" });
+      }
+    }
+    
+    // Update the booking
+    const updatePayload = { booking_date: newDate, booking_time: newTime };
+    if (status) updatePayload.status = status;
+    const { error } = await bookingsClient.from("bookings").update(updatePayload).eq("id", req.params.id).eq("user_id", req.user.id);
+    if (error) return res.status(500).json({ success: false, error: error.message });
+  } else {
+    // Status-only update (existing behavior)
+    const { error } = await bookingsClient.from("bookings").update({ status }).eq("id", req.params.id).eq("user_id", req.user.id);
+    if (error) return res.status(500).json({ success: false, error: error.message });
+  }
+  
   res.json({ success: true });
 });
 

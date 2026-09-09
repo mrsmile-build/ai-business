@@ -2500,8 +2500,15 @@ async function renderAppointments(){
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 ${b.status==="pending"?`<button onclick="updateBooking('${b.id}','confirmed')" style="padding:6px 12px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Confirm</button>`:""}
+                <button onclick="showReschedule('${b.id}','${b.booking_date}','${b.booking_time}')" style="padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Reschedule</button>
                 ${b.customer_phone?`<a href="https://wa.me/${b.customer_phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}" target="_blank" style="padding:6px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px">WhatsApp</a>`:""}
                 <button onclick="updateBooking('${b.id}','cancelled')" style="padding:6px 12px;background:#1e293b;color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:12px">Cancel</button>
+              </div>
+              <div id="reschedule_${b.id}" style="display:none;margin-top:10px;padding:10px;background:#0b1220;border-radius:6px">
+                <input id="reschedule_date_${b.id}" type="date" value="${b.booking_date}" onchange="updateRescheduleSlots('${b.id}')" style="width:100%;padding:6px;margin-bottom:6px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px">
+                <select id="reschedule_time_${b.id}" style="width:100%;padding:6px;margin-bottom:6px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px"></select>
+                <p id="reschedule_msg_${b.id}" style="margin:4px 0;font-size:11px;color:#64748b"></p>
+                <button onclick="saveReschedule('${b.id}')" style="width:100%;padding:8px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Save New Time</button>
               </div>
             </div>
           `).join("")}
@@ -2539,6 +2546,133 @@ async function deleteService(id){
 async function updateBooking(id, status){
   await apiFetch("/api/bookings/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
   renderAppointments();
+}
+
+function showReschedule(id, currentDate, currentTime){
+  var box = document.getElementById("reschedule_"+id);
+  if(box){
+    box.style.display = box.style.display==="none"?"block":"none";
+    if(box.style.display==="block"){
+      document.getElementById("reschedule_date_"+id).value = currentDate;
+      updateRescheduleSlots(id);
+    }
+  }
+}
+
+function updateRescheduleSlots(id){
+  var dateInput = document.getElementById("reschedule_date_"+id);
+  var timeSelect = document.getElementById("reschedule_time_"+id);
+  var msg = document.getElementById("reschedule_msg_"+id);
+  if(!dateInput || !timeSelect) return;
+  
+  var date = dateInput.value;
+  if(!date){
+    timeSelect.innerHTML = "<option value=''>Select a date first</option>";
+    msg.textContent = "";
+    return;
+  }
+  
+  // Fetch availability
+  apiFetch("/api/biz-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var page = data.page || {};
+      var bh = page.booking_hours || null;
+      var bd = page.blocked_dates || [];
+      
+      if(bd.indexOf(date) > -1){
+        timeSelect.innerHTML = "<option value=''>Closed</option>";
+        msg.textContent = "The business is not accepting bookings on this date";
+        msg.style.color = "#ef4444";
+        return;
+      }
+      
+      var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"];
+      var dayKey = dayKeys[new Date(date + "T12:00:00").getDay()];
+      
+      if(!bh){
+        var times = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+        timeSelect.innerHTML = times.map(function(t){ return "<option value='"+t+"'>"+t+"</option>"; }).join("");
+        msg.textContent = "";
+        return;
+      }
+      
+      var day = bh[dayKey];
+      if(!day || day.closed){
+        timeSelect.innerHTML = "<option value=''>Closed</option>";
+        msg.textContent = "The business is closed on this day";
+        msg.style.color = "#ef4444";
+        return;
+      }
+      
+      // For reschedule, use 60min as default duration
+      var totalMins = 60;
+      
+      var toMin = function(t){ var p = t.split(":"); return (+p[0])*60 + (+p[1]); };
+      var openMin = toMin(day.open);
+      var closeMin = toMin(day.close);
+      
+      var slots = [];
+      for(var m = openMin; m + totalMins <= closeMin; m += 60){
+        var h = Math.floor(m / 60);
+        var min = m % 60;
+        var slotStr = String(h).padStart(2,"0") + ":" + String(min).padStart(2,"0");
+        
+        var intersects = false;
+        (day.breaks || []).forEach(function(br){
+          var brStart = toMin(br[0]);
+          var brEnd = toMin(br[1]);
+          if(m < brEnd && (m + totalMins) > brStart) intersects = true;
+        });
+        
+        if(!intersects) slots.push(slotStr);
+      }
+      
+      if(slots.length === 0){
+        timeSelect.innerHTML = "<option value=''>No available slots</option>";
+        msg.textContent = "No slots available";
+        msg.style.color = "#f59e0b";
+      } else {
+        timeSelect.innerHTML = slots.map(function(s){ return "<option value='"+s+"'>"+s+"</option>"; }).join("");
+        msg.textContent = "";
+      }
+    });
+}
+
+async function saveReschedule(id){
+  var dateInput = document.getElementById("reschedule_date_"+id);
+  var timeSelect = document.getElementById("reschedule_time_"+id);
+  var btn = event.target;
+  
+  if(!dateInput || !timeSelect) return alert("Error: inputs not found");
+  
+  var date = dateInput.value;
+  var time = timeSelect.value;
+  
+  if(!date || !time || time==="Closed" || time==="No available slots"){
+    return alert("Please select a valid date and time");
+  }
+  
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  
+  try{
+    var res = await apiFetch("/api/bookings/"+id,{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body:JSON.stringify({booking_date:date, booking_time:time})
+    });
+    var data = await res.json();
+    if(data.success){
+      alert("Booking rescheduled!");
+      renderAppointments();
+    } else {
+      alert("Error: " + (data.error || "Unknown error"));
+    }
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+  
+  if(btn){btn.disabled=false;btn.textContent="Save New Time";}
 }
 
 function toggleAvailDay(d){
