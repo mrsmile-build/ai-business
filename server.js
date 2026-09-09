@@ -1696,6 +1696,12 @@ app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate) || newDate < todayStr) {
       return res.status(400).json({ success: false, error: "Cannot reschedule to past dates" });
     }
+    if (newDate === todayStr) {
+      const [rh, rm] = newTime.split(":").map(Number);
+      if (rh * 60 + rm <= now.getHours() * 60 + now.getMinutes()) {
+        return res.status(400).json({ success: false, error: "That time already passed today. Pick a later time." });
+      }
+    }
     
     // Validate time format
     if (!/^\d{2}:\d{2}$/.test(newTime)) {
@@ -1773,6 +1779,18 @@ app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
   }
   
+  // Activity log
+  try {
+    let action = "booking_updated";
+    if (booking_date || booking_time) action = "booking_rescheduled";
+    else if (status === "confirmed") action = "booking_confirmed";
+    else if (status === "cancelled") action = "booking_cancelled";
+    await bookingsClient.from("activity").insert({
+      user_id: req.user.id, action: action,
+      details: { booking_id: req.params.id, booking_date, booking_time, status }
+    });
+  } catch (e) { console.log("Activity log failed:", e.message); }
+  
   res.json({ success: true });
 });
 
@@ -1846,6 +1864,12 @@ app.post("/api/book/:userId", async (req, res) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(booking_date) || booking_date < todayStr) {
       return res.status(400).json({ success: false, error: "Cannot book past dates" });
     }
+    if (booking_date === todayStr) {
+      const [ph, pm] = booking_time.split(":").map(Number);
+      if (ph * 60 + pm <= now.getHours() * 60 + now.getMinutes()) {
+        return res.status(400).json({ success: false, error: "That time already passed today. Pick a later time." });
+      }
+    }
     
     // Validate time format
     if (!/^\d{2}:\d{2}$/.test(booking_time)) {
@@ -1907,11 +1931,42 @@ app.post("/api/book/:userId", async (req, res) => {
       }
     }
     
+    // Link booking to a lead (CRM). Reuse same phone, else create.
+    let leadId = null;
+    try {
+      if (customer_phone) {
+        const { data: existingLead } = await bookClient.from("leads")
+          .select("id").eq("user_id", req.params.userId).eq("phone", customer_phone).limit(1);
+        if (existingLead && existingLead.length > 0) {
+          leadId = existingLead[0].id;
+          await bookClient.from("leads").update({
+            status: "won", follow_up_date: booking_date, updated_at: new Date().toISOString()
+          }).eq("id", leadId);
+        } else {
+          const { data: newLead } = await bookClient.from("leads").insert({
+            user_id: req.params.userId, name: customer_name, phone: customer_phone,
+            email: customer_email || null, status: "won", follow_up_date: booking_date,
+            message: "Booked via booking page on " + booking_date + " at " + booking_time
+          }).select("id").single();
+          if (newLead) leadId = newLead.id;
+        }
+      }
+    } catch (e) { console.log("Lead linkage failed:", e.message); }
+
     await pushNotification(req.params.userId, "booking", "New booking from " + customer_name).catch(()=>{});
     const { data } = await bookClient.from("bookings").insert({
       user_id: req.params.userId, service_id: service_ids[0], service_ids, customer_name,
-      customer_phone, customer_email, booking_date, booking_time, notes, status: "pending"
+      customer_phone, customer_email, booking_date, booking_time, notes, status: "pending",
+      lead_id: leadId
     }).select().single();
+    
+    try {
+      await bookClient.from("activity").insert({
+        user_id: req.params.userId, action: "booking_created",
+        details: { customer_name, booking_date, booking_time, lead_id: leadId }
+      });
+    } catch (e) { console.log("Activity log failed:", e.message); }
+    
     res.json({ success: true, booking: data, services: servicesData || [] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
