@@ -1618,7 +1618,63 @@ app.get("/api/bookings", authMiddleware, async (req, res) => {
   const bookingsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   const { data } = await bookingsClient.from("bookings").select("*, services(name, price, duration_minutes)")
     .eq("user_id", req.user.id).order("booking_date", { ascending: true });
-  res.json({ success: true, bookings: data || [] });
+
+  const bookings = data || [];
+
+  // Reminder check.
+  // When owner opens Appointments, remind about bookings in the next 24 hours.
+  const now = new Date();
+  const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const toRemind = bookings.filter(function(b){
+    if (b.status === "cancelled") return false;
+    if (b.reminder_sent_at) return false;
+    if (!b.booking_date || !b.booking_time) return false;
+    const start = new Date(b.booking_date + "T" + b.booking_time + ":00");
+    return start >= now && start <= in24h;
+  });
+
+  for (const b of toRemind) {
+    try {
+      const serviceName = (b.services && b.services.name) ? b.services.name : "Service";
+
+      // Bell notification
+      await pushNotification(
+        req.user.id,
+        "reminder",
+        "Reminder: " + b.customer_name + " at " + b.booking_time + " on " + b.booking_date
+      );
+
+      // Owner email
+      if (req.user.email) {
+        await sendEmail(
+          req.user.email,
+          "Reminder: " + b.customer_name + " booking at " + b.booking_time,
+          "<p>Reminder:</p><p><strong>" + b.customer_name + "</strong> has a booking on <strong>" + b.booking_date + " at " + b.booking_time + "</strong>.</p><p>Service: " + serviceName + "</p><p>Phone: " + (b.customer_phone || "not provided") + "</p>"
+        );
+      }
+
+      // Customer email, only if customer gave email
+      if (b.customer_email) {
+        await sendEmail(
+          b.customer_email,
+          "Reminder: your booking at " + b.booking_time,
+          "<p>Hi " + b.customer_name + ",</p><p>Your booking is on <strong>" + b.booking_date + " at " + b.booking_time + "</strong>.</p><p>Service: " + serviceName + "</p>"
+        );
+      }
+
+      // Mark it, so we do not remind twice
+      await bookingsClient.from("bookings")
+        .update({ reminder_sent_at: new Date().toISOString() })
+        .eq("id", b.id)
+        .eq("user_id", req.user.id);
+
+    } catch (e) {
+      console.log("Reminder failed:", e.message);
+    }
+  }
+
+  res.json({ success: true, bookings });
 });
 
 app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
@@ -1707,7 +1763,7 @@ app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
     }
     
     // Update the booking
-    const updatePayload = { booking_date: newDate, booking_time: newTime };
+    const updatePayload = { booking_date: newDate, booking_time: newTime, reminder_sent_at: null };
     if (status) updatePayload.status = status;
     const { error } = await bookingsClient.from("bookings").update(updatePayload).eq("id", req.params.id).eq("user_id", req.user.id);
     if (error) return res.status(500).json({ success: false, error: error.message });
