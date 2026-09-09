@@ -163,3 +163,130 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 3. Build → test the real workflow → deploy → mark DONE with evidence → move on. One NOW item at a time.
 4. DONE means the described scope shipped and was verified; it never closes the broader area to future improvement.
 5. Preserve historical and architectural memory; consolidate, never erase.
+
+---
+
+## SaaS Intelligence & Opportunity Expansion
+
+### Strategic Direction
+
+AI Business should evolve beyond a collection of business tools into a connected business growth system that helps a business move from discovery to trust, opportunity, conversion, payment, and proof.
+
+Core loop:
+
+**Get Found → Look Credible → Find Opportunities → Convert → Follow Up → Get Paid → Build Proof → Grow Trust**
+
+These capabilities are inspired by validated patterns observed across SaaS products and builder communities. They are roadmap directions, not automatically approved feature builds.
+
+### NEXT — Opportunity Finder
+
+**Goal:** Move beyond generic lead lists toward identifying businesses and customers showing meaningful opportunity signals.
+
+Potential capabilities:
+- Detect businesses showing buying/growth/problem signals.
+- Identify businesses with weak online presence or obvious business gaps.
+- Identify businesses that may need the user's product/service.
+- Explain why each opportunity is relevant.
+- Prioritize opportunities instead of dumping large lists.
+- Generate an appropriate outreach message.
+- Save opportunity → contact → follow up → convert.
+- Connect with Lead Finder and Follow-Up Assistant.
+
+**Principle:** The product should answer not only "Who is a business?" but "Why is this business worth contacting now?"
+
+### NEXT — Business Strength / Health
+
+**Goal:** Help businesses understand what is making them weak or strong in the eyes of potential customers and partners.
+
+Potential dimensions:
+- Discoverability
+- Online presence
+- Contactability
+- Professional presentation
+- Reviews/reputation
+- Customer proof
+- Website health
+- Business information completeness
+- Conversion readiness
+
+Output should be actionable rather than merely a score:
+- What is weak?
+- Why does it matter?
+- What should the business do next?
+- Can AI Business help complete the action?
+
+### LATER — Business Proof / Proof of Work
+
+**Goal:** Help businesses demonstrate that they are real, capable, trustworthy, and worth choosing.
+
+Potential assets:
+- Business profile
+- Portfolio
+- Completed work
+- Testimonials
+- Reviews
+- Customer proof
+- Business information
+- Credibility signals
+- Public shareable business profile
+
+Long-term direction: a business should be able to build a stronger public credibility footprint through AI Business.
+
+### LATER — Opportunity / Idea Validation
+
+**Goal:** Help businesses test demand before investing significant money or resources.
+
+Potential capabilities:
+- Validate an offer.
+- Identify likely target customers.
+- Research competing offers.
+- Test willingness to pay.
+- Identify objections.
+- Suggest experiments.
+- Turn validated demand into an acquisition workflow.
+
+### LATER — Promotion & Distribution Opportunities
+
+**Goal:** Help businesses discover legitimate places and channels where their target customers already exist.
+
+Potential capabilities:
+- Relevant communities.
+- Industry channels.
+- Content/distribution opportunities.
+- Partnership opportunities.
+- Promotion opportunities.
+- Match opportunities to business type and target customer.
+
+### PRODUCT PRINCIPLE — Connected Intelligence
+
+These capabilities must not become isolated mini-tools.
+
+AI Business should progressively connect:
+
+**Business Profile**
+→ **Business Health**
+→ **Opportunity Discovery**
+→ **Target Customer**
+→ **Outreach**
+→ **Follow-Up**
+→ **Conversion**
+→ **Payment**
+→ **Proof of Work**
+→ **Trust**
+→ **More Opportunities**
+
+The long-term advantage is the connected system and the business context accumulated across these workflows, not simply the number of tools.
+
+### PRIORITIZATION RULE
+
+Do not build every idea immediately.
+
+Prioritize according to:
+1. Evidence of real customer demand.
+2. Ability to produce measurable business value.
+3. Reuse of existing AI Business infrastructure.
+4. Ability to strengthen the core growth loop.
+5. Potential to increase retention or willingness to pay.
+
+New ideas remain roadmap items until implemented and verified. Do not mark them DONE merely because they have been designed or discussed.
+
