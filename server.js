@@ -1628,6 +1628,44 @@ app.patch("/api/bookings/:id", authMiddleware, async (req, res) => {
   res.json({ success: true });
 });
 
+app.patch("/api/availability", authMiddleware, async (req, res) => {
+  try {
+    const { booking_hours, blocked_dates } = req.body;
+    if (booking_hours !== null && booking_hours !== undefined && typeof booking_hours !== "object") {
+      return res.status(400).json({ success: false, error: "booking_hours must be an object or null" });
+    }
+    if (booking_hours) {
+      const hm = /^\d{2}:\d{2}$/;
+      for (const d of ["mon","tue","wed","thu","fri","sat","sun"]) {
+        const day = booking_hours[d];
+        if (!day || day.closed) continue;
+        if (!hm.test(day.open || "") || !hm.test(day.close || "")) {
+          return res.status(400).json({ success: false, error: "Invalid hours format for " + d });
+        }
+        for (const br of (day.breaks || [])) {
+          if (!Array.isArray(br) || br.length !== 2 || !hm.test(br[0]) || !hm.test(br[1])) {
+            return res.status(400).json({ success: false, error: "Invalid break format for " + d });
+          }
+        }
+      }
+    }
+    const blocked = Array.isArray(blocked_dates) ? blocked_dates : [];
+    const availClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: existing } = await availClient.from("biz_pages").select("user_id").eq("user_id", req.user.id).limit(1);
+    const payload = { booking_hours: booking_hours || null, blocked_dates: blocked, updated_at: new Date().toISOString() };
+    let error = null;
+    if (existing && existing.length > 0) {
+      const r = await availClient.from("biz_pages").update(payload).eq("user_id", req.user.id);
+      error = r.error;
+    } else {
+      const r = await availClient.from("biz_pages").insert(Object.assign({ user_id: req.user.id }, payload));
+      error = r.error;
+    }
+    if (error) return res.status(500).json({ success: false, error: error.message });
+    res.json({ success: true });
+  } catch(err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 // Public booking endpoint - no auth needed
 app.get("/api/book/:userId/services", async (req, res) => {
   function withTimeout(promise, ms){
@@ -1639,7 +1677,7 @@ app.get("/api/book/:userId/services", async (req, res) => {
   try {
     const servicesClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const r1 = await withTimeout(servicesClient.from("services").select("*").eq("user_id", req.params.userId).eq("is_active", true), 8000);
-    const r2 = await withTimeout(servicesClient.from("biz_pages").select("business_name, theme_color").eq("user_id", req.params.userId).single(), 8000);
+    const r2 = await withTimeout(servicesClient.from("biz_pages").select("business_name, theme_color, booking_hours, blocked_dates").eq("user_id", req.params.userId).single(), 8000);
     res.json({ success: true, services: r1.data || [], biz: r2.data || {} });
   } catch(err) {
     console.log("Booking services lookup failed/timed out:", err.message);
@@ -1686,6 +1724,30 @@ app.post("/api/book/:userId", async (req, res) => {
     const [reqHour, reqMin] = booking_time.split(":").map(Number);
     const reqStart = reqHour * 60 + reqMin;
     const reqEnd = reqStart + requestedMinutes;
+    
+    // Working-hours enforcement: blocked dates, closed days, open/close window, breaks
+    const { data: bizRow } = await bookClient.from("biz_pages").select("booking_hours, blocked_dates").eq("user_id", req.params.userId).single();
+    const blockedDates = (bizRow && Array.isArray(bizRow.blocked_dates)) ? bizRow.blocked_dates : [];
+    if (blockedDates.indexOf(booking_date) > -1) {
+      return res.status(409).json({ success: false, error: "The business is not accepting bookings on that date" });
+    }
+    const bh = bizRow && bizRow.booking_hours ? bizRow.booking_hours : null;
+    if (bh) {
+      const dayKey = ["sun","mon","tue","wed","thu","fri","sat"][new Date(booking_date + "T12:00:00").getDay()];
+      const day = bh[dayKey];
+      if (!day || day.closed) {
+        return res.status(409).json({ success: false, error: "The business is closed on the selected day" });
+      }
+      const toMin = function(t){ const p = String(t||"").split(":"); return (+p[0])*60 + (+p[1]); };
+      if (reqStart < toMin(day.open) || reqEnd > toMin(day.close)) {
+        return res.status(409).json({ success: false, error: "That time is outside the business working hours" });
+      }
+      for (const br of (Array.isArray(day.breaks) ? day.breaks : [])) {
+        if (reqStart < toMin(br[1]) && reqEnd > toMin(br[0])) {
+          return res.status(409).json({ success: false, error: "That time falls within a break period" });
+        }
+      }
+    }
     
     for (const booking of (existingBookings || [])) {
       const [bHour, bMin] = String(booking.booking_time || "00:00").split(":").map(Number);
@@ -1992,12 +2054,13 @@ input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid
     <input id="b_email" placeholder="your@email.com" type="email">
 
     <label>Preferred Date *</label>
-    <input id="b_date" type="date" min="${new Date().toISOString().split('T')[0]}">
+    <input id="b_date" type="date" min="${new Date().toISOString().split('T')[0]}" onchange="updateTimeSlots()">
 
     <label>Preferred Time *</label>
     <select id="b_time">
-      ${["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"].map(t=>`<option value="${t}">${t}</option>`).join("")}
+      <option value="">Select a date first</option>
     </select>
+    <p id="b_time_msg" style="margin:4px 0 0;font-size:11px;color:#64748b"></p>
 
     <label>Additional Notes</label>
     <input id="b_notes" placeholder="Any special requests?">
@@ -2057,6 +2120,78 @@ function loadServices(){
     });
 }
 loadServices();
+
+document.getElementById("b_date").addEventListener("change", updateTimeSlots);
+setTimeout(updateTimeSlots, 100);
+
+function updateTimeSlots(){
+  var dateInput = document.getElementById("b_date");
+  var timeSelect = document.getElementById("b_time");
+  var msg = document.getElementById("b_time_msg");
+  if(!dateInput || !timeSelect || !allServices || allServices.length === 0) return;
+  var date = dateInput.value;
+  if(!date){
+    timeSelect.innerHTML = "<option value=''>Select a date first</option>";
+    msg.textContent = "";
+    return;
+  }
+  fetch("/api/book/"+uid+"/services")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      var biz = data.biz || {};
+      var bh = biz.booking_hours || null;
+      var bd = biz.blocked_dates || [];
+      if(bd.indexOf(date) > -1){
+        timeSelect.innerHTML = "<option value=''>Closed</option>";
+        msg.textContent = "The business is not accepting bookings on this date";
+        msg.style.color = "#ef4444";
+        return;
+      }
+      var dayKeys = ["sun","mon","tue","wed","thu","fri","sat"];
+      var dayKey = dayKeys[new Date(date + "T12:00:00").getDay()];
+      if(!bh){
+        var times = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+        timeSelect.innerHTML = times.map(function(t){ return "<option value='"+t+"'>"+t+"</option>"; }).join("");
+        msg.textContent = "";
+        return;
+      }
+      var day = bh[dayKey];
+      if(!day || day.closed){
+        timeSelect.innerHTML = "<option value=''>Closed</option>";
+        msg.textContent = "The business is closed on this day";
+        msg.style.color = "#ef4444";
+        return;
+      }
+      var totalMins = 0;
+      selectedServices.forEach(function(sid){
+        var s = allServices.find(function(x){ return x.id === sid; });
+        if(s) totalMins += parseInt(s.duration_minutes || 60);
+      });
+      if(totalMins === 0) totalMins = 60;
+      var toMin = function(t){ var p = t.split(":"); return (+p[0])*60 + (+p[1]); };
+      var openMin = toMin(day.open);
+      var closeMin = toMin(day.close);
+      var slots = [];
+      for(var m = openMin; m + totalMins <= closeMin; m += 60){
+        var h = Math.floor(m / 60);
+        var min = m % 60;
+        var slotStr = String(h).padStart(2,"0") + ":" + String(min).padStart(2,"0");
+        var intersects = false;
+        (day.breaks || []).forEach(function(br){
+          if(m < toMin(br[1]) && (m + totalMins) > toMin(br[0])) intersects = true;
+        });
+        if(!intersects) slots.push(slotStr);
+      }
+      if(slots.length === 0){
+        timeSelect.innerHTML = "<option value=''>No available slots</option>";
+        msg.textContent = "No slots available for the selected services";
+        msg.style.color = "#f59e0b";
+      } else {
+        timeSelect.innerHTML = slots.map(function(s){ return "<option value='"+s+"'>"+s+"</option>"; }).join("");
+        msg.textContent = "";
+      }
+    });
+}
 
 function toggleService(idx){
   var s = allServices[idx];

@@ -2367,12 +2367,18 @@ async function renderAnalytics(){
 async function renderAppointments(){
   setView(`<div class="card">${header("📅 Appointments","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const [svcRes, bookRes] = await Promise.all([
+    const [svcRes, bookRes, bizRes] = await Promise.all([
       apiFetch("/api/services",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
-      apiFetch("/api/bookings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+      apiFetch("/api/bookings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      apiFetch("/api/biz-settings",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
     ]);
     const { services } = await svcRes.json();
     const { bookings } = await bookRes.json();
+    const bizData = await bizRes.json();
+    const page = bizData.page || {};
+    const bh = page.booking_hours || null;
+    const bd = page.blocked_dates || [];
+    window._blockedDates = bd.slice();
     const uid = currentUser?.id || "";
     const bookLink = (await resolveBackend()) + "/book/" + uid;
 
@@ -2437,6 +2443,48 @@ async function renderAppointments(){
           </div>
         </div>
 
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:16px">
+          <p style="margin:0 0 6px;font-size:13px;font-weight:bold">Booking Hours & Blocked Days</p>
+          <p style="margin:0 0 10px;font-size:11px;color:#94a3b8">The hours customers can book you. Tick "Closed" for days you don't take bookings. Break times are paused periods inside your open hours.</p>
+          <div style="display:grid;grid-template-columns:60px 50px 1fr 1fr 1fr 1fr;gap:6px;margin-bottom:4px">
+            <span style="font-size:10px;color:#64748b">DAY</span>
+            <span style="font-size:10px;color:#64748b">CLOSED</span>
+            <span style="font-size:10px;color:#64748b">OPENS</span>
+            <span style="font-size:10px;color:#64748b">CLOSES</span>
+            <span style="font-size:10px;color:#64748b">BREAK FROM</span>
+            <span style="font-size:10px;color:#64748b">BREAK TO</span>
+          </div>
+          <div id="availability_days" style="display:grid;gap:8px">
+            ${["mon","tue","wed","thu","fri","sat","sun"].map(function(d){
+              const day = bh ? bh[d] : null;
+              const closed = day ? day.closed : false;
+              const open = day && day.open ? day.open : "09:00";
+              const close = day && day.close ? day.close : "17:00";
+              const br = day && day.breaks && day.breaks.length > 0 ? day.breaks[0] : ["13:00","14:00"];
+              return `<div style="display:grid;grid-template-columns:60px 50px 1fr 1fr 1fr 1fr;gap:6px;align-items:center">
+                <span style="font-size:12px;text-transform:uppercase">${d}</span>
+                <label style="font-size:11px;color:#94a3b8"><input type="checkbox" id="avail_closed_${d}" ${closed?"checked":""} onchange="toggleAvailDay('${d}')"> Closed</label>
+                <input id="avail_open_${d}" type="time" value="${open}" style="padding:4px;font-size:11px">
+                <input id="avail_close_${d}" type="time" value="${close}" style="padding:4px;font-size:11px">
+                <input id="avail_brk0_${d}" type="time" value="${br[0]}" style="padding:4px;font-size:11px" placeholder="Break start">
+                <input id="avail_brk1_${d}" type="time" value="${br[1]}" style="padding:4px;font-size:11px" placeholder="Break end">
+              </div>`;
+            }).join("")}
+          </div>
+          <div style="margin-top:12px">
+            <p style="margin:0 0 4px;font-size:12px;font-weight:600">Unavailable Dates</p>
+            <p style="margin:0 0 6px;font-size:11px;color:#94a3b8">Specific days your business is absent (public holidays, closures, travel). Customers cannot book these dates.</p>
+            <div id="blocked_chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              ${bd.map(function(dt){return `<span style="padding:4px 10px;background:#1e293b;border-radius:6px;font-size:12px">${dt} <button onclick="removeBlocked('${dt}')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;margin-left:4px">x</button></span>`;}).join("")}
+            </div>
+            <div style="display:flex;gap:6px">
+              <input id="blocked_input" type="date" style="flex:1;padding:6px;font-size:12px">
+              <button onclick="addBlocked()" style="padding:6px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">Add</button>
+            </div>
+          </div>
+          <button onclick="saveAvailability()" style="width:100%;margin-top:12px;padding:10px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save Availability</button>
+        </div>
+
         ${upcoming.length > 0 ? `
           <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Upcoming (${upcoming.length})</p>
           ${upcoming.map(b=>`
@@ -2491,6 +2539,83 @@ async function deleteService(id){
 async function updateBooking(id, status){
   await apiFetch("/api/bookings/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
   renderAppointments();
+}
+
+function toggleAvailDay(d){
+  var closed = document.getElementById("avail_closed_"+d).checked;
+  var open = document.getElementById("avail_open_"+d);
+  var close = document.getElementById("avail_close_"+d);
+  var brk0 = document.getElementById("avail_brk0_"+d);
+  var brk1 = document.getElementById("avail_brk1_"+d);
+  if(closed){
+    open.disabled=true; close.disabled=true; brk0.disabled=true; brk1.disabled=true;
+  } else {
+    open.disabled=false; close.disabled=false; brk0.disabled=false; brk1.disabled=false;
+  }
+}
+
+function removeBlocked(dt){
+  if(!confirm("Remove "+dt+" from blocked dates?")) return;
+  var chips = document.getElementById("blocked_chips");
+  if(chips){
+    var spans = chips.querySelectorAll("span");
+    spans.forEach(function(s){ if(s.textContent.includes(dt)) s.remove(); });
+  }
+  window._blockedDates = (window._blockedDates || []).filter(function(x){ return x !== dt; });
+}
+
+function addBlocked(){
+  var input = document.getElementById("blocked_input");
+  var dt = input.value;
+  if(!dt) return alert("Select a date first.");
+  window._blockedDates = window._blockedDates || [];
+  if(window._blockedDates.indexOf(dt) === -1){
+    window._blockedDates.push(dt);
+    var chips = document.getElementById("blocked_chips");
+    if(chips){
+      var span = document.createElement("span");
+      span.style.cssText = "padding:4px 10px;background:#1e293b;border-radius:6px;font-size:12px";
+      span.innerHTML = dt + ' <button onclick="removeBlocked(\'' + dt + '\')" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;margin-left:4px">x</button>';
+      chips.appendChild(span);
+    }
+  }
+  input.value = "";
+}
+
+async function saveAvailability(){
+  var btn = document.querySelector("button[onclick='saveAvailability()']");
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  try {
+    var bh = {};
+    ["mon","tue","wed","thu","fri","sat","sun"].forEach(function(d){
+      var closed = document.getElementById("avail_closed_"+d).checked;
+      if(closed){
+        bh[d] = {closed:true, open:"00:00", close:"00:00", breaks:[]};
+      } else {
+        var open = document.getElementById("avail_open_"+d).value;
+        var close = document.getElementById("avail_close_"+d).value;
+        var brk0 = document.getElementById("avail_brk0_"+d).value;
+        var brk1 = document.getElementById("avail_brk1_"+d).value;
+        bh[d] = {closed:false, open:open, close:close, breaks:(brk0 && brk1)?[[brk0,brk1]]:[]};
+      }
+    });
+    var bd = window._blockedDates || [];
+    var res = await apiFetch("/api/availability",{
+      method:"PATCH",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
+      body:JSON.stringify({booking_hours:bh, blocked_dates:bd})
+    });
+    var data = await res.json();
+    if(data.success){
+      alert("Availability saved!");
+      renderAppointments();
+    } else {
+      alert("Error: " + (data.error || "Unknown error"));
+    }
+  } catch(e){
+    alert("Network error: " + e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent="Save Availability";}
 }
 /* =========================
    INVOICE GENERATOR
