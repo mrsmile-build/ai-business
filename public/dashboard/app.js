@@ -2235,15 +2235,77 @@ async function changePassword(){
 /* =========================
    ANALYTICS
 ========================= */
+function bkStatCard(color, value, label){
+  return '<div style="background:#1e293b;padding:12px;border-radius:8px;text-align:center"><p style="margin:0;font-size:18px;font-weight:800;color:' + color + '">' + value + '</p><p style="margin:4px 0 0;font-size:10px;color:#64748b">' + label + '</p></div>';
+}
+function bkInfoCard(label, value){
+  return '<div style="background:#1e293b;padding:10px;border-radius:8px;text-align:center"><p style="margin:0;font-size:12px;color:#94a3b8">' + label + '</p><p style="margin:4px 0 0;font-size:13px;font-weight:600;color:white">' + value + '</p></div>';
+}
+function bookingChartsHTML(bk){
+  if(!bk) bk = {};
+  var h = '<div style="background:#0f172a;border-radius:10px;padding:15px;margin-top:14px">';
+  h += '<p style="margin:0 0 12px;font-size:13px;font-weight:bold">Bookings</p>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
+  h += bkStatCard('#3b82f6', bk.total || 0, 'Total');
+  h += bkStatCard('#10b981', bk.confirmed || 0, 'Confirmed');
+  h += bkStatCard('#f59e0b', (bk.confirmationRate || 0) + '%', 'Confirm Rate');
+  h += bkStatCard('#8b5cf6', (bk.bookingRevenue || 0).toLocaleString(), 'Revenue 30d');
+  h += '</div>';
+  h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">';
+  h += bkInfoCard('Busiest Day', bk.busiestDay || '-');
+  h += bkInfoCard('Busiest Hour', bk.busiestHour || '-');
+  h += bkInfoCard('Top Service', bk.mostPopularService || '-');
+  h += '</div>';
+  var perDay = bk.bookingsPerDay || [];
+  if(perDay.length > 0){
+    var max = 1;
+    perDay.forEach(function(d){ if(d.count > max) max = d.count; });
+    h += '<p style="margin:0 0 8px;font-size:12px;color:#94a3b8">Bookings (Last 7 Days)</p>';
+    h += '<div style="display:flex;gap:4px;align-items:flex-end;height:80px;margin-bottom:14px">';
+    perDay.forEach(function(d){
+      var pct = Math.round((d.count / max) * 100);
+      h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">';
+      h += '<div style="background:#3b82f6;width:100%;height:' + pct + '%;min-height:4px;border-radius:4px"></div>';
+      h += '<p style="margin:4px 0 0;font-size:10px;color:#64748b">' + d.date.split('-')[2] + '</p>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+  var pops = bk.servicePopularity || [];
+  if(pops.length > 0){
+    h += '<p style="margin:0 0 8px;font-size:12px;color:#94a3b8">Service Popularity</p>';
+    pops.forEach(function(s){
+      var pct = Math.round((s.count / pops[0].count) * 100);
+      h += '<div style="margin-bottom:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:#cbd5e1">' + s.name + '</span><span style="font-size:11px;color:#3b82f6">' + s.count + '</span></div><div style="background:#1e293b;border-radius:3px;height:4px"><div style="background:#3b82f6;width:' + pct + '%;height:4px;border-radius:3px"></div></div></div>';
+    });
+  }
+  var rec = bk.recent || [];
+  if(rec.length > 0){
+    var colors = {pending:'#f59e0b', confirmed:'#10b981', cancelled:'#ef4444'};
+    h += '<p style="margin:12px 0 8px;font-size:12px;color:#94a3b8">Recent Bookings</p>';
+    rec.slice(0,5).forEach(function(b){
+      var col = colors[b.status] || '#64748b';
+      h += '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #1e293b"><div><p style="margin:0;font-size:12px;color:#cbd5e1">' + b.customer_name + '</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">' + b.service_name + ' - ' + b.booking_date + ' ' + b.booking_time + '</p></div><span style="font-size:10px;padding:2px 6px;border-radius:4px;color:' + col + ';border:1px solid ' + col + '">' + b.status + '</span></div>';
+    });
+  } else {
+    h += '<p style="font-size:12px;color:#64748b;text-align:center;padding:10px">No bookings yet.</p>';
+  }
+  h += '</div>';
+  return h;
+}
+
 async function renderAnalytics(){
   setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
-    const [leadsRes, revenueRes] = await Promise.all([
+    const [leadsRes, revenueRes, bookingsRes] = await Promise.all([
       apiFetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
-      apiFetch("/api/revenue",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+      apiFetch("/api/revenue",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
+      apiFetch("/api/booking-analytics",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
     ]);
     const leadsData = await leadsRes.json();
     const revenueData = await revenueRes.json();
+    const bookingsData = await bookingsRes.json();
+    const bookings = bookingsData.stats || {};
 
     const leads = leadsData.leads || [];
     const total = leads.length;
@@ -2310,6 +2372,8 @@ async function renderAnalytics(){
             <span style="font-size:13px;font-weight:bold;text-transform:capitalize">${plan}</span>
           </div>
         </div>
+
+        ${bookingChartsHTML(bookings)}
 
         <div style="background:#0f172a;border-radius:10px;padding:15px;margin-top:14px">
           <p style="margin:0 0 10px;font-size:13px;font-weight:bold">💡 Insights</p>

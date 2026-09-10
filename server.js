@@ -2733,6 +2733,44 @@ app.delete("/api/demo-data/clear", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- NOTIFICATIONS ---------------- */
+app.get("/api/booking-analytics", authMiddleware, async (req, res) => {
+  try {
+    const ac = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: bookings } = await ac.from("bookings").select("*, services(name, price, duration_minutes)").eq("user_id", req.user.id);
+    const { data: activity } = await ac.from("activity").select("action, created_at").eq("user_id", req.user.id).in("action", ["booking_created","booking_confirmed","booking_cancelled","booking_rescheduled"]).limit(500);
+    const all = bookings || [];
+    const acts = activity || [];
+    const statusCounts = { pending: 0, confirmed: 0, cancelled: 0 };
+    all.forEach(function(b){ if (statusCounts[b.status] !== undefined) statusCounts[b.status]++; });
+    const total = all.length;
+    const confirmed = statusCounts.confirmed;
+    const cancelled = statusCounts.cancelled;
+    const rescheduled = acts.filter(function(x){ return x.action === "booking_rescheduled"; }).length;
+    const confirmationRate = total > 0 ? Math.round((confirmed / total) * 100) : 0;
+    const dayCounts = [0,0,0,0,0,0,0];
+    const hourCounts = new Array(24).fill(0);
+    const serviceCounts = {};
+    all.forEach(function(b){
+      if (b.booking_date) dayCounts[new Date(b.booking_date + "T12:00:00").getDay()]++;
+      if (b.booking_time) { const h = parseInt(b.booking_time.split(":")[0], 10); if (h >= 0 && h < 24) hourCounts[h]++; }
+      if (b.services && b.services.name) serviceCounts[b.services.name] = (serviceCounts[b.services.name] || 0) + 1;
+    });
+    const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const busiestDay = total > 0 ? dayNames[dayCounts.indexOf(Math.max.apply(null, dayCounts))] : "-";
+    const busiestHour = total > 0 ? String(hourCounts.indexOf(Math.max.apply(null, hourCounts))).padStart(2,"0") + ":00" : "-";
+    const servicePopularity = Object.keys(serviceCounts).map(function(k){ return { name: k, count: serviceCounts[k] }; }).sort(function(a,b){ return b.count - a.count; }).slice(0,5);
+    const mostPopularService = servicePopularity.length ? servicePopularity[0].name : "None yet";
+    const thirty = new Date(); thirty.setDate(thirty.getDate() - 30);
+    const thirtyStr = thirty.toISOString().split("T")[0];
+    const bookingRevenue = all.filter(function(b){ return b.status === "confirmed" && b.booking_date >= thirtyStr; }).reduce(function(s,b){ return s + (b.services && b.services.price ? parseFloat(b.services.price) : 0); }, 0);
+    const days = [];
+    for (var i = 6; i >= 0; i--) { var d = new Date(); d.setDate(d.getDate() - i); days.push(d.toISOString().split("T")[0]); }
+    const bookingsPerDay = days.map(function(ds){ return { date: ds, count: all.filter(function(b){ return b.booking_date === ds; }).length }; });
+    const recent = all.slice().sort(function(a,b){ return String(b.created_at).localeCompare(String(a.created_at)); }).slice(0,10).map(function(b){ return { id: b.id, customer_name: b.customer_name, service_name: b.services ? b.services.name : "Service", booking_date: b.booking_date, booking_time: b.booking_time, status: b.status }; });
+    res.json({ success: true, stats: { total: total, confirmed: confirmed, cancelled: cancelled, rescheduled: rescheduled, confirmationRate: confirmationRate, busiestDay: busiestDay, busiestHour: busiestHour, mostPopularService: mostPopularService, bookingRevenue: bookingRevenue, bookingsPerDay: bookingsPerDay, dayCounts: dayCounts, hourCounts: hourCounts, servicePopularity: servicePopularity, recent: recent } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.get("/api/notifications", authMiddleware, async (req, res) => {
   try {
     const { data } = await supabase.from("notifications").select("*").eq("user_id", req.user.id).order("created_at", { ascending: false }).limit(20);
