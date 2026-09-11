@@ -2086,13 +2086,17 @@ async function generateProposal(){
 }
 
 function copyProposal(){
-  const text = document.getElementById("proposal_text")?.value||"";
+  const plan = currentSub?.plan || "free";
+  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business";
+  const text = (document.getElementById("proposal_text")?.value||"") + brand;
   navigator.clipboard.writeText(text).then(()=>alert("Proposal copied!"));
 }
 function shareProposal(){
-  const text = document.getElementById("proposal_text")?.value||"";
+  const plan = currentSub?.plan || "free";
+  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business";
+  const text = (document.getElementById("proposal_text")?.value||"") + brand;
   if(navigator.share){ navigator.share({title:"Business Proposal", text}).catch(()=>{}); }
-  else { copyProposal(); }
+  else { navigator.clipboard.writeText(text).then(()=>alert("Proposal copied!")); }
 }
 
 /* =========================
