@@ -2077,10 +2077,10 @@ async function generateProposal(){
           <button onclick="shareProposal()" style="width:100%;margin-top:10px;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📤 Share Proposal</button>
         </div>`;
     } else {
-      if(result) result.innerHTML = "<p style='color:red'>Failed to generate. Try again.</p>";
+      if(result) result.innerHTML = "<div style='text-align:center'><p style='color:red'>Failed to generate. " + (data && data.error ? data.error : "The AI service is busy.") + "</p><button onclick='generateProposal()' style='margin-top:8px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer'>🔄 Retry</button></div>";
     }
   }catch(e){
-    if(result) result.innerHTML = `<div style="text-align:center"><p style="color:red">Network error.</p><button onclick="generateProposal()" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer">🔄 Retry</button></div>`;
+    if(result) result.innerHTML = `<div style="text-align:center"><p style="color:red">Network problem. Check your connection.</p><button onclick="generateProposal()" style="padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer">🔄 Retry</button></div>`;
   }
   if(btn){ btn.disabled=false; btn.textContent="📄 Generate Proposal"; }
 }

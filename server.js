@@ -992,15 +992,23 @@ Write a complete proposal with these sections:
 10. Terms & Validity (valid 30 days)
 
 Make it professional, persuasive, and specific to Nigerian business context.
-Format with clear sections using headers. Be detailed but concise.`;
+Format with clear sections using headers. Keep the whole proposal under 650 words: one or two sentences per section, except Deliverables which is a bullet list.`;
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
-    });
-    const data = await response.json();
-    const proposal = cleanAIOutput(data.choices?.[0]?.message?.content);
+    const keys = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2].filter(Boolean);
+    let data = null; let lastErr = "No AI key configured";
+    for (const k of keys) {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + k },
+        body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none", max_tokens: 990 })
+      });
+      data = await response.json();
+      if (response.ok && data.choices) break;
+      lastErr = (data && data.error && data.error.message) || ("HTTP " + response.status);
+      data = null;
+    }
+    if (!data) return res.status(500).json({ success: false, error: "AI service said: " + lastErr });
+    const proposal = cleanAIOutput(data.choices[0].message.content);
     res.json({ success: true, proposal });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
