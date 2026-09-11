@@ -3873,6 +3873,25 @@ async function renderBlogAdmin(){
   }
 }
 
+
+function previewBlogCover(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")){
+    alert("Please choose an image.");
+    input.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const preview = document.getElementById("bp_cover_preview");
+    if(preview){
+      preview.innerHTML = '<img src="' + e.target.result + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">';
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 function renderBlogEditor(id){
   var post = id ? (window._blogPosts || []).find(function(p){ return p.id === id; }) : null;
   var p = post || {};
@@ -3884,7 +3903,12 @@ function renderBlogEditor(id){
       <textarea id="bp_excerpt" placeholder="Short excerpt (shows in blog list)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box">${p.excerpt||''}</textarea>
       <textarea id="bp_content" placeholder="Full content (plain text or Markdown)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:200px;resize:vertical;box-sizing:border-box">${p.content||''}</textarea>
       <input id="bp_category" placeholder="Category (e.g. Business Tips)" value="${p.category||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-      <input id="bp_cover" placeholder="Cover image URL (optional)" value="${p.cover_image_url||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <div style="margin-bottom:10px">
+        <input type="file" id="bp_cover_file" accept="image/*" onchange="previewBlogCover(this)" style="display:none">
+        <button onclick="document.getElementById('bp_cover_file').click()" style="width:100%;padding:10px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📷 Choose Cover Image from Gallery</button>
+        <div id="bp_cover_preview" style="margin-top:8px">${p.cover_image_url ? '<img src="' + p.cover_image_url + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:8px">' : ''}</div>
+        <input id="bp_cover" placeholder="Or paste cover image URL (optional)" value="${p.cover_image_url||''}" style="width:100%;padding:8px;margin-top:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px;box-sizing:border-box">
+      </div>
       <input id="bp_seo_title" placeholder="SEO title (optional)" value="${p.seo_title||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <textarea id="bp_seo_desc" placeholder="SEO description (optional)" style="width:100%;padding:10px;margin-bottom:16px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:50px;resize:none;box-sizing:border-box">${p.seo_description||''}</textarea>
       <div style="display:flex;gap:8px">
@@ -3897,12 +3921,27 @@ function renderBlogEditor(id){
 }
 
 async function saveBlogPost(id, status){
+  var coverUrl = document.getElementById("bp_cover").value.trim();
+  var coverFile = document.getElementById("bp_cover_file")?.files?.[0];
+  if (coverFile) {
+    var formData = new FormData();
+    formData.append("cover", coverFile);
+    try {
+      var uploadRes = await apiFetch("/api/blog/upload-cover", {
+        method: "POST",
+        body: formData
+      });
+      var uploadData = await uploadRes.json();
+      if (uploadData.success) coverUrl = uploadData.url;
+      else alert("Cover upload failed: " + (uploadData.error || "unknown"));
+    } catch(e) { alert("Cover upload error: " + e.message); }
+  }
   var body = {
     title: document.getElementById("bp_title").value.trim(),
     excerpt: document.getElementById("bp_excerpt").value.trim(),
     content: document.getElementById("bp_content").value.trim(),
     category: document.getElementById("bp_category").value.trim(),
-    cover_image_url: document.getElementById("bp_cover").value.trim(),
+    cover_image_url: coverUrl,
     seo_title: document.getElementById("bp_seo_title").value.trim(),
     seo_description: document.getElementById("bp_seo_desc").value.trim(),
     status: status

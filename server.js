@@ -1265,6 +1265,30 @@ const testimonialUpload = multer({
   }
 });
 
+app.post("/api/blog/upload-cover", authMiddleware, testimonialUpload.single("cover"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No image uploaded." });
+    const ext = req.file.originalname.split(".").pop() || "jpg";
+    const filePath = "blog-covers/" + Date.now() + "-" + Math.random().toString(36).slice(2,8) + "." + ext;
+    const bucketCheck = await supabase.storage.getBucket("uploads");
+    if (bucketCheck.error) {
+      const created = await supabase.storage.createBucket("uploads", { public: true });
+      if (created.error) console.log("Bucket create:", created.error.message);
+    }
+    const { error: uploadError } = await supabase.storage
+      .from("uploads")
+      .upload(filePath, req.file.buffer, { contentType: req.file.mimetype, upsert: false });
+    if (uploadError) {
+      console.error("Blog cover upload error:", uploadError.message);
+      return res.status(500).json({ error: uploadError.message });
+    }
+    const { data } = supabase.storage.from("uploads").getPublicUrl(filePath);
+    res.json({ success: true, url: data.publicUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/api/testimonials/upload", authMiddleware, testimonialUpload.single("avatar"), async (req, res) => {
   try {
     if (req.user.email !== BLOG_ADMIN_EMAIL) {
@@ -2053,6 +2077,7 @@ h1{font-size:24px;font-weight:800;margin-bottom:20px}
 ${list.length === 0 ? '<p style="color:#64748b">No posts yet. Check back soon.</p>' : list.map(p => `
 <a href="/blog/${p.slug}" class="post-card">
   <div class="post-cat">${p.category||"Business Tips"}</div>
+  ${p.cover_image_url ? `<img src="${p.cover_image_url}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:10px">` : ""}
   <div class="post-title">${p.title}</div>
   <div class="post-excerpt">${p.excerpt||""}</div>
   <div class="post-date">${p.published_at ? new Date(p.published_at).toLocaleDateString() : ""}</div>
