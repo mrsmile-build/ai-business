@@ -1802,7 +1802,7 @@ async function searchLeads(){
 
   const plan = currentSub?.plan || "free";
   const isPro = plan === "pro" || plan === "business";
-  const referralLine = isPro ? "" : "\n\n_Managed with AI Business_ 🚀 Try free: " + window.location.origin;
+  window._lfBrand = isPro ? "" : "\n\n— AI Business";
 
   try{
     const res = await apiFetch("/api/lead-finder",{
@@ -1848,12 +1848,12 @@ async function searchLeads(){
           </div>
 
           <p style="margin:0 0 6px;font-size:12px;color:#64748b">✏️ Edit message before sending:</p>
-          <textarea id="msg_${i}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:13px;height:100px;resize:vertical;box-sizing:border-box;line-height:1.5">${l.message}${referralLine}</textarea>
+          <textarea id="msg_${i}" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#162032;color:#cbd5e1;font-size:13px;height:100px;resize:vertical;box-sizing:border-box;line-height:1.5">${l.message}</textarea>
 
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
             <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
-            ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}?text=" + encodeURIComponent(document.getElementById("msg_${i}")?.value||"") + "" target="_blank" onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
+            ${l.phone?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
             <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
           </div>
@@ -1876,7 +1876,7 @@ async function searchLeads(){
 }
 
 function shareMsg(i){
-  const text = document.getElementById("msg_"+i)?.value||"";
+  const text = (document.getElementById("msg_"+i)?.value||"") + (window._lfBrand||"");
   if(navigator.share){
     navigator.share({ text }).catch(()=>{});
   } else {
@@ -1885,17 +1885,17 @@ function shareMsg(i){
 }
 
 function sendLfWhatsApp(i, phone){
-  var msg = document.getElementById("msg_"+i)?.value || "";
+  var msg = (document.getElementById("msg_"+i)?.value || "") + (window._lfBrand||"");
   if(!msg){ alert("Message is empty"); return; }
   window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(msg),"_blank");
 }
 function shareLfMsg(i){
-  var text = document.getElementById("msg_"+i)?.value || "";
+  var text = (document.getElementById("msg_"+i)?.value || "") + (window._lfBrand||"");
   if(navigator.share){ navigator.share({text}).catch(function(){}); }
   else { navigator.clipboard.writeText(text).then(function(){ alert("Copied!"); }); }
 }
 function copyEditedMsg(i){
-  const text = document.getElementById("msg_"+i)?.value||"";
+  const text = (document.getElementById("msg_"+i)?.value||"") + (window._lfBrand||"");
   navigator.clipboard.writeText(text).then(()=>{
     const btn = document.querySelectorAll("[onclick^='copyEditedMsg']")[i];
     if(btn){ btn.textContent="✅ Copied!"; setTimeout(()=>btn.textContent="📋 Copy",2000); }
@@ -2995,6 +2995,37 @@ async function renderBizPage(){
         </div>
 
         <button onclick="saveBizPage()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🌐 Save and Publish Page</button>
+
+        ${p.business_name ? `
+          <div style="background:#0f172a;border-radius:10px;padding:15px;margin-top:16px">
+            <p style="margin:0 0 12px;font-size:13px;font-weight:bold">📤 Share Your Page</p>
+            <p style="font-size:12px;color:#94a3b8;margin-bottom:12px">Get more bookings by sharing your page everywhere.</p>
+            <div style="background:#1e293b;padding:12px;border-radius:8px;margin-bottom:12px;text-align:center">
+              <p style="margin:0 0 8px;font-size:11px;color:#64748b">Scan to visit your page</p>
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(bizUrl)}" alt="QR" style="width:120px;height:120px;border-radius:6px;background:white">
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:12px">
+              <button onclick="navigator.clipboard.writeText('${bizUrl}').then(()=>alert('Link copied!'))" style="flex:1;padding:10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy Link</button>
+              <a href="https://wa.me/?text=${encodeURIComponent('Book an appointment with me: ' + bizUrl)}" target="_blank" style="flex:1;padding:10px;background:#25d366;color:white;border:none;border-radius:6px;text-decoration:none;font-size:12px;text-align:center">💬 WhatsApp</a>
+            </div>
+            <div style="background:#1e293b;padding:12px;border-radius:8px;margin-bottom:8px">
+              <p style="margin:0 0 6px;font-size:11px;color:#94a3b8">Bio text (copy this):</p>
+              <div style="background:#0b1220;padding:8px;border-radius:6px;font-size:11px;color:#cbd5e1;line-height:1.5">Book appointments with ${p.business_name}. Click the link to schedule online.</div>
+              <button onclick="navigator.clipboard.writeText('Book appointments with ${p.business_name}. Click the link to schedule online. ' + '${bizUrl}').then(()=>alert('Bio text copied!'))" style="margin-top:8px;padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Copy Bio Text</button>
+            </div>
+            <div style="background:#1e293b;padding:12px;border-radius:8px">
+              <p style="margin:0 0 8px;font-size:11px;color:#94a3b8">Share checklist:</p>
+              <div style="font-size:11px;color:#cbd5e1;line-height:1.8">
+                ✓ Instagram bio<br>
+                ✓ WhatsApp profile/status<br>
+                ✓ Facebook page<br>
+                ✓ TikTok bio<br>
+                ✓ Email signature<br>
+                ✓ Business cards (print QR)
+              </div>
+            </div>
+          </div>
+        ` : ""}
       </div>
     `);
   } catch(e){ setView(`<div class="card">${header("🌐 Business Page","dashboard")}<p style="color:red">${e.message}</p></div>`); }

@@ -2181,7 +2181,7 @@ ${services && services.length > 0 ? `
   </form>
 </section>
 
-<div class="footer">Powered by <a href="${process.env.BASE_URL||"/"}">AI Business</a> — The AI Operating System for African Businesses</div>
+<div style="text-align:center;padding:24px 20px 12px;font-size:11px;color:#64748b"><a href="${process.env.BASE_URL||"/"}" style="color:#64748b;text-decoration:none">AI Business</a></div>
 <script>
 async function submitEnquiry(e){
   e.preventDefault();
