@@ -970,6 +970,7 @@ app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   try {
     const { client_name, service, price, details, your_name, your_business } = req.body;
+    const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
 
 Write a complete, professional business proposal with these details:
@@ -977,6 +978,7 @@ Write a complete, professional business proposal with these details:
 - To: ${client_name}
 - Service: ${service}
 - Price: ${price || "To be discussed"}
+- Date: ${todayStr}
 - Details: ${details || "Standard service delivery"}
 
 Write a complete proposal with these sections:
@@ -992,7 +994,9 @@ Write a complete proposal with these sections:
 10. Terms & Validity (valid 30 days)
 
 Make it professional, persuasive, and specific to Nigerian business context.
-Format with clear sections using headers. Keep the whole proposal under 650 words: one or two sentences per section, except Deliverables which is a bullet list.`;
+Format with clear sections using headers. Keep the whole proposal under 650 words: one or two sentences per section, except Deliverables which is a bullet list.
+In the Investment section, use EXACTLY this price: ₦${price || "To be discussed"}. Write the number exactly as given; do not change it, round it, add zeros, or reinterpret it.
+In the Cover/Header, use EXACTLY this date: ${todayStr}. Do not invent any other date or year.`;
 
     const keys = [process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2].filter(Boolean);
     let data = null; let lastErr = "No AI key configured";
