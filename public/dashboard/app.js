@@ -1759,6 +1759,26 @@ function renderLeadFinderB2B(){
           </select>
           <input id="lf_custom_industry" placeholder="Type custom industry..." style="display:none;width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
 
+          <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What are you looking for?</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+            <label style="display:flex;align-items:center;gap:6px;padding:8px;background:#0b1220;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="lf_filter_new" style="margin:0">
+              <span>New businesses (<10 reviews)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px;background:#0b1220;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="lf_filter_no_site" style="margin:0">
+              <span>No website</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px;background:#0b1220;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="lf_filter_high_reviews" style="margin:0">
+              <span>High reviews (50+)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;padding:8px;background:#0b1220;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="lf_filter_high_rating" style="margin:0">
+              <span>High rating (4.5+)</span>
+            </label>
+          </div>
+
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Which city or area?</p>
           <input id="lf_location" placeholder="e.g. Lagos, Abuja, Port Harcourt..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
 
@@ -1794,6 +1814,13 @@ async function searchLeads(){
   if(!industry) return alert("Please select a target industry.");
   if(!location) return alert("Please enter a target location.");
 
+  const filters = {
+    new: document.getElementById("lf_filter_new")?.checked || false,
+    no_site: document.getElementById("lf_filter_no_site")?.checked || false,
+    high_reviews: document.getElementById("lf_filter_high_reviews")?.checked || false,
+    high_rating: document.getElementById("lf_filter_high_rating")?.checked || false
+  };
+
   const btn = document.querySelector("button[onclick='searchLeads()']");
   if(btn){ btn.disabled=true; btn.textContent="🔍 Searching for leads..."; }
 
@@ -1808,7 +1835,7 @@ async function searchLeads(){
     const res = await apiFetch("/api/lead-finder",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry })
+      body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry, filters })
     });
     const data = await res.json();
 

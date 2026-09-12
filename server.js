@@ -563,7 +563,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     const { error: quotaErr } = await leadFinderQuotaClient.rpc('increment_ai_usage', { p_user_id: req.user.id, p_increment: 1 });
     if (quotaErr) console.error("Lead Finder quota RPC error:", quotaErr.message);
 
-    const { service, location, context } = req.body;
+    const { service, location, context, filters } = req.body;
     if(!service || !location) return res.status(400).json({ error: "Service and location required" });
 
     // Search HasData - rotate through all configured API keys.
@@ -673,7 +673,19 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       return true;
     });
 
-    const localLeads = deduped.slice(0, 15).map(p => ({
+    const filtered = deduped.filter(p => {
+      if (filters) {
+        const reviews = p.reviews || p.reviewsCount || 0;
+        const rating = p.rating || 0;
+        const hasWebsite = !!(p.links?.website || p.website);
+        if (filters.new && reviews >= 10) return false;
+        if (filters.no_site && hasWebsite) return false;
+        if (filters.high_reviews && reviews < 50) return false;
+        if (filters.high_rating && rating < 4.5) return false;
+      }
+      return true;
+    });
+    const localLeads = filtered.slice(0, 15).map(p => ({
       name: p.title || p.name, 
       phone: p.phone || p.phoneNumber || null, 
       address: p.address || p.street || null,
@@ -735,7 +747,8 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
 
     // Prefer real local businesses. Organic websites are only supplementary.
     // This keeps directories such as Tripadvisor from dominating the results.
-    const allLeads = [...localLeads, ...organicLeads]
+    const anyFilter = filters && (filters.new || filters.no_site || filters.high_reviews || filters.high_rating);
+    const allLeads = [...localLeads, ...(anyFilter ? [] : organicLeads)]
       .filter((lead, index, arr) => {
         const name = (lead.name || "").toLowerCase().trim();
         return name && arr.findIndex(x =>
