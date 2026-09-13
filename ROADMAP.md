@@ -335,3 +335,38 @@ Stages (do not skip ahead):
 - V4: Interview scheduling, reminders, employer screening tools.
 - V5: Verified hiring marketplace, only after real usage proves demand.
 Entry gate: do NOT start V1 until Lead Finder 2.0 is fully shipped AND either revenue plateaus or users visibly ask for jobs. This stays VISION, never NOW.
+
+---
+
+## 🗺️ SESSION LOG — 2026-09-13 — SEARCH API SPRINT
+
+### ✅ DONE (built & verified live tonight)
+- [x] Proprietary Search API (Flask) — HasData is now optional fallback only
+- [x] Deployed to 2 Render free replicas (failover pair)
+- [x] 3 Overpass mirrors with auto-fallback (kumi.systems → private.coffee → overpass-api.de)
+- [x] Supabase shared cloud DB (project: ai-business, table: public.businesses) — 50 Miami leads stored
+- [x] Dedup + cleaning layer (proven: 5+ searches = still 50 rows, no duplicates)
+- [x] gunicorn --timeout 240 worker fix on both services
+- [x] UptimeRobot 5-min keep-alive pings on both URLs (no cold starts)
+- [x] Frontend failover utility: lib/searchApi.js (searchBusinesses + getGhostLeads)
+- [x] HANDOFF.md docs in BOTH repos (ai-business + ai-business-search-api)
+- [x] Security model: zero keys in frontend/GitHub — secrets live only in Render env vars
+
+### ⬜ TODO / NEEDS UPGRADE (next work items — unmarked = not done yet)
+- [ ] **UI: Lead Finder results table** — wire to searchBusinesses(); red-highlight has_website=false rows
+- [ ] **Opportunity Finder** — SELECT * FROM businesses WHERE has_website = false → lead list view
+- [ ] **City accuracy fix** — namesake stragglers (Gold Coast/Australia rows) → add place="city" or bbox filter in app.py fetch_osm_business()
+- [ ] **Hunter upgrade** — googlesearch blocked from cloud IPs (found_by_hunter always false) → swap to SERP API (~$5/mo e.g. ValueSERP) or DuckDuckGo
+- [ ] **Usage limits** — daily/monthly quota table with auto-reset
+- [ ] **Source aggregator** — add Yelp Fusion + Google Places ($200/mo free credit) as sources 2 & 3
+- [ ] **Security: Supabase RLS** — businesses table currently RLS OFF → add policies / service-role-only key before production
+- [ ] **3rd Render replica** — GitHub app reconnect loop unresolved; 2 replicas currently enough
+- [ ] **Loading UX** — 30–90s response time needs skeleton/loading states in UI
+
+### 🔑 KEY FACTS (read before touching anything)
+- Backend repo: mrsmile-build/ai-business-search-api → READ ITS HANDOFF.md FIRST
+- Live endpoints: POST https://ai-business-search-api.onrender.com/api/v1/search (and -2 variant)
+- Health check: GET / must return "db":"supabase"
+- Frontend util: lib/searchApi.js (URLs hardcoded, no env vars needed)
+- Render start command (DO NOT CHANGE): gunicorn --timeout 240 --workers 1 app:app
+- Supabase table: public.businesses (id, name, category, address, phone, website, has_website, found_by_hunter, created_at)
