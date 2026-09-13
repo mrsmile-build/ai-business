@@ -66,6 +66,10 @@ Free-plan artifacts carry a small permanent brand, turning user activity into di
 ### Lead Finder 2.0 / Signal System
 FIND → UNDERSTAND → CONTACT → FOLLOW UP → CONVERT, built on honest signals (review count, new-listing framing, contact availability). No invented buying signals. Legal constraint: only sources with explicit programmatic access (HasData, public RSS); no scraping against robots.txt/ToS, no CAPTCHA bypass.
 
+**Phase 1 (DONE):** Smart filters (new businesses, no website, high reviews, high rating).
+**Phase 2 (NEXT):** Bulk outreach - tick boxes on leads, one message template, send to all selected via WhatsApp with personalization.
+**Phase 3 (LATER):** Pipeline polish - kanban view of lead status (new → contacted → replied → won).
+
 ### Smart Analytics & Weekly Performance
 Plain-English insights from real stored data (leads, follow-ups, messages, bookings, conversions). Menu activity badges as evidence of activity, distinct from notifications; weekly timeline view.
 
@@ -162,6 +166,11 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 - **Appointment hardening slice 5 — booking-to-lead linkage, activity log, past-time gate (verified on localhost and all 3 live backends).** New bookings link to CRM leads by phone (existing lead set to won with follow_up_date = booking date; missing lead created); bookings.lead_id stores the link; repeat bookings reuse the same lead. Activity log rows: booking_created, booking_confirmed, booking_cancelled, booking_rescheduled with details jsonb. Creation and reschedule reject same-day past times. Verified: past-time rejection on ok3x, 1orz and 90n6 by direct API call; lead created once as won and reused; activity rows for created, confirmed and rescheduled.
 - **Booking & activity analytics (verified on localhost).** GET /api/booking-analytics (read-only): totals by status, confirmation rate, busiest day and hour, service popularity, 30-day confirmed revenue, 7-day bookings-per-day series, recent bookings. Analytics page shows a Bookings block (stat cards, bar chart, popularity bars, recent list) beside existing lead pipeline stats; lead stats unchanged. Verified: cards match DB counts after test cleanup (17 total, popularity sums to 17), charts render, no regression.
 - **My Page booking prominence + clean brand mark (verified on localhost and live).** Owner Business Page gains a Share card: QR code of the page link, 1-tap WhatsApp share, copy link, copy bio text, 6-point share checklist. Public page footer replaced by a small permanent centered "AI Business" mark (free plan cannot remove). Lead Finder free-plan branding moved out of the editable box: Copy/Share/Send WhatsApp append "- AI Business" at send time, pro appends nothing; broken Send WhatsApp link rewired to carry the edited message. Verified: badge no longer covers buttons, QR and checklist render, box stays clean while copied and WhatsApp texts end with the mark. Schema: `booking_hours` jsonb + `blocked_dates` jsonb on `biz_pages` (null preserves legacy 08:00–18:00). Owner UI: per-day hours with closed toggle + break + unavailable-date chips, labeled columns, plain-English helpers, wipe-safe init. Customer UI: time dropdown dynamically generated from saved hours minus breaks and duration overrun; closed/blocked days show explicit messages. Server enforcement: blocked dates, closed days, open/close window, break intersection all reject with specific errors before the overlap check. Verified: exact Monday slot list (10/11/12/14/15 for 10:00–16:00 with 13:00–14:00 break), closed-day and blocked-date messages, chip persistence, success path with hours set.
+- **Proposal generator fixes (verified on localhost and live).** Exact typed price now appears in Investment section (no more inflated amounts); current date injected into Cover/Header (no more 2023); Groq token limits handled with concise prompt and 990 token cap to fit free tier. Verified: date shows 2026, price shows exact amount typed.
+- **Proposal brand mark (verified on localhost).** Free-plan proposals append "— AI Business" at copy/share time; pro users can turn off. Computed at action time from subscription plan. Verified: pasted text ends with brand mark on free plan.
+- **Blog photo gallery picker (verified on localhost and live).** Replaced "paste image URL" text box with "Choose Cover Image from Gallery" button that opens phone's photos/files/camera. Images upload to Supabase Storage (auto-creates bucket on first use), thumbnail preview shows in editor, public blog list and single post pages render the cover photo. Verified: 200 OK on image URLs, photos display on /blog list and /blog/:slug pages.
+- **Lead Finder brand mark (verified on localhost).** Free-plan outreach messages append "— AI Business" at send time (copy/share/WhatsApp); pro appends nothing. Mark moved out of editable box to respect user editing. Verified: copied message ends with brand mark, box stays clean while editing.
+- **Lead Finder 2.0 Phase 1: Smart filters (verified on localhost and live).** Four filter checkboxes: "New businesses (<10 reviews)", "No website", "High reviews (50+)", "High rating (4.5+)". Backend filters HasData results before returning; online leads excluded when filtering. Verified: "No website" filter returns zero cards with Website button; "High reviews" filter returns only 50+ review businesses.
 
 ---
 
@@ -310,3 +319,19 @@ Architecture:
 - Connected layer: WhatsApp + website + calendar + customers + invoices + payments + documents + business profile
 Entry gate: do NOT start Phase 1 until Lead Finder 2.0 is fully shipped AND users visibly ask for conversational qualification. This stays VISION, never NOW.
 Key principle: the AI reads → understands → decides → acts → records → follows up. That's the moat: connected business context + actions + data + workflows.
+
+
+## VISION — Opportunity Finder (jobs first, staged)
+Goal: help people find REAL opportunities and act on them with confidence. Jobs first; later grants, contracts, tenders, freelance.
+Principles:
+- Verify, don't expose: show "Identity verified" / "Business verified" badges. Never display NIN, BVN, or registration documents. Evidence stays internal.
+- Two-sided trust: Employer Trust Score (registration, age, website, hiring history, job authenticity) meets Candidate Readiness (identity, CV, skills, experience, availability).
+- Reuse existing engines: Search API = discovery; scoring = qualification; follow-up = relationship; booking system = interview scheduling; biz pages = employer profiles.
+- First job source when V1 starts: AI Business businesses posting "we are hiring" on their own pages. External sources second.
+Stages (do not skip ahead):
+- V1: Search, normalize, dedupe, basic trust signals, simple match, apply. Businesses post jobs directly. Test if people want it.
+- V2: Employer verification + candidate profile + application stages (interested, serious, qualified, employer review).
+- V3: AI match with explanations (strong match because..., unlikely because...).
+- V4: Interview scheduling, reminders, employer screening tools.
+- V5: Verified hiring marketplace, only after real usage proves demand.
+Entry gate: do NOT start V1 until Lead Finder 2.0 is fully shipped AND either revenue plateaus or users visibly ask for jobs. This stays VISION, never NOW.
