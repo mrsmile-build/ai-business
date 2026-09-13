@@ -298,3 +298,15 @@ Prioritize according to:
 
 New ideas remain roadmap items until implemented and verified. Do not mark them DONE merely because they have been designed or discussed.
 
+
+
+## VISION — Business Agent (unified AI assistant)
+Goal: move from "collection of AI tools" to "one AI assistant that handles your customers." Not 10 separate agents — one connected system.
+Architecture:
+- Conversation layer: AI Receptionist, FAQs, business knowledge, intent understanding
+- Qualification layer: ask qualifying questions, score opportunities, capture customer info
+- Actions layer: book appointments, create customers, send follow-ups, create invoices
+- Retention layer: intelligent follow-up, reminders, feedback collection, review requests
+- Connected layer: WhatsApp + website + calendar + customers + invoices + payments + documents + business profile
+Entry gate: do NOT start Phase 1 until Lead Finder 2.0 is fully shipped AND users visibly ask for conversational qualification. This stays VISION, never NOW.
+Key principle: the AI reads → understands → decides → acts → records → follows up. That's the moat: connected business context + actions + data + workflows.
