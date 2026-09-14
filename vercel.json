@@ -1,3 +1,12 @@
 {
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/faq", "destination": "/faq.html" },
+    { "source": "/privacy-policy", "destination": "/privacy-policy.html" },
+    { "source": "/terms-of-service", "destination": "/terms-of-service.html" },
+    { "source": "/features/:slug", "destination": "/features/:slug.html" },
+    { "source": "/resources/:slug", "destination": "/resources/:slug.html" },
+    { "source": "/resources", "destination": "/resources/index.html" }
+  ]
 }
