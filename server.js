@@ -2536,18 +2536,18 @@ async function creditAffiliate(userId, plan, amountPaid){
     const affCode = profile?.referred_by_affiliate;
     if(!affCode) return;
 
-    const { data: aff } = await supabase.from("affiliates").select("user_id, balance, pending, total_conversions, commission_rate").eq("affiliate_code", affCode).single();
+    const { data: aff } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliates").select("user_id, balance, pending, total_conversions, commission_rate").eq("affiliate_code", affCode).single();
     if(!aff) return;
 
     // First payment only for now - 20% recurring needs real renewal billing, not built yet
-    const { data: existing } = await supabase.from("affiliate_conversions").select("id").eq("converted_user_id", userId).limit(1);
+    const { data: existing } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliate_conversions").select("id").eq("converted_user_id", userId).limit(1);
     if(existing && existing.length > 0) return;
 
     const rate = (aff.commission_rate != null) ? parseFloat(aff.commission_rate) : 0.5;
     const commission = Math.round(amountPaid * rate);
     const clearanceTime = new Date(Date.now() + 24*60*60*1000); // matches "Pending 24h" already in the dashboard UI
 
-      await supabase.from("affiliate_conversions").insert({
+      await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliate_conversions").insert({
         affiliate_id: aff.user_id,
         converted_user_id: userId,
         plan: plan,
@@ -2558,7 +2558,7 @@ async function creditAffiliate(userId, plan, amountPaid){
         status: "pending",
         clearance_time: clearanceTime
       });
-    await supabase.from("affiliates").update({
+    await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliates").update({
       pending: (aff.pending || 0) + commission,
       total_conversions: (aff.total_conversions || 0) + 1
     }).eq("user_id", aff.user_id);
@@ -2566,7 +2566,7 @@ async function creditAffiliate(userId, plan, amountPaid){
 }
 
 async function clearMaturedCommissions(affiliateUserId){
-  const { data: matured } = await supabase.from("affiliate_conversions")
+  const { data: matured } = await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliate_conversions")
     .select("id, commission")
     .eq("affiliate_id", affiliateUserId).eq("status", "pending")
     .lte("clearance_time", new Date().toISOString());
@@ -2575,7 +2575,7 @@ async function clearMaturedCommissions(affiliateUserId){
   const ids = matured.map(function(c){ return c.id; });
   await supabase.from("affiliate_conversions").update({ status: "available" }).in("id", ids);
   const { data: aff } = await supabase.from("affiliates").select("balance, pending, total_earned").eq("user_id", affiliateUserId).single();
-  await supabase.from("affiliates").update({
+  await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("affiliates").update({
     balance: (aff?.balance||0) + totalCleared,
     pending: Math.max(0, (aff?.pending||0) - totalCleared),
     total_earned: (aff?.total_earned||0) + totalCleared
@@ -2685,8 +2685,8 @@ app.get("/api/affiliate/stats", authMiddleware, async (req, res) => {
     const affStatsClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const { data: aff } = await affStatsClient.from("affiliates").select("*").eq("user_id", uid).single();
     if(!aff) return res.json({ success: false, error: "Not enrolled yet" });
-    const { data: convs } = await supabase.from("affiliate_conversions").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
-    const { data: withdrawals } = await supabase.from("affiliate_withdrawals").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
+    const { data: convs } = await affStatsClient.from("affiliate_conversions").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
+    const { data: withdrawals } = await affStatsClient.from("affiliate_withdrawals").select("*").eq("affiliate_id", uid).order("created_at",{ascending:false});
     res.json({ success: true, affiliate: aff, conversions: convs||[], withdrawals: withdrawals||[] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
