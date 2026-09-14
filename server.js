@@ -23,6 +23,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public", { extensions: ['html'] }));
 
+    // --- Explicit Static Routes for Vercel (Bypasses middleware issues) ---
+    app.get('/about', (req, res) => res.sendFile(require('path').join(__dirname, 'public/about.html')));
+    app.get('/faq', (req, res) => res.sendFile(require('path').join(__dirname, 'public/faq.html')));
+    app.get('/privacy-policy', (req, res) => res.sendFile(require('path').join(__dirname, 'public/privacy-policy.html')));
+    app.get('/terms-of-service', (req, res) => res.sendFile(require('path').join(__dirname, 'public/terms-of-service.html')));
+    app.get('/resources', (req, res) => res.sendFile(require('path').join(__dirname, 'public/resources/index.html')));
+    app.get('/features/:slug', (req, res) => res.sendFile(require('path').join(__dirname, 'public/features', req.params.slug + '.html')));
+    app.get('/resources/:slug', (req, res) => res.sendFile(require('path').join(__dirname, 'public/resources', req.params.slug + '.html')));
+    // --------------------------------------------------------------------
+
+
     // --- AI Business Static Fallback for Vercel ---
     const fs = require('fs');
     const path = require('path');
