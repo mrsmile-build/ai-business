@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Affiliate Dashboard | AI Business</title>
+    <style>
+        :root { --bg: #0f172a; --card: #1e293b; --text: #f8fafc; --muted: #94a3b8; --primary: #3b82f6; --success: #10b981; --warning: #f59e0b; --border: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 20px; max-width: 900px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid var(--border); }
+        header a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        h1 { font-size: 1.8rem; margin-bottom: 10px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); }
+        .stat-label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .link-box { background: #020617; border: 1px dashed var(--primary); border-radius: 8px; padding: 15px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 20px; word-break: break-all; }
+        .link-box input { background: transparent; border: none; color: var(--text); font-size: 0.95rem; flex: 1; outline: none; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-copy { background: var(--success); padding: 8px 16px; font-size: 0.85rem; }
+        .btn-join { width: 100%; padding: 16px; font-size: 1.1rem; background: var(--success); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 0.9rem; }
+        input[type="text"] { width: 100%; padding: 12px; background: #020617; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--muted); font-weight: 500; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-available { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .hidden { display: none; }
+        .alert { padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
+        .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+        .loader { text-align: center; padding: 40px; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/dashboard">← Back to Dashboard</a>
+        <span id="user-email" style="color: var(--muted); font-size: 0.9rem;"></span>
+    </header>
+
+    <div id="loading" class="loader">Loading your affiliate dashboard...</div>
+
+    <div id="join-section" class="card hidden">
+        <h1>🚀 Join the AI Business Affiliate Program</h1>
+        <p style="color: var(--muted); margin-bottom: 20px;">Earn commissions for every business that signs up through your unique link. Track your clicks, conversions, and withdraw your earnings easily.</p>
+        <button id="join-btn" class="btn-join">Become an Affiliate Partner</button>
+        <div id="join-error" class="alert alert-error hidden" style="margin-top: 15px;"></div>
+    </div>
+
+    <div id="dashboard-section" class="hidden">
+        <h1>Affiliate Dashboard</h1>
+        <p style="color: var(--muted); margin-bottom: 20px;">Share your link and earn commissions on every successful signup.</p>
+
+        <div class="card">
+            <h3 style="margin-bottom: 10px;">Your Unique Affiliate Link</h3>
+            <div class="link-box">
+                <input type="text" id="aff-link" readonly>
+                <button class="btn-copy" onclick="copyLink()">Copy</button>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--muted);">Share this link. When someone signs up using it, you get credited automatically.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box"><div class="stat-value" id="stat-clicks">0</div><div class="stat-label">Total Clicks</div></div>
+            <div class="stat-box"><div class="stat-value" id="stat-conversions">0</div><div class="stat-label">Conversions</div></div>
+            <div class="stat-box"><div class="stat-value" id="stat-pending">₦0</div><div class="stat-label">Pending</div></div>
+            <div class="stat-box"><div class="stat-value" id="stat-balance">₦0</div><div class="stat-label">Available</div></div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Request Withdrawal</h3>
+            <div id="withdraw-alert"></div>
+            <form id="withdraw-form">
+                <div class="form-group">
+                    <label>Bank Name</label>
+                    <input type="text" id="bank-name" required placeholder="e.g. GTBank, Access Bank">
+                </div>
+                <div class="form-group">
+                    <label>Account Number</label>
+                    <input type="text" id="account-number" required placeholder="10-digit account number">
+                </div>
+                <div class="form-group">
+                    <label>Account Name</label>
+                    <input type="text" id="account-name" required placeholder="Name on the account">
+                </div>
+                <button type="submit" id="withdraw-btn">Withdraw Available Balance</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Recent Conversions</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead><tr><th>Date</th><th>Status</th><th>Amount</th></tr></thead>
+                    <tbody id="conversions-body"><tr><td colspan="3" style="text-align: center; color: var(--muted);">No conversions yet</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-bottom: 15px;">Withdrawal History</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead><tr><th>Date</th><th>Amount</th><th>Bank</th><th>Status</th></tr></thead>
+                    <tbody id="withdrawals-body"><tr><td colspan="4" style="text-align: center; color: var(--muted);">No withdrawals yet</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = window.location.origin;
+
+        async function loadDashboard() {
+            try {
+                const res = await fetch(`${API}/api/affiliate/stats`, { credentials: 'include' });
+                if (res.status === 401) return window.location.href = '/auth';
+                const data = await res.json();
+
+                document.getElementById('loading').classList.add('hidden');
+
+                if (!data.success) {
+                    document.getElementById('join-section').classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                const aff = data.affiliate;
+                
+                document.getElementById('aff-link').value = `${API}/auth?aff=${aff.affiliate_code}`;
+                document.getElementById('stat-clicks').textContent = aff.clicks || 0;
+                document.getElementById('stat-conversions').textContent = aff.total_conversions || 0;
+                document.getElementById('stat-pending').textContent = `₦${(aff.pending || 0).toLocaleString()}`;
+                document.getElementById('stat-balance').textContent = `₦${(aff.balance || 0).toLocaleString()}`;
+
+                const convsBody = document.getElementById('conversions-body');
+                if (data.conversions && data.conversions.length > 0) {
+                    convsBody.innerHTML = data.conversions.map(c => `
+                        <tr>
+                            <td>${new Date(c.created_at).toLocaleDateString()}</td>
+                            <td><span class="badge badge-${c.status}">${c.status}</span></td>
+                            <td>₦${(c.commission_amount || 0).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                const wBody = document.getElementById('withdrawals-body');
+                if (data.withdrawals && data.withdrawals.length > 0) {
+                    wBody.innerHTML = data.withdrawals.map(w => `
+                        <tr>
+                            <td>${new Date(w.created_at).toLocaleDateString()}</td>
+                            <td>₦${(w.amount || 0).toLocaleString()}</td>
+                            <td>${w.bank_name}</td>
+                            <td><span class="badge badge-${w.status === 'paid' ? 'available' : 'pending'}">${w.status}</span></td>
+                        </tr>
+                    `).join('');
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading').textContent = 'Error loading dashboard. Please refresh.';
+            }
+        }
+
+        document.getElementById('join-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('join-btn');
+            const errBox = document.getElementById('join-error');
+            btn.disabled = true;
+            btn.textContent = 'Joining...';
+            try {
+                const res = await fetch(`${API}/api/affiliate/join`, { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) {
+                    loadDashboard();
+                } else {
+                    errBox.textContent = data.error || 'Failed to join.';
+                    errBox.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.textContent = 'Become an Affiliate Partner';
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.textContent = 'Become an Affiliate Partner';
+            }
+        });
+
+        document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('withdraw-btn');
+            const alertBox = document.getElementById('withdraw-alert');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            
+            const body = {
+                bank_name: document.getElementById('bank-name').value,
+                account_number: document.getElementById('account-number').value,
+                account_name: document.getElementById('account-name').value
+            };
+
+            try {
+                const res = await fetch(`${API}/api/affiliate/withdraw`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                alertBox.className = 'alert ' + (data.success ? 'alert-success' : 'alert-error');
+                alertBox.textContent = data.success ? 'Withdrawal requested successfully! We will process it shortly.' : (data.error || 'Failed to request withdrawal.');
+                alertBox.style.display = 'block';
+                if (data.success) loadDashboard();
+            } catch (err) {
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = 'Network error. Please try again.';
+                alertBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Withdraw Available Balance';
+            }
+        });
+
+        function copyLink() {
+            const input = document.getElementById('aff-link');
+            input.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
