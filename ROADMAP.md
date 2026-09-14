@@ -370,3 +370,23 @@ Entry gate: do NOT start V1 until Lead Finder 2.0 is fully shipped AND either re
 - Frontend util: lib/searchApi.js (URLs hardcoded, no env vars needed)
 - Render start command (DO NOT CHANGE): gunicorn --timeout 240 --workers 1 app:app
 - Supabase table: public.businesses (id, name, category, address, phone, website, has_website, found_by_hunter, created_at)
+
+## AI Business Discoverability / AI Search Presence
+
+**Status:** IN PROGRESS
+
+**Why:**
+Make AI Business clearly understandable and discoverable by search engines and AI assistants through authoritative public product information, use-case pages, documentation, structured data, educational content, and proof.
+
+**Implementation Plan:**
+- [x] Audit current SEO and AI discoverability (Completed)
+- [x] Priority 1: Technical Foundation (robots.txt, sitemap.xml, meta tags, JSON-LD, legal pages)
+- [x] Priority 2: Core Product Pages (Dedicated HTML pages for each feature)
+- [x] Priority 3: Use-Case & Problem-Solving Pages (Educational resources)
+- [x] Priority 4: Documentation & Blog Section
+- [x] Priority 5: AI Optimization (llms.txt, AI-crawler formatting)
+
+**Rules:**
+- Preserve existing working UI/features. Do not redesign the website unnecessarily.
+- Every new page must contain genuinely useful information, not just SEO filler.
+- Verify all technical implementations against official Google and Schema.org documentation.

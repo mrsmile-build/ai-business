@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# Block AI Business dashboard and auth routes from indexing
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /api
+
 Sitemap: https://ai-business-two-psi.vercel.app/sitemap.xml
