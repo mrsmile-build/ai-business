@@ -373,7 +373,7 @@ Entry gate: do NOT start V1 until Lead Finder 2.0 is fully shipped AND either re
 
 ## AI Business Discoverability / AI Search Presence
 
-**Status:** IN PROGRESS
+**Status:** DONE
 
 **Why:**
 Make AI Business clearly understandable and discoverable by search engines and AI assistants through authoritative public product information, use-case pages, documentation, structured data, educational content, and proof.
