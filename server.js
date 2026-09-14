@@ -23,6 +23,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public", { extensions: ['html'] }));
 
+    // --- AI Business Static Fallback for Vercel ---
+    const fs = require('fs');
+    const path = require('path');
+    app.use((req, res, next) => {
+      // Skip API, auth, dashboard, and non-GET requests
+      if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path.startsWith('/dashboard') || req.path.startsWith('/admin') || req.method !== 'GET') {
+        return next();
+      }
+      const baseDir = path.join(__dirname, 'public');
+      let filePath = path.join(baseDir, req.path);
+      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+        return res.sendFile(filePath);
+      }
+      if (!req.path.includes('.')) {
+        const htmlPath = path.join(baseDir, req.path + '.html');
+        if (fs.existsSync(htmlPath)) return res.sendFile(htmlPath);
+        const indexPath = path.join(baseDir, req.path, 'index.html');
+        if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
+      }
+      next();
+    });
+    // ----------------------------------------------
+    
+
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
