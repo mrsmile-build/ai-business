@@ -21,42 +21,19 @@ function cleanAIOutput(text) {
 }
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public", { extensions: ['html'] }));
 
-    // --- Explicit Static Routes for Vercel (Bypasses middleware issues) ---
-    app.get('/about', (req, res) => res.sendFile(require('path').join(__dirname, 'public/about.html')));
-    app.get('/faq', (req, res) => res.sendFile(require('path').join(__dirname, 'public/faq.html')));
-    app.get('/privacy-policy', (req, res) => res.sendFile(require('path').join(__dirname, 'public/privacy-policy.html')));
-    app.get('/terms-of-service', (req, res) => res.sendFile(require('path').join(__dirname, 'public/terms-of-service.html')));
-    app.get('/resources', (req, res) => res.sendFile(require('path').join(__dirname, 'public/resources/index.html')));
-    app.get('/features/:slug', (req, res) => res.sendFile(require('path').join(__dirname, 'public/features', req.params.slug + '.html')));
-    app.get('/resources/:slug', (req, res) => res.sendFile(require('path').join(__dirname, 'public/resources', req.params.slug + '.html')));
-    // --------------------------------------------------------------------
-
-
-    // --- AI Business Static Fallback for Vercel ---
-    const fs = require('fs');
+    // === EXPLICIT STATIC ROUTES (TOP PRIORITY) ===
     const path = require('path');
-    app.use((req, res, next) => {
-      // Skip API, auth, dashboard, and non-GET requests
-      if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path.startsWith('/dashboard') || req.path.startsWith('/admin') || req.method !== 'GET') {
-        return next();
-      }
-      const baseDir = path.join(__dirname, 'public');
-      let filePath = path.join(baseDir, req.path);
-      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
-        return res.sendFile(filePath);
-      }
-      if (!req.path.includes('.')) {
-        const htmlPath = path.join(baseDir, req.path + '.html');
-        if (fs.existsSync(htmlPath)) return res.sendFile(htmlPath);
-        const indexPath = path.join(baseDir, req.path, 'index.html');
-        if (fs.existsSync(indexPath)) return res.sendFile(indexPath);
-      }
-      next();
-    });
-    // ----------------------------------------------
-    
+    app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public/about.html')));
+    app.get('/faq', (req, res) => res.sendFile(path.join(__dirname, 'public/faq.html')));
+    app.get('/privacy-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy-policy.html')));
+    app.get('/terms-of-service', (req, res) => res.sendFile(path.join(__dirname, 'public/terms-of-service.html')));
+    app.get('/resources', (req, res) => res.sendFile(path.join(__dirname, 'public/resources/index.html')));
+    app.get('/features/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public/features', req.params.slug + '.html')));
+    app.get('/resources/:slug', (req, res) => res.sendFile(path.join(__dirname, 'public/resources', req.params.slug + '.html')));
+    // =============================================
+
+app.use(express.static("public", { extensions: ['html'] }));    
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
