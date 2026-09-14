@@ -20,6 +20,18 @@ function cleanAIOutput(text) {
     .trim();
 }
 app.use(cors());
+
+// --- SEO: Redirect onrender.com traffic to vercel.app ---
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  if (host.includes('onrender.com')) {
+    // 301 = Permanent redirect. Tells Google to transfer all SEO power to Vercel.
+    return res.redirect(301, `https://ai-business-two-psi.vercel.app${req.originalUrl}`);
+  }
+  next();
+});
+// --------------------------------------------------------
+
 app.use(express.json());
 
     // === EXPLICIT STATIC ROUTES (TOP PRIORITY) ===
