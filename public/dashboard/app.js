@@ -1704,7 +1704,10 @@ const INDUSTRIES = [
   "Legal Services", "Accounting / Finance", "Other (type below)"
 ];
 
+
 function renderLeadFinder(){
+  const bar = document.getElementById("lf_bulk_bar");
+  if(bar) bar.style.display = "none";
   setView(`
     <div class="card">
       ${header("🎯 Lead Finder","dashboard")}
@@ -1726,6 +1729,8 @@ function renderLeadFinder(){
 }
 
 function renderLeadFinderB2B(){
+  const bar = document.getElementById("lf_bulk_bar");
+  if(bar) bar.style.display = "none";
   const plan = currentSub?.plan || "free";
   const usage = currentSub?.ai_usage || 0;
   const limits = { free:20, starter:40, pro:80, business:200 };
@@ -1860,16 +1865,26 @@ async function searchLeads(){
     }
 
     if(results) results.innerHTML = `
+      <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;border:1px solid #334155">
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;color:#cbd5e1">
+            <input type="checkbox" id="lf_select_all" onchange="toggleSelectAll(this.checked)" style="width:18px;height:18px;cursor:pointer">
+            Select All
+         </label>
+         <span id="lf_bulk_count" style="font-size:12px;color:#94a3b8">0 selected</span>
+      </div>
       <p style="font-size:12px;color:#64748b;margin-bottom:12px">✅ Found ${leads.length} potential leads — edit messages then send</p>
       ${leads.map((l,i) => `
         <div id="lead_card_${i}" style="background:#0f172a;border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid ${l.source==="local"?"#10b981":"#3b82f6"}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+             <input type="checkbox" class="lf-bulk-check" data-index="${i}" onchange="updateBulkCount()" style="width:20px;height:20px;margin-top:2px;cursor:pointer;flex-shrink:0">
+             <div style="flex:1;margin-left:10px">
             <div style="flex:1">
               <p style="margin:0;font-weight:bold;font-size:14px">${l.name}</p>
               ${l.type?`<p style="margin:2px 0;font-size:11px;color:#64748b">${l.type}</p>`:""}
               ${l.address?`<p style="margin:2px 0;font-size:12px;color:#94a3b8">📍 ${l.address}</p>`:""}
               ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981;font-weight:bold">📞 ${l.phone}</p>`:""}
               ${l.rating?`<p style="margin:2px 0;font-size:11px;color:#f59e0b">⭐ ${l.rating} (${l.reviews} reviews)${l.reviews!=null && l.reviews<10?' — <span style="color:#10b981">new listing, few reviews yet</span>':''}</p>`:""}
+              </div>
             </div>
             <span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;${l.source==="local"?"background:rgba(16,185,129,0.15);color:#10b981":"background:rgba(59,130,246,0.15);color:#3b82f6"}">${l.source==="local"?"Local":"Online"}</span>
           </div>
@@ -1894,6 +1909,16 @@ async function searchLeads(){
 
     // Store leads data for save functions
     window._lfLeads = leads;
+
+    // Setup Bulk Bar
+    let bar = document.getElementById("lf_bulk_bar");
+    if(!bar){
+       bar = document.createElement("div");
+       bar.id = "lf_bulk_bar";
+       bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;background:#0f172a;border-top:1px solid #334155;padding:16px;display:none;z-index:1000;box-shadow:0 -4px 6px rgba(0,0,0,0.3)";
+       document.body.appendChild(bar);
+    }
+    updateBulkCount();
 
   }catch(e){
     if(results) results.innerHTML = `<div style="text-align:center;padding:15px"><p style="color:#ef4444;margin-bottom:10px">Network error. Check connection and try again.</p><button onclick="searchLeads()" style="padding:10px 20px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer">🔄 Retry</button></div>`;
@@ -5311,3 +5336,101 @@ if (window.location.hash === "#demo-creator" || window.location.hash === "#demo"
       }
     }, true);
     
+
+
+window.updateBulkCount = function(){
+   const checks = document.querySelectorAll(".lf-bulk-check:checked");
+   const count = checks.length;
+   const countEl = document.getElementById("lf_bulk_count");
+   if(countEl) countEl.textContent = count + " selected";
+   const allCheck = document.getElementById("lf_select_all");
+   const total = document.querySelectorAll(".lf-bulk-check").length;
+   if(allCheck) allCheck.checked = (count === total && count > 0);
+   
+   const bar = document.getElementById("lf_bulk_bar");
+   if(bar){
+      if(count > 0){
+         bar.style.display = "block";
+         bar.innerHTML = `<button onclick="startBulkSend()" style="width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.2)">🚀 Send to ${count} Leads</button>`;
+      } else {
+         bar.style.display = "none";
+      }
+   }
+};
+
+window.toggleSelectAll = function(checked){
+   document.querySelectorAll(".lf-bulk-check").forEach(c => c.checked = checked);
+   updateBulkCount();
+};
+
+window.startBulkSend = function(){
+   const indices = Array.from(document.querySelectorAll(".lf-bulk-check:checked")).map(c => parseInt(c.dataset.index));
+   if(indices.length === 0) return;
+   window._lfBulkQueue = indices;
+   window._lfBulkCurrent = 0;
+   renderBulkStep();
+};
+
+window.renderBulkStep = function(){
+   const i = window._lfBulkQueue[window._lfBulkCurrent];
+   const lead = window._lfLeads[i];
+   const msg = document.getElementById("msg_" + i)?.value || "";
+   const total = window._lfBulkQueue.length;
+   const current = window._lfBulkCurrent + 1;
+   
+   // Hide bottom bar in queue view
+   const bar = document.getElementById("lf_bulk_bar");
+   if(bar) bar.style.display = "none";
+
+   setView(`
+     <div class="card" style="padding:20px">
+       ${header("🚀 Bulk Outreach (" + current + " of " + total + ")", "dashboard")}
+       <div style="background:#0f172a;padding:16px;border-radius:10px;border:1px solid #334155;margin-bottom:20px">
+          <p style="margin:0 0 4px;font-size:12px;color:#64748b">Sending to:</p>
+          <p style="margin:0 0 8px;font-size:18px;font-weight:bold">${lead.name}</p>
+          <p style="margin:0 0 12px;font-size:13px;color:#10b981">📞 ${lead.phone || "No phone"}</p>
+          
+          <p style="margin:0 0 4px;font-size:12px;color:#64748b">Edit message:</p>
+          <textarea id="bulk_msg_${i}" style="width:100%;height:140px;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;line-height:1.5">${msg}</textarea>
+       </div>
+       
+       ${lead.phone ? `
+       <button onclick="openBulkWhatsApp(${i})" style="width:100%;padding:14px;background:#25d366;color:white;border:none;border-radius:8px;font-size:16px;font-weight:bold;margin-bottom:12px">💬 Open WhatsApp & Send</button>
+       ` : `
+       <button disabled style="width:100%;padding:14px;background:#334155;color:#64748b;border:none;border-radius:8px;font-size:16px;margin-bottom:12px">No Phone Number (Skip)</button>
+       `}
+       
+       <button onclick="nextBulkStep()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:15px">Next Lead →</button>
+       <button onclick="cancelBulk()" style="width:100%;padding:10px;background:transparent;border:none;color:#64748b;margin-top:10px;font-size:13px">Cancel</button>
+     </div>
+   `);
+};
+
+window.openBulkWhatsApp = function(i){
+   const msg = document.getElementById("bulk_msg_" + i)?.value || "";
+   const lead = window._lfLeads[i];
+   const phone = (lead.phone||"").replace(/[^0-9]/g,"").replace(/^0/,"234");
+   // Save to CRM as contacted
+   saveToLeads(i, lead.name, lead.phone, lead.type, lead.address, lead.website, 'wa');
+   window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg + (window._lfBrand||"")), "_blank");
+};
+
+window.nextBulkStep = function(){
+   window._lfBulkCurrent++;
+   if(window._lfBulkCurrent >= window._lfBulkQueue.length){
+      setView(`
+        <div class="card" style="text-align:center;padding:30px">
+          <div style="font-size:48px;margin-bottom:16px">✅</div>
+          <h2 style="margin-bottom:12px">All Done!</h2>
+          <p style="color:#94a3b8;margin-bottom:24px">You processed ${window._lfBulkQueue.length} leads.</p>
+          <button onclick="renderLeadFinderB2B()" style="padding:12px 24px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:15px">Back to Search</button>
+        </div>
+      `);
+   } else {
+      renderBulkStep();
+   }
+};
+
+window.cancelBulk = function(){
+   renderLeadFinderB2B();
+};
