@@ -759,14 +759,25 @@ async function renderLeads(){
           </div>
         </div>
 
-        <div id="leads_filter" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-          <button onclick="filterLeads('all')" style="padding:5px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px" id="f_all">All</button>
-          ${["new","contacted","interested","won","lost"].map(s=>`<button onclick="filterLeads('${s}')" style="padding:5px 10px;background:#1e293b;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px" id="f_${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join("")}
-        </div>
-
-        <div id="leads_list">
-          ${leads.length === 0 ? `<div style="text-align:center;padding:30px"><p style="color:#64748b;font-size:14px">No leads yet.</p><p style="color:#475569;font-size:12px;margin-top:4px">Add your first lead above.</p></div>` :
-          leads.map(l => leadCard(l)).join("")}
+        <div id="kanban_board" style="display:flex; overflow-x:auto; gap:12px; padding-bottom:16px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; margin: 0 -16px; padding-left: 16px; padding-right: 16px;">
+           ${["new","contacted","interested","negotiation","won","lost"].map(status => {
+              const colLeads = leads.filter(l => l.status === status);
+              const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
+              const c = colors[status];
+              const nextStatus = {new:"contacted", contacted:"interested", interested:"negotiation", negotiation:"won"}[status];
+              return `
+                <div style="min-width:260px; max-width:260px; background:#0b1220; border-radius:10px; padding:12px; scroll-snap-align: start; flex-shrink:0;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid ${c}44;">
+                    <span style="font-weight:bold; color:${c}; font-size:14px; text-transform:capitalize;">${status}</span>
+                    <span style="background:${c}22; color:${c}; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold;">${colLeads.length}</span>
+                  </div>
+                  <div style="display:flex; flex-direction:column; gap:10px; max-height: 60vh; overflow-y:auto; padding-right:4px;">
+                    ${colLeads.length === 0 ? '<p style="color:#475569; font-size:12px; text-align:center; padding:20px 0;">No leads</p>' :
+                      colLeads.map(l => kanbanCard(l, nextStatus)).join("")}
+                  </div>
+                </div>
+              `;
+           }).join("")}
         </div>
       </div>
     `);
@@ -5434,3 +5445,29 @@ window.nextBulkStep = function(){
 window.cancelBulk = function(){
    renderLeadFinderB2B();
 };
+
+
+function kanbanCard(l, nextStatus){
+  const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
+  const c = colors[l.status] || "#64748b";
+  const today = new Date().toISOString().split("T")[0];
+  const isOverdue = l.follow_up_date && l.follow_up_date < today && l.status !== "won" && l.status !== "lost";
+  return `
+    <div style="background:#0f172a; padding:12px; border-radius:8px; border-left:3px solid ${c}; ${isOverdue?'border:1px solid rgba(239,68,68,0.4);':''}">
+       <p style="margin:0 0 4px; font-size:14px; font-weight:700; color:white; cursor:pointer;" onclick="window.openLeadDetail('${l.id}')">${l.name}</p>
+       ${l.business?`<p style="margin:0 0 4px; font-size:12px; color:#64748b">${l.business}</p>`:""}
+       ${l.phone?`<p style="margin:0 0 4px; font-size:12px; color:#10b981">📞 ${l.phone}</p>`:""}
+       ${l.follow_up_date?`<p style="margin:0 0 8px; font-size:11px; color:${isOverdue?'#ef4444':'#f59e0b'}">⏰ ${l.follow_up_date}${isOverdue?' (OVERDUE)':''}</p>`:""}
+       <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${nextStatus ? `<button onclick="moveLead('${l.id}','${nextStatus}')" style="flex:1; padding:6px; background:${colors[nextStatus]}22; color:${colors[nextStatus]}; border:1px solid ${colors[nextStatus]}55; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">→ ${nextStatus.charAt(0).toUpperCase()+nextStatus.slice(1)}</button>` : ''}
+          ${l.phone?`<a href="https://wa.me/${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}" target="_blank" style="padding:6px 10px; background:#25d366; color:white; border-radius:6px; text-decoration:none; font-size:11px; text-align:center;">WA</a>`:""}
+          <button onclick="window.openLeadDetail('${l.id}')" style="padding:6px 10px; background:#1e293b; color:#94a3b8; border:1px solid #334155; border-radius:6px; cursor:pointer; font-size:11px;">...</button>
+       </div>
+    </div>
+  `;
+}
+
+async function moveLead(id, status){
+  await quickStatus(id, status);
+  loadPage('leads');
+}
