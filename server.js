@@ -289,7 +289,7 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
         "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
       },
       body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         messages,
         max_tokens: 800,
         temperature: 0.7,
@@ -862,7 +862,7 @@ ${allLeads.map((l,i) => {
             "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
           },
           body: JSON.stringify({
-            model: "qwen/qwen3.6-27b",
+            model: "qwen/qwen3.8-27b",
             messages: [{ role: "user", content: aiPrompt }],
             max_tokens: 800,
             temperature: 0.3,
@@ -1029,7 +1029,7 @@ In the Cover/Header, use EXACTLY this date: ${todayStr}. Do not invent any other
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + k },
-        body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none", max_tokens: 990 })
+        body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none", max_tokens: 990 })
       });
       data = await response.json();
       if (response.ok && data.choices) break;
@@ -1173,7 +1173,7 @@ Return ONLY a JSON array of personalized messages in same order. No markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
     });
     const groqData = await groqRes.json();
     let messages = [];
@@ -1242,7 +1242,7 @@ Reply professionally, helpfully, and friendly. Keep it under 100 words. If asked
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], max_tokens: 200, reasoning_effort: "none" })
     });
     const data = await groqRes.json();
     const reply = cleanAIOutput(data.choices?.[0]?.message?.content) || "Thank you for your message. Our team will respond shortly.";
@@ -1648,7 +1648,7 @@ Reply helpfully in under 80 words.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
     });
     const data = await groqRes.json();
     const reply = data.choices?.[0]?.message?.content || "Thank you! We will respond shortly.";
@@ -2763,7 +2763,7 @@ Make it feel specific to a ${niche} business, not generic. No markdown, no expla
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], reasoning_effort: "none" })
     });
     const groqData = await groqRes.json();
     let generated = [];
@@ -2929,7 +2929,7 @@ Return ONLY the JSON array, no markdown.`;
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7, reasoning_effort: "none" })
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], max_tokens: 600, temperature: 0.7, reasoning_effort: "none" })
     });
 
     const groqData = await groqRes.json();
@@ -2994,7 +2994,7 @@ Rules:
         "Authorization": "Bearer " + process.env.GROQ_API_KEY_1
       },
       body: JSON.stringify({
-        model: "qwen/qwen3.6-27b",
+        model: "qwen/qwen3.8-27b",
         messages: [{ role: "user", content: prompt }],
         max_tokens: 200,
         temperature: 0.7,
@@ -3091,7 +3091,7 @@ app.post("/api/website-health", authMiddleware, async (req, res) => {
       const groqRes = await withTimeout(fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-        body: JSON.stringify({ model: "qwen/qwen3.6-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
+        body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], max_tokens: 150, reasoning_effort: "none" })
       }), 8000);
       const groqData = await groqRes.json();
       aiSummary = groqData.choices?.[0]?.message?.content || "";

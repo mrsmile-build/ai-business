@@ -5115,7 +5115,7 @@ async function renderDemoCreatorUI(containerId = 'app') {
   const container = document.getElementById(containerId);
   if (!container) return;
 
-  const baseUrl = "https://ai-business-1-ok3x.onrender.com";
+  const baseUrl = await resolveBackend();
 
   container.innerHTML = `
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
