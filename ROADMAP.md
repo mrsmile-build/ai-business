@@ -68,7 +68,7 @@ FIND → UNDERSTAND → CONTACT → FOLLOW UP → CONVERT, built on honest signa
 
 **Phase 1 (DONE):** Smart filters (new businesses, no website, high reviews, high rating).
 **Phase 2 (DONE, verified on localhost):** Bulk outreach - checkboxes + Select All on lead cards, fixed Send-to-N bar, guided Send Queue (Open WhatsApp with personalized message + brand mark, auto-save to CRM as contacted, Next Lead).
-**Phase 3 (LATER):** Pipeline polish - kanban view of lead status (new → contacted → replied → won).
+**Phase 3 (DONE, verified on localhost):** Pipeline polish - horizontal swipeable kanban board, 6 columns with live counts, one-tap advance buttons.
 
 ### Smart Analytics & Weekly Performance
 Plain-English insights from real stored data (leads, follow-ups, messages, bookings, conversions). Menu activity badges as evidence of activity, distinct from notifications; weekly timeline view.
@@ -171,6 +171,7 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 - **Blog photo gallery picker (verified on localhost and live).** Replaced "paste image URL" text box with "Choose Cover Image from Gallery" button that opens phone's photos/files/camera. Images upload to Supabase Storage (auto-creates bucket on first use), thumbnail preview shows in editor, public blog list and single post pages render the cover photo. Verified: 200 OK on image URLs, photos display on /blog list and /blog/:slug pages.
 - **Lead Finder brand mark (verified on localhost).** Free-plan outreach messages append "— AI Business" at send time (copy/share/WhatsApp); pro appends nothing. Mark moved out of editable box to respect user editing. Verified: copied message ends with brand mark, box stays clean while editing.
 - **Lead Finder 2.0 Phase 2: Bulk outreach (verified on localhost).** Checkboxes + Select All on lead cards; fixed bottom bar Send to N Leads; guided Send Queue shows one lead at a time with editable message; Open WhatsApp and Send opens wa.me with personalized message plus free-plan brand mark and auto-saves the lead to CRM as contacted (notification fires); Next Lead advances; completion screen at end. Verified: 15-lead selection, queue flow, WhatsApp draft carries brand mark, new-lead notification received.
+- **Lead Finder 2.0 Phase 3: Kanban pipeline (verified on localhost).** Leads page becomes a horizontal swipeable board with 6 status columns (new, contacted, interested, negotiation, won, lost), per-column live counts, one-tap advance button per card, WA and details shortcuts, overdue highlight preserved. Verified: columns render with correct counts, swipe navigation works, advancing a card moves it and updates counts.
 - **Lead Finder 2.0 Phase 1: Smart filters (verified on localhost and live).** Four filter checkboxes: "New businesses (<10 reviews)", "No website", "High reviews (50+)", "High rating (4.5+)". Backend filters HasData results before returning; online leads excluded when filtering. Verified: "No website" filter returns zero cards with Website button; "High reviews" filter returns only 50+ review businesses.
 
 ---
