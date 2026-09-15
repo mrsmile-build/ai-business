@@ -67,7 +67,7 @@ Free-plan artifacts carry a small permanent brand, turning user activity into di
 FIND → UNDERSTAND → CONTACT → FOLLOW UP → CONVERT, built on honest signals (review count, new-listing framing, contact availability). No invented buying signals. Legal constraint: only sources with explicit programmatic access (HasData, public RSS); no scraping against robots.txt/ToS, no CAPTCHA bypass.
 
 **Phase 1 (DONE):** Smart filters (new businesses, no website, high reviews, high rating).
-**Phase 2 (NEXT):** Bulk outreach - tick boxes on leads, one message template, send to all selected via WhatsApp with personalization.
+**Phase 2 (DONE, verified on localhost):** Bulk outreach - checkboxes + Select All on lead cards, fixed Send-to-N bar, guided Send Queue (Open WhatsApp with personalized message + brand mark, auto-save to CRM as contacted, Next Lead).
 **Phase 3 (LATER):** Pipeline polish - kanban view of lead status (new → contacted → replied → won).
 
 ### Smart Analytics & Weekly Performance
@@ -170,6 +170,7 @@ Business Digital Twin; AI Business Scientist; AI CEO daily priorities; cause-and
 - **Proposal brand mark (verified on localhost).** Free-plan proposals append "— AI Business" at copy/share time; pro users can turn off. Computed at action time from subscription plan. Verified: pasted text ends with brand mark on free plan.
 - **Blog photo gallery picker (verified on localhost and live).** Replaced "paste image URL" text box with "Choose Cover Image from Gallery" button that opens phone's photos/files/camera. Images upload to Supabase Storage (auto-creates bucket on first use), thumbnail preview shows in editor, public blog list and single post pages render the cover photo. Verified: 200 OK on image URLs, photos display on /blog list and /blog/:slug pages.
 - **Lead Finder brand mark (verified on localhost).** Free-plan outreach messages append "— AI Business" at send time (copy/share/WhatsApp); pro appends nothing. Mark moved out of editable box to respect user editing. Verified: copied message ends with brand mark, box stays clean while editing.
+- **Lead Finder 2.0 Phase 2: Bulk outreach (verified on localhost).** Checkboxes + Select All on lead cards; fixed bottom bar Send to N Leads; guided Send Queue shows one lead at a time with editable message; Open WhatsApp and Send opens wa.me with personalized message plus free-plan brand mark and auto-saves the lead to CRM as contacted (notification fires); Next Lead advances; completion screen at end. Verified: 15-lead selection, queue flow, WhatsApp draft carries brand mark, new-lead notification received.
 - **Lead Finder 2.0 Phase 1: Smart filters (verified on localhost and live).** Four filter checkboxes: "New businesses (<10 reviews)", "No website", "High reviews (50+)", "High rating (4.5+)". Backend filters HasData results before returning; online leads excluded when filtering. Verified: "No website" filter returns zero cards with Website button; "High reviews" filter returns only 50+ review businesses.
 
 ---
