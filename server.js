@@ -712,6 +712,10 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
           type: l.category || null,
           opportunity: l.opportunity || 0,
           opportunity_tags: l.opportunity_tags || [],
+          email: l.email || null,
+          facebook: l.facebook || null,
+          instagram: l.instagram || null,
+          whatsapp: l.whatsapp || null,
           source: "fallback",
           message: l.opportunity >= 7
             ? `Hi ${l.name}, I noticed your business ${l.opportunity_tags.includes('no website') ? "doesn't have a website yet" : 'could use some help'}. Businesses like yours in ${location} often lose customers to competitors with an online presence. I can fix that for you - interested?`
