@@ -685,6 +685,14 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       }
       
       if (fallbackSuccess) {
+        // Dedup by normalized name (OSM can list the same business as node and way)
+        const seen = {};
+        fallbackLeads = fallbackLeads.filter(l => {
+          const k = (l.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (!k || seen[k]) return false;
+          seen[k] = true;
+          return true;
+        });
         // Honor the "no website" filter in fallback mode (we have that data)
         if (filters && filters.no_site) fallbackLeads = fallbackLeads.filter(l => !l.website);
         // Map fallback leads to expected format
