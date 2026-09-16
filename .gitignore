@@ -4,3 +4,5 @@ node_modules
 backups/
 backup_current_ai_business/
 .env
+*.bak.*
+*.backup.*
