@@ -801,7 +801,10 @@ function leadCard(l){
           ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981">📞 ${l.phone}</p>`:""}
           ${l.follow_up_date?`<p style="margin:2px 0;font-size:11px;color:${isOverdue?'#ef4444':'#f59e0b'}">⏰ Follow-up: ${l.follow_up_date}${isOverdue?' (OVERDUE)':''}</p>`:""}
         </div>
-        <span style="padding:3px 8px;background:${c}22;border:1px solid ${c}55;border-radius:6px;font-size:11px;color:${c};flex-shrink:0">${l.status}</span>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          ${(typeof l.opportunity === 'number' && l.opportunity >= 7) ? `<span style="padding:3px 8px;background:#f59e0b22;border:1px solid #f59e0b55;border-radius:6px;font-size:11px;color:#f59e0b;font-weight:600">🔥 ${l.opportunity}/10</span>` : ''}
+          <span style="padding:3px 8px;background:${c}22;border:1px solid ${c}55;border-radius:6px;font-size:11px;color:${c}">${l.status || 'New'}</span>
+        </div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <select onchange="quickStatus('${l.id}',this.value)" style="flex:1;padding:6px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:white;font-size:11px">

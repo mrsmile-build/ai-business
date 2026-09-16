@@ -556,11 +556,11 @@ app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
 function osmCategory(industry){
   const s = (industry || "").toLowerCase();
   const map = [
-    ["restaurant","restaurant"],["food","restaurant"],["cafe","cafe"],["coffee","cafe"],
-    ["bar","bar"],["hotel","hotel"],["guest","hotel"],["spa","spa"],["wellness","spa"],
-    ["hair","hairdresser"],["salon","beauty"],["beauty","beauty"],["gym","fitness_centre"],["fitness","fitness_centre"],
-    ["school","school"],["pharmacy","pharmacy"],["supermarket","supermarket"],["market","supermarket"],
-    ["real estate","estate_agent"],["estate","estate_agent"],["clinic","clinic"],["hospital","hospital"],
+    ["restaurant","restaurant,fast_food,cafe"],["food","restaurant,fast_food"],["cafe","cafe,coffee_shop"],["coffee","cafe,coffee_shop"],
+    ["bar","bar,pub"],["hotel","hotel,guest_house"],["guest","hotel,guest_house"],["spa","spa,beauty,massage"],["wellness","spa,beauty,massage"],
+    ["hair","hairdresser,beauty"],["salon","hairdresser,beauty"],["beauty","beauty,hairdresser"],["gym","fitness_centre,gym"],["fitness","fitness_centre,gym"],
+    ["school","school,kindergarten"],["pharmacy","pharmacy"],["supermarket","supermarket"],["market","supermarket,marketplace"],
+    ["real estate","estate_agent,office"],["estate","estate_agent,office"],["clinic","clinic,doctors"],["hospital","hospital,clinic"],
     ["bank","bank"],["church","place_of_worship"],["mosque","place_of_worship"]
   ];
   for (const [k,v] of map) if (s.includes(k)) return v;
@@ -656,6 +656,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       ].filter(Boolean);
       
       let fallbackSuccess = false;
+      let fallbackResponded = false;
       let fallbackLeads = [];
       
       for (let apiUrl of searchApiUrls) {
@@ -668,11 +669,13 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
               category: osmCategory(req.body.industry),
               city: location,
               country: ({ng:"Nigeria", gh:"Ghana", ke:"Kenya", za:"South Africa", us:"United States", gb:"United Kingdom"})[detectCountryCode(location)] || null
-            })
+            }),
+            signal: AbortSignal.timeout(60000)
           });
           
           if (fallbackRes.ok) {
             fallbackLeads = await fallbackRes.json();
+            if (Array.isArray(fallbackLeads)) fallbackResponded = true;
             if (Array.isArray(fallbackLeads) && fallbackLeads.length > 0) {
               fallbackSuccess = true;
               console.log(`Lead Finder fallback: got ${fallbackLeads.length} leads from ${apiUrl}`);
@@ -684,6 +687,9 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
         }
       }
       
+      if (!fallbackSuccess && fallbackResponded) {
+        return res.json({ success: true, leads: [], usage: usage, limit: monthlyLimit });
+      }
       if (fallbackSuccess) {
         // Dedup by normalized name (OSM can list the same business as node and way)
         const seen = {};
@@ -704,8 +710,12 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
           rating: null,
           reviews: null,
           type: l.category || null,
+          opportunity: l.opportunity || 0,
+          opportunity_tags: l.opportunity_tags || [],
           source: "fallback",
-          message: `Hi ${l.name}, I noticed your business and wanted to reach out...`
+          message: l.opportunity >= 7
+            ? `Hi ${l.name}, I noticed your business ${l.opportunity_tags.includes('no website') ? "doesn't have a website yet" : 'could use some help'}. Businesses like yours in ${location} often lose customers to competitors with an online presence. I can fix that for you - interested?`
+            : `Hi ${l.name}, I noticed your business and wanted to reach out...`
         }));
         
         return res.json({
