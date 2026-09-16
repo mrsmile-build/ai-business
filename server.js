@@ -553,6 +553,20 @@ app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- LEAD FINDER ---------------- */
+function osmCategory(industry){
+  const s = (industry || "").toLowerCase();
+  const map = [
+    ["restaurant","restaurant"],["food","restaurant"],["cafe","cafe"],["coffee","cafe"],
+    ["bar","bar"],["hotel","hotel"],["guest","hotel"],["spa","spa"],["wellness","spa"],
+    ["hair","hairdresser"],["salon","beauty"],["beauty","beauty"],["gym","fitness_centre"],["fitness","fitness_centre"],
+    ["school","school"],["pharmacy","pharmacy"],["supermarket","supermarket"],["market","supermarket"],
+    ["real estate","estate_agent"],["estate","estate_agent"],["clinic","clinic"],["hospital","hospital"],
+    ["bank","bank"],["church","place_of_worship"],["mosque","place_of_worship"]
+  ];
+  for (const [k,v] of map) if (s.includes(k)) return v;
+  return (industry || "").split("/")[0].trim().toLowerCase().split(" ")[0] || "restaurant";
+}
+
 app.post("/api/lead-finder", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'lead_finder_searched'); checkAndTriggerActivation(req.user.id, 'lead_finder');
   try {
@@ -634,7 +648,66 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     // Do not silently turn HasData API errors into "No leads found".
     if (!hasDataSuccess) {
       const combinedError = (serpText + " " + mapsText).toLowerCase();
-
+      
+      // FALLBACK: Try our own Search API when HasData fails
+      const searchApiUrls = [
+        process.env.SEARCH_API_URL_1,
+        process.env.SEARCH_API_URL_2
+      ].filter(Boolean);
+      
+      let fallbackSuccess = false;
+      let fallbackLeads = [];
+      
+      for (let apiUrl of searchApiUrls) {
+        try {
+          console.log(`Lead Finder fallback: trying ${apiUrl}`);
+          const fallbackRes = await fetch(`${apiUrl}/api/v1/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              category: osmCategory(req.body.industry),
+              city: location,
+              country: ({ng:"Nigeria", gh:"Ghana", ke:"Kenya", za:"South Africa", us:"United States", gb:"United Kingdom"})[detectCountryCode(location)] || null
+            })
+          });
+          
+          if (fallbackRes.ok) {
+            fallbackLeads = await fallbackRes.json();
+            if (Array.isArray(fallbackLeads) && fallbackLeads.length > 0) {
+              fallbackSuccess = true;
+              console.log(`Lead Finder fallback: got ${fallbackLeads.length} leads from ${apiUrl}`);
+              break;
+            }
+          }
+        } catch (err) {
+          console.error(`Lead Finder fallback: ${apiUrl} failed`, err.message);
+        }
+      }
+      
+      if (fallbackSuccess) {
+        // Honor the "no website" filter in fallback mode (we have that data)
+        if (filters && filters.no_site) fallbackLeads = fallbackLeads.filter(l => !l.website);
+        // Map fallback leads to expected format
+        const allLeads = fallbackLeads.slice(0, 15).map(l => ({
+          name: l.name,
+          phone: l.phone || null,
+          address: l.address || null,
+          website: l.website || null,
+          rating: null,
+          reviews: null,
+          type: l.category || null,
+          source: "fallback",
+          message: `Hi ${l.name}, I noticed your business and wanted to reach out...`
+        }));
+        
+        return res.json({
+          success: true,
+          leads: allLeads,
+          usage: usage,
+          limit: monthlyLimit
+        });
+      }
+      
       if (combinedError.includes("not_enough_credits") ||
           combinedError.includes("insufficient credits") ||
           combinedError.includes("run out of credits")) {
