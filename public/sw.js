@@ -1,4 +1,4 @@
-const CACHE = "aibusiness-v1";
+const CACHE = "aibusiness-v1.8.2";
 const ASSETS = ["/", "/dashboard", "/auth", "/manifest.json", "/icon.svg"];
 
 self.addEventListener("install", e => {
