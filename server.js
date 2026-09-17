@@ -1089,7 +1089,7 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   try {
-    const { client_name, service, price, details, your_name, your_business } = req.body;
+    const { client_name, service, price, details, your_name, your_business, lead_facts } = req.body;
     const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
 
@@ -1100,6 +1100,8 @@ Write a complete, professional business proposal with these details:
 - Price: ${price || "To be discussed"}
 - Date: ${todayStr}
 - Details: ${details || "Standard service delivery"}
+- VERIFIED FACTS about this client (use ONLY these when describing the client): ${lead_facts && Object.values(lead_facts).some(Boolean) ? Object.entries(lead_facts).filter(([k,v])=>v).map(([k,v])=>k+"="+v).join(", ") : "none provided"}
+- VERIFIED FACTS about this client (use ONLY these when describing the client): ${lead_facts && Object.values(lead_facts).some(Boolean) ? Object.entries(lead_facts).filter(([k,v])=>v).map(([k,v])=>k+"="+v).join(", ") : "none provided"}
 
 Write a complete proposal with these sections:
 1. Cover/Header
@@ -1113,6 +1115,8 @@ Write a complete proposal with these sections:
 9. Next Steps
 10. Terms & Validity (valid 30 days)
 
+In "Understanding Your Needs", NEVER assert problems the client currently has unless a VERIFIED FACT states them. Phrase generally instead: "Businesses like yours often..." or "This service addresses...".
+In "Understanding Your Needs", NEVER assert problems the client currently has unless a VERIFIED FACT states them. Phrase generally instead: "Businesses like yours often..." or "This service addresses...".
 Make it professional, persuasive, and specific to Nigerian business context.
 Format with clear sections using headers. Keep the whole proposal under 650 words: one or two sentences per section, except Deliverables which is a bullet list.
 In the Investment section, use EXACTLY this price: ₦${price || "To be discussed"}. Write the number exactly as given; do not change it, round it, add zeros, or reinterpret it.
@@ -2946,7 +2950,9 @@ app.post("/api/notifications/read-all", authMiddleware, async (req, res) => {
 async function pushNotification(userId, type, message){
   try {
     const notifClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    await notifClient.from("notifications").insert({ user_id: userId, type, message });
+      const { data: recentDup } = await notifClient.from("notifications").select("id").eq("user_id", userId).eq("message", message).gte("created_at", new Date(Date.now()-60000).toISOString()).limit(1);
+  if(recentDup && recentDup.length) return;
+  await notifClient.from("notifications").insert({ user_id: userId, type, message });
   }
   catch(e){ console.error("Notification error:", e.message); }
 }

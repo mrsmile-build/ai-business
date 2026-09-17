@@ -905,9 +905,12 @@ async function renderLeadDetailObj(lead){
 
       <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
         <p style="margin:0 0 10px;font-size:13px;font-weight:bold">📝 Notes & History</p>
-        ${lead.message?`<div style="background:#162032;border-radius:8px;padding:10px;margin-bottom:10px;border-left:2px solid #334155"><p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5">${lead.message}</p></div>`:""}
+        ${lead.notes?`<div style="background:#162032;border-radius:8px;padding:10px;margin-bottom:10px;border-left:3px solid #8b5cf6"><p style="margin:0;font-size:12px;color:#c4b5fd;line-height:1.6;white-space:pre-line">${lead.notes}</p></div>`:""}
+        ${lead.message?`<div style="background:#162032;border-radius:8px;padding:10px;margin-bottom:10px;border-left:2px solid #334155;opacity:0.7"><p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.5">${lead.message}</p></div>`:""}
         <textarea id="ld_note" placeholder="Add a note (e.g. Called today, interested in Pro plan...)" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box;margin-bottom:8px"></textarea>
         <button onclick="saveLeadNote('${lead.id}')" style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save Note</button>
+        <div id="note_save_result" style="margin-top:6px"></div>
+        <div id="note_save_result" style="margin-top:6px"></div>
       </div>
 
       ${lead.phone?`
@@ -919,7 +922,7 @@ async function renderLeadDetailObj(lead){
       `:""}
 
       <div style="display:flex;gap:8px">
-        <button onclick="loadPage('proposal')" style="flex:1;padding:11px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:12px">📄 Generate Proposal</button>
+        <button onclick="selectLeadForProposal('${lead.id}')" style="flex:1;padding:11px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:12px">📄 Generate Proposal</button>
         <button onclick="deleteLead('${lead.id}')" style="padding:11px 14px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;font-size:12px">🗑️ Delete</button>
       </div>
     </div>
@@ -927,9 +930,16 @@ async function renderLeadDetailObj(lead){
 }
 
 async function updateLeadStatus(id, status){
+  var lead = (window._allLeads||[]).find(l=>l.id===id);
+  if(lead) lead.status = status;
+  renderLeadDetail(id);
   try {
     await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({status})});
-    if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l){ l.status=status; renderLeadDetail(id); } }
+    var t=document.getElementById("lead_toast");
+    if(!t){ t=document.createElement("div"); t.id="lead_toast"; t.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#10b981;color:#04121f;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.4)"; document.body.appendChild(t); }
+    t.textContent="Status → "+status.toUpperCase();
+    t.style.display="block";
+    setTimeout(function(){ t.style.display="none"; },2200);
   } catch(e){}
 }
 
@@ -939,7 +949,7 @@ async function saveLeadFollowup(id){
   var result = document.getElementById("followup_save_result");
   try {
     var body = {};
-    if(date) body.follow_up_date = date;
+    body.follow_up_date = date || null;
     if(amount) body.sale_amount = parseFloat(amount);
     var res = await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify(body)});
     var data = await res.json();
@@ -956,15 +966,16 @@ async function saveLeadNote(id){
   if(!note) return alert("Write a note first.");
   try {
     var lead = (window._allLeads||[]).find(l=>l.id===id);
-    var existing = lead?.message || "";
-    var stamp = "[" + new Date().toLocaleDateString() + "] "; var updated = existing ? (existing + "\n\n" + stamp + note) : (stamp + note);
-    var res = await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({message:updated})});
+    var existing = lead?.notes || "";
+    var stamp = new Date().toLocaleDateString("en-GB") + ": ";
+    var updated = existing ? (existing + "\n" + stamp + note) : (stamp + note);
+    var res = await apiFetch("/api/leads/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({notes:updated})});
     var data = await res.json();
     if(data.success){
-      if(lead) lead.message = updated;
-      alert("Note saved!");
+      if(lead) lead.notes = updated;
       renderLeadDetail(id);
-    }
+      setTimeout(function(){ var r=document.getElementById("note_save_result"); if(r){ r.innerHTML="<p style='color:#10b981;font-size:12px'>✓ Note saved</p>"; setTimeout(function(){ r.innerHTML=""; },2500); } },60);
+    } else { alert("Could not save note: "+(data.error||"error")); }
   } catch(e){ alert("Network error."); }
 }
 
@@ -1976,7 +1987,7 @@ async function saveToLeads(i, name, phone, business, address, website, action){
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
         name, phone, email: "", business,
-        message: "Found via Lead Finder. Address: "+address+". Website: "+website+". Sent: "+message.slice(0,200),
+        message: "Found via Lead Finder. Address: "+address+". Website: "+website+". Drafted: "+message.slice(0,200),
         status: action==="wa" ? "contacted" : "new"
       })
     });
@@ -2105,6 +2116,13 @@ function renderProposal(){
       <div id="proposal_result"></div>
     </div>
   `);
+  setTimeout(function(){ var lf=window._selectedLeadForProposal; if(lf){ var c=document.getElementById("pr_client"); if(c && !c.value) c.value=lf.name||""; var d=document.getElementById("pr_details"); if(d && !d.value){ var facts=[]; if(lf.type) facts.push("Business type: "+lf.type); if(lf.address) facts.push("Address: "+lf.address); if(lf.website) facts.push("Website: "+lf.website); if(facts.length) d.value=facts.join(" | "); } } },80);
+}
+
+function selectLeadForProposal(id){
+  var l = (window._allLeads||[]).find(x=>x.id===id);
+  window._selectedLeadForProposal = l ? {name:l.name||"", type:l.business||null, address:l.address||null, website:l.website||null} : null;
+  loadPage('proposal');
 }
 
 async function generateProposal(){
@@ -2118,6 +2136,9 @@ async function generateProposal(){
   const result = document.getElementById("proposal_result");
   if(result) result.innerHTML = "<p style='color:#64748b;text-align:center'>Writing your proposal... (15-20 seconds)</p>";
 
+  // Get lead facts if generating from a saved lead
+  const selectedLead = window._selectedLeadForProposal || {};
+  
   try{
     const res = await apiFetch("/api/generate-proposal",{
       method:"POST",
@@ -2128,7 +2149,14 @@ async function generateProposal(){
         price: document.getElementById("pr_price")?.value,
         details: document.getElementById("pr_details")?.value,
         your_name: document.getElementById("pr_your_name")?.value,
-        your_business: document.getElementById("pr_your_biz")?.value
+        your_business: document.getElementById("pr_your_biz")?.value,
+        lead_facts: {
+          business_type: selectedLead.type || selectedLead.category || null,
+          rating: selectedLead.rating || null,
+          reviews: selectedLead.reviews || null,
+          address: selectedLead.address || null,
+          website: selectedLead.website || null
+        }
       })
     });
     const data = await res.json();
