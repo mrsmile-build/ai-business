@@ -799,6 +799,7 @@ function leadCard(l){
           <p style="margin:0;font-size:14px;font-weight:700">${l.name}</p>
           ${l.business?`<p style="margin:2px 0;font-size:12px;color:#64748b">${l.business}</p>`:""}
           ${l.phone?`<p style="margin:2px 0;font-size:12px;color:#10b981">📞 ${l.phone}</p>`:""}
+          ${l.email?`<p style="margin:2px 0;font-size:12px;color:#3b82f6">✉️ ${l.email}</p>`:""}
           ${l.follow_up_date?`<p style="margin:2px 0;font-size:11px;color:${isOverdue?'#ef4444':'#f59e0b'}">⏰ Follow-up: ${l.follow_up_date}${isOverdue?' (OVERDUE)':''}</p>`:""}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">

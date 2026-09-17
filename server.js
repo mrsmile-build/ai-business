@@ -553,6 +553,11 @@ app.post("/api/signals/youtube", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- LEAD FINDER ---------------- */
+
+
+
+const leadQuality = l => (l.phone?100:0)+(l.email?50:0)+(l.whatsapp?40:0)+(l.website?20:0)+(l.rating?10:0)+(l.opportunity||0);
+
 function osmCategory(industry){
   const s = (industry || "").toLowerCase();
   const map = [
@@ -702,6 +707,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
         // Honor the "no website" filter in fallback mode (we have that data)
         if (filters && filters.no_site) fallbackLeads = fallbackLeads.filter(l => !l.website);
         // Map fallback leads to expected format
+        fallbackLeads.sort((a, b) => leadQuality(b) - leadQuality(a));
         const allLeads = fallbackLeads.slice(0, 15).map(l => ({
           name: l.name,
           phone: l.phone || null,
@@ -716,6 +722,11 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
           facebook: l.facebook || null,
           instagram: l.instagram || null,
           whatsapp: l.whatsapp || null,
+          email: l.email || null,
+          facebook: l.facebook || null,
+          instagram: l.instagram || null,
+          whatsapp: l.whatsapp || null,
+          phone_source: l.phone ? "ddg" : null,
           source: "fallback",
           message: l.opportunity >= 7
             ? `Hi ${l.name}, I noticed your business ${l.opportunity_tags.includes('no website') ? "doesn't have a website yet" : 'could use some help'}. Businesses like yours in ${location} often lose customers to competitors with an online presence. I can fix that for you - interested?`
@@ -887,6 +898,7 @@ ${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " ("+l.type+")" : ""}${l.sn
 
 Return ONLY a JSON array of strings in the same order. No markdown, no explanation.`;
 
+    allLeads.sort((a, b) => leadQuality(b) - leadQuality(a));
     const compactPrompt = `You write personalized WhatsApp outreach messages for Nigerian businesses.
 
 The sender's offer is:
