@@ -5523,9 +5523,9 @@ async function moveLead(id, status){
     if(document.getElementById("ea_card")) return;
     var nodes = document.querySelectorAll("p,div,span,h2,h3");
     var anchorEl = null;
-    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && /leads used/i.test(n.textContent||"")){ anchorEl=n; break; } }
+    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && /leads used|getting started|recommended for you/i.test(n.textContent||"")){ anchorEl=n; break; } }
     if(!anchorEl) return;
-    var box = anchorEl.closest("div");
+    var box = anchorEl; for(var k=0;k<3 && box && box.parentElement;k++){ box = box.parentElement; }
     if(!box || !box.parentNode) return;
     var card = document.createElement("div");
     card.id = "ea_card";
@@ -5537,7 +5537,7 @@ async function moveLead(id, status){
     });
     html += '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p>';
     card.innerHTML = html;
-    box.parentNode.insertBefore(card, box.nextSibling);
+    box.parentNode.insertBefore(card, box);
   }
   setInterval(inject, 1500);
 })();
@@ -5549,7 +5549,7 @@ async function moveLead(id, status){
     if(document.getElementById("ea_menu")) return;
     var nodes = document.querySelectorAll("a,button,div,span,li,p");
     var mb = null;
-    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && (n.textContent||"").trim()==="Manage Blog"){ mb=n; break; } }
+    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && /manage blog/i.test(n.textContent||"")){ mb=n; break; } }
     if(!mb) return;
     var tpl = mb.closest("a") || mb;
     if(!tpl.parentNode) return;
