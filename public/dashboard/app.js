@@ -5503,3 +5503,41 @@ async function moveLead(id, status){
   await quickStatus(id, status);
   loadPage('leads');
 }
+
+
+/* ---- Early Access "What's Coming" card ---- */
+(function(){
+  var EA_CAPS = [
+    {k:"agent", label:"AI Business Agent", desc:"Answers WhatsApp enquiries 24/7, qualifies & books"},
+    {k:"templates", label:"Proposal Templates", desc:"Ready-made proposals you can send in 2 minutes"},
+    {k:"kanban", label:"Kanban Pipeline", desc:"Drag leads through stages like a sales pro"},
+    {k:"paystack", label:"Paystack Payment Links", desc:"Collect payment inside your proposal"},
+    {k:"analytics", label:"Analytics Dashboard", desc:"See which leads convert and what you earned"}
+  ];
+  window.eaVoteX = function(k, btn){
+    fetch("/api/early-access", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")}, body: JSON.stringify({capability:k, source:"dashboard"})})
+      .then(function(r){return r.json();}).then(function(d){ if(d.success){ btn.textContent="✓ Joined early access"; btn.disabled=true; btn.style.borderColor="#10b981"; } else { alert(d.error||"Could not join"); } })
+      .catch(function(){alert("Network error");});
+  };
+  function inject(){
+    if(document.getElementById("ea_card")) return;
+    var nodes = document.querySelectorAll("p,div,span,h2,h3");
+    var anchorEl = null;
+    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && /leads used/i.test(n.textContent||"")){ anchorEl=n; break; } }
+    if(!anchorEl) return;
+    var box = anchorEl.closest("div");
+    if(!box || !box.parentNode) return;
+    var card = document.createElement("div");
+    card.id = "ea_card";
+    card.style.cssText = "background:#0f172a;border:1px solid #1e2d42;border-radius:12px;padding:16px;margin:14px 0";
+    var html = '<p style="margin:0 0 4px;font-size:14px;font-weight:700">🚧 Help shape what we build next</p>' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#64748b">Vote for the capability that would save you the most time. Early voters get first access.</p>';
+    EA_CAPS.forEach(function(c){
+      html += '<button type="button" onclick="eaVoteX(\''+c.k+'\', this)" style="display:block;width:100%;text-align:left;margin-bottom:6px;padding:10px 12px;background:#131d2e;border:1px solid #1e2d42;border-radius:8px;color:#f1f5f9;cursor:pointer;font-size:12px"><strong>'+c.label+'</strong><span style="display:block;color:#64748b;font-size:11px;margin-top:2px">'+c.desc+'</span></button>';
+    });
+    html += '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p>';
+    card.innerHTML = html;
+    box.parentNode.insertBefore(card, box.nextSibling);
+  }
+  setInterval(inject, 1500);
+})();

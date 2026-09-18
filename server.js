@@ -2951,6 +2951,29 @@ app.get("/api/booking-analytics", authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.post("/api/early-access", async (req, res) => {
+  try {
+    const { name, email, phone, business_type, capability, source } = req.body || {};
+    if (!capability) return res.json({ success: false, error: "Pick a capability" });
+    let userId = null;
+    try {
+      const token = (req.headers.authorization || "").replace("Bearer ", "");
+      if (token) { const payload = require("jsonwebtoken").verify(token, process.env.JWT_SECRET); userId = payload.id || payload.sub || null; }
+    } catch (e) {}
+    const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public" });
+    if (error) return res.json({ success: false, error: error.message });
+    res.json({ success: true });
+  } catch (e) { res.json({ success: false, error: e.message }); }
+});
+
+app.get("/api/early-access/counts", authMiddleware, async (req, res) => {
+  const { data, error } = await supabase.from("early_access_interests").select("capability");
+  if (error) return res.json({ success: false, error: error.message });
+  const counts = {};
+  (data || []).forEach(r => { counts[r.capability] = (counts[r.capability] || 0) + 1; });
+  res.json({ success: true, counts });
+});
+
 app.get("/api/notifications", authMiddleware, async (req, res) => {
   try {
     const { data } = await supabase.from("notifications").select("*").eq("user_id", req.user.id).order("created_at", { ascending: false }).limit(20);

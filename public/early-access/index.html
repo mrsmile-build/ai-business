@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Early Access - AI Business</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",sans-serif;margin:0;padding:24px}h1{font-family:"Syne",sans-serif;font-size:28px}.wrap{max-width:560px;margin:30px auto}.cap{display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 14px;background:#131d2e;border:1px solid #1e2d42;border-radius:10px;color:#f1f5f9;cursor:pointer;font-size:14px}.cap.sel{border-color:#2563eb;background:#16233c}input,select{width:100%;padding:11px;margin-bottom:10px;border-radius:8px;border:1px solid #1e2d42;background:#0f1623;color:#f1f5f9;font-size:14px;box-sizing:border-box}button.go{width:100%;padding:13px;background:#2563eb;border:none;border-radius:10px;color:white;font-size:15px;font-weight:700;cursor:pointer}.muted{color:#64748b;font-size:13px}</style></head>
+<body><div class="wrap">
+<h1>Get early access to what's coming</h1>
+<p class="muted">We're building new tools to help small businesses find customers, follow up, get booked and get paid. Pick the one that would help your business most - early voters get first access and founder pricing.</p>
+<div id="caps"></div>
+<input id="ea_name" placeholder="Your name">
+<input id="ea_email" type="email" placeholder="Email *">
+<select id="ea_biz"><option>Restaurant / Food</option><option>Salon / Beauty</option><option>Real Estate</option><option>Fashion / Retail</option><option>Tech / Services</option><option>School / Education</option><option>Other</option></select>
+<input id="ea_phone" placeholder="WhatsApp number (optional)">
+<button class="go" onclick="eaSubmit()">Join Early Access</button>
+<p class="muted" id="ea_msg"></p>
+<p class="muted">Already use AI Business? Vote from your dashboard too.</p>
+</div>
+<script>
+var CAPS=[{k:"agent",l:"AI Business Agent",d:"Answers WhatsApp enquiries 24/7, qualifies customers, books appointments"},{k:"templates",l:"Proposal Templates",d:"Ready-made proposals you can personalise and send in 2 minutes"},{k:"kanban",l:"Kanban Pipeline",d:"Drag leads through stages visually, like a sales pro"},{k:"paystack",l:"Paystack Payment Links",d:"Collect payment inside your proposal"},{k:"analytics",l:"Analytics Dashboard",d:"See which leads convert and what you earned"}];
+var sel=null;
+var box=document.getElementById("caps");
+CAPS.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="cap";b.innerHTML="<strong>"+c.l+"</strong><span class='muted' style='display:block;font-size:12px;margin-top:2px'>"+c.d+"</span>";b.onclick=function(){sel=c.k;var all=document.querySelectorAll(".cap");for(var i=0;i<all.length;i++)all[i].classList.remove("sel");b.classList.add("sel");};box.appendChild(b);});
+function msg(t){document.getElementById("ea_msg").textContent=t;}
+function eaSubmit(){
+  var email=document.getElementById("ea_email").value.trim();
+  if(!sel) return msg("Pick a capability first.");
+  if(!email) return msg("Email is required.");
+  fetch("/api/early-access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({capability:sel,name:document.getElementById("ea_name").value.trim(),email:email,phone:document.getElementById("ea_phone").value.trim(),business_type:document.getElementById("ea_biz").value,source:"public"})})
+  .then(function(r){return r.json()}).then(function(d){ if(d.success){ msg("You're on the list! We'll email you when early access opens."); } else { msg(d.error||"Could not join."); } })
+  .catch(function(){msg("Network error.");});
+}
+</script></body></html>
