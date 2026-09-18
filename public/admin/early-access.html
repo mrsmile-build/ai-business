@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Early Access - Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",sans-serif;margin:0;padding:24px}h1{font-family:"Syne",sans-serif;font-size:24px}.wrap{max-width:900px;margin:20px auto}.cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}.card{background:#131d2e;border:1px solid #1e2d42;border-radius:10px;padding:14px 18px;min-width:120px}.card b{display:block;font-size:26px;font-family:"Syne"}.card span{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #1e2d42}th{color:#64748b;font-size:11px;text-transform:uppercase}.tag{padding:2px 8px;border-radius:6px;background:#16233c;border:1px solid #2563eb;font-size:11px}.muted{color:#64748b}</style></head>
+<body><div class="wrap">
+<h1>Early Access - Votes</h1>
+<p class="muted" id="status">Loading...</p>
+<div class="cards" id="cards"></div>
+<table><thead><tr><th>When</th><th>Capability</th><th>Name</th><th>Email</th><th>WhatsApp</th><th>Business</th><th>Source</th></tr></thead><tbody id="rows"></tbody></table>
+</div>
+<script>
+var LABELS={agent:"AI Business Agent",templates:"Proposal Templates",kanban:"Kanban Pipeline",paystack:"Paystack Links",analytics:"Analytics Dashboard"};
+if(!localStorage.getItem("token")){document.getElementById("status").innerHTML='Not logged in. <a href="/dashboard/" style="color:#3b82f6">Log in here</a>, then come back.';}else fetch("/api/admin/early-access",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+.then(function(r){return r.json();})
+.then(function(d){
+  if(!d.success){var st=document.getElementById("status"); if(/token/i.test(d.error||"")){st.innerHTML='Not logged in. <a href="/dashboard/" style="color:#3b82f6">Log in here</a>, then come back to this page.';}else{st.textContent="Error: "+(d.error||"unknown");} return;}
+  document.getElementById("status").textContent=d.rows.length+" vote(s) so far. Interview the first 5 per capability before building.";
+  var ch="";
+  Object.keys(LABELS).forEach(function(k){ch+='<div class="card"><b>'+(d.counts[k]||0)+'</b><span>'+LABELS[k]+'</span></div>';});
+  document.getElementById("cards").innerHTML=ch;
+  var rb="";
+  d.rows.forEach(function(r){
+    rb+="<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td><span class='tag'>"+(LABELS[r.capability]||r.capability)+"</span></td><td>"+(r.name||"-")+"</td><td>"+(r.email||"-")+"</td><td>"+(r.phone||"-")+"</td><td>"+(r.business_type||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td></tr>";
+  });
+  document.getElementById("rows").innerHTML=rb||"<tr><td colspan=7 class='muted'>No votes yet. Share the link!</td></tr>";
+})
+.catch(function(){document.getElementById("status").textContent="Network error or not logged in.";});
+</script></body></html>

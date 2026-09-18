@@ -2951,6 +2951,23 @@ app.get("/api/booking-analytics", authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
+  try {
+    const OWNER_EMAIL = "mrsmile4569@gmail.com";
+    let userEmail = req.user.email;
+    if (!userEmail && req.user.id) {
+      const { data: usr } = await supabase.from("users").select("email").eq("id", req.user.id).single();
+      userEmail = usr ? usr.email : null;
+    }
+    if (userEmail !== OWNER_EMAIL) return res.json({ success: false, error: "Admin only" });
+    const { data, error } = await supabase.from("early_access_interests").select("*").order("created_at", { ascending: false }).limit(500);
+    if (error) return res.json({ success: false, error: error.message });
+    const counts = {};
+    (data || []).forEach(r => { counts[r.capability] = (counts[r.capability] || 0) + 1; });
+    res.json({ success: true, rows: data || [], counts });
+  } catch (e) { res.json({ success: false, error: e.message }); }
+});
+
 app.post("/api/early-access", async (req, res) => {
   try {
     const { name, email, phone, business_type, capability, source } = req.body || {};
