@@ -3,11 +3,28 @@
 <style>body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",sans-serif;margin:0;padding:24px}h1{font-family:"Syne",sans-serif;font-size:24px}.wrap{max-width:900px;margin:20px auto}.cards{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}.card{background:#131d2e;border:1px solid #1e2d42;border-radius:10px;padding:14px 18px;min-width:120px}.card b{display:block;font-size:26px;font-family:"Syne"}.card span{color:#64748b;font-size:12px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #1e2d42}th{color:#64748b;font-size:11px;text-transform:uppercase}.tag{padding:2px 8px;border-radius:6px;background:#16233c;border:1px solid #2563eb;font-size:11px}.muted{color:#64748b}</style></head>
 <body><div class="wrap">
 <h1>Early Access - Votes</h1>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px">
+  <input id="publink" readonly style="flex:1;min-width:200px;padding:9px;border-radius:8px;border:1px solid #1e2d42;background:#0f1623;color:#94a3b8;font-size:12px">
+  <button onclick="copyLink()" style="padding:9px 14px;background:#2563eb;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer">📋 Copy Link</button>
+  <button onclick="waShare()" style="padding:9px 14px;background:#25d366;border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer">💬 Share on WhatsApp</button>
+</div>
 <p class="muted" id="status">Loading...</p>
 <div class="cards" id="cards"></div>
 <table><thead><tr><th>When</th><th>Capability</th><th>Name</th><th>Email</th><th>WhatsApp</th><th>Business</th><th>Source</th></tr></thead><tbody id="rows"></tbody></table>
 </div>
 <script>
+var PUB = location.origin + "/early-access";
+document.addEventListener("DOMContentLoaded", function(){ var i=document.getElementById("publink"); if(i) i.value = PUB; });
+function copyLink(){
+  var i = document.getElementById("publink");
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(PUB).then(function(){ flash("Copied!"); }); }
+  else { i.select(); document.execCommand("copy"); flash("Copied!"); }
+}
+function flash(t){ var b=event && event.target; if(b){ var o=b.textContent; b.textContent=t; setTimeout(function(){ b.textContent=o; },1500); } }
+function waShare(){
+  var text = encodeURIComponent("Would an AI that answers your customers' WhatsApp messages 24/7 actually help your business? Vote in 30 seconds (no signup): " + PUB);
+  window.open("https://wa.me/?text=" + text, "_blank");
+}
 var LABELS={agent:"AI Business Agent",templates:"Proposal Templates",kanban:"Kanban Pipeline",paystack:"Paystack Links",analytics:"Analytics Dashboard"};
 if(!localStorage.getItem("token")){document.getElementById("status").innerHTML='Not logged in. <a href="/dashboard/" style="color:#3b82f6">Log in here</a>, then come back.';}else fetch("/api/admin/early-access",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
 .then(function(r){return r.json();})
