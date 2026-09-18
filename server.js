@@ -40,18 +40,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.get("/__debug", (req, res) => {
-  const fs = require("fs");
-  const path = require("path");
-  res.json({
-    cwd: process.cwd(),
-    publicExists: fs.existsSync("./public"),
-    swExists: fs.existsSync("./public/sw.js"),
-    earlyAccessExists: fs.existsSync("./public/early-access/index.html"),
-    filesInPublic: fs.existsSync("./public") ? fs.readdirSync("./public").slice(0, 10) : []
-  });
-});
-
 app.use(express.static("public", { extensions: ['html'] }));    
 
 const supabase = createClient(
