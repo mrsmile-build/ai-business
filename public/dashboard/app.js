@@ -5541,3 +5541,24 @@ async function moveLead(id, status){
   }
   setInterval(inject, 1500);
 })();
+
+
+/* ---- Admin menu: Early Access Votes link ---- */
+(function(){
+  function injectMenu(){
+    if(document.getElementById("ea_menu")) return;
+    var nodes = document.querySelectorAll("a,button,div,span,li,p");
+    var mb = null;
+    for(var i=0;i<nodes.length;i++){ var n=nodes[i]; if(n.childElementCount===0 && (n.textContent||"").trim()==="Manage Blog"){ mb=n; break; } }
+    if(!mb) return;
+    var tpl = mb.closest("a") || mb;
+    if(!tpl.parentNode) return;
+    var a2 = tpl.cloneNode(true);
+    a2.removeAttribute("onclick");
+    if(a2.setAttribute) a2.setAttribute("href","/admin/early-access.html");
+    a2.id = "ea_menu";
+    a2.textContent = "📊 Early Access Votes";
+    tpl.parentNode.insertBefore(a2, tpl.nextSibling);
+  }
+  setInterval(injectMenu, 1500);
+})();
