@@ -5558,6 +5558,8 @@ async function moveLead(id, status){
     if(a2.setAttribute) a2.setAttribute("href","/admin/early-access.html");
     a2.id = "ea_menu";
     a2.textContent = "📊 Early Access Votes";
+    a2.style.cursor = "pointer";
+    a2.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); window.location.href = "/admin/early-access.html"; }, true);
     tpl.parentNode.insertBefore(a2, tpl.nextSibling);
   }
   setInterval(injectMenu, 1500);
