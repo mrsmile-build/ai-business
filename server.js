@@ -2973,15 +2973,22 @@ app.post("/api/early-access", async (req, res) => {
     const { name, email, phone, business_type, capability, source } = req.body || {};
     if (!capability) return res.json({ success: false, error: "Pick a capability" });
     let userId = null;
+    let authUser = null;
     try {
       const token = (req.headers.authorization || "").replace("Bearer ", "");
-      if (token) { const payload = require("jsonwebtoken").verify(token, process.env.JWT_SECRET); userId = payload.id || payload.sub || null; }
-    } catch (e) {}
-    if (userId) {
+      if (token) {
+        const tmpClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const { data: authData, error: authErr } = await tmpClient.auth.getUser(token);
+        if (!authErr && authData.user) { authUser = authData.user; userId = authData.user.id; }
+        else console.error("[early-access] auth.getUser failed:", authErr && authErr.message);
+      }
+    } catch (e) { console.error("[early-access] auth failed:", e.message); }
+    if (userId && authUser) {
+      email = email || authUser.email || null;
       try {
-        const { data: u } = await supabase.from("users").select("*").eq("id", userId).single();
-        if (u) { email = email || u.email; name = name || u.name || u.full_name || u.business_name || null; phone = phone || u.phone || u.whatsapp || null; }
-      } catch (e) {}
+        const { data: p } = await supabase.from("profiles").select("display_name, phone").eq("user_id", userId).single();
+        if (p) { name = name || p.display_name || null; phone = phone || p.phone || null; }
+      } catch (e) { console.error("[early-access] profile fetch failed:", e.message); }
     }
     let dup = null;
     if (userId) { const { data } = await supabase.from("early_access_interests").select("id").eq("user_id", userId).eq("capability", capability).limit(1); dup = data && data[0]; }
