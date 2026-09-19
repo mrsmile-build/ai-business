@@ -5510,9 +5510,9 @@ async function moveLead(id, status){
   var EA_CAPS = [
     {k:"agent", label:"AI Business Agent", desc:"Answers WhatsApp enquiries 24/7, qualifies & books"},
     {k:"templates", label:"Proposal Templates", desc:"Ready-made proposals you can send in 2 minutes"},
-    {k:"kanban", label:"Kanban Pipeline", desc:"Drag leads through stages like a sales pro"},
+    {k:"reviews", label:"Auto Review Collector", desc:"Happy customers get asked for a Google review automatically"},
     {k:"paystack", label:"Paystack Payment Links", desc:"Collect payment inside your proposal"},
-    {k:"analytics", label:"Analytics Dashboard", desc:"See which leads convert and what you earned"}
+    {k:"broadcast", label:"WhatsApp Broadcast Campaigns", desc:"Send one offer to every past customer in two taps"}
   ];
   window.eaVoteX = function(k, btn){
     fetch("/api/early-access", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")}, body: JSON.stringify({capability:k, source:"dashboard"})})

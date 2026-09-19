@@ -25,7 +25,7 @@ function waShare(){
   var text = encodeURIComponent("Would an AI that answers your customers' WhatsApp messages 24/7 actually help your business? Vote in 30 seconds (no signup): " + PUB);
   window.open("https://wa.me/?text=" + text, "_blank");
 }
-var LABELS={agent:"AI Business Agent",templates:"Proposal Templates",kanban:"Kanban Pipeline",paystack:"Paystack Links",analytics:"Analytics Dashboard"};
+var LABELS={agent:"AI Business Agent",templates:"Proposal Templates",reviews:"Auto Review Collector",paystack:"Paystack Links",broadcast:"WhatsApp Broadcast Campaigns"};
 if(!localStorage.getItem("token")){document.getElementById("status").innerHTML='Not logged in. <a href="/dashboard/" style="color:#3b82f6">Log in here</a>, then come back.';}else fetch("/api/admin/early-access",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
 .then(function(r){return r.json();})
 .then(function(d){

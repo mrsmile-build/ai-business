@@ -14,7 +14,7 @@
 <p class="muted">Already use AI Business? Vote from your dashboard too.</p>
 </div>
 <script>
-var CAPS=[{k:"agent",l:"AI Business Agent",d:"Answers WhatsApp enquiries 24/7, qualifies customers, books appointments"},{k:"templates",l:"Proposal Templates",d:"Ready-made proposals you can personalise and send in 2 minutes"},{k:"kanban",l:"Kanban Pipeline",d:"Drag leads through stages visually, like a sales pro"},{k:"paystack",l:"Paystack Payment Links",d:"Collect payment inside your proposal"},{k:"analytics",l:"Analytics Dashboard",d:"See which leads convert and what you earned"}];
+var CAPS=[{k:"agent",l:"AI Business Agent",d:"Answers WhatsApp enquiries 24/7, qualifies customers, books appointments"},{k:"templates",l:"Proposal Templates",d:"Ready-made proposals you can personalise and send in 2 minutes"},{k:"reviews",l:"Auto Review Collector",d:"Happy customers get asked for a Google review automatically"},{k:"paystack",l:"Paystack Payment Links",d:"Collect payment inside your proposal"},{k:"broadcast",l:"WhatsApp Broadcast Campaigns",d:"Send one offer to every past customer in two taps"}];
 var sel=null;
 var box=document.getElementById("caps");
 CAPS.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="cap";b.innerHTML="<strong>"+c.l+"</strong><span class='muted' style='display:block;font-size:12px;margin-top:2px'>"+c.d+"</span>";b.onclick=function(){sel=c.k;var all=document.querySelectorAll(".cap");for(var i=0;i<all.length;i++)all[i].classList.remove("sel");b.classList.add("sel");};box.appendChild(b);});
