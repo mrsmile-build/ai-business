@@ -2977,6 +2977,16 @@ app.post("/api/early-access", async (req, res) => {
       const token = (req.headers.authorization || "").replace("Bearer ", "");
       if (token) { const payload = require("jsonwebtoken").verify(token, process.env.JWT_SECRET); userId = payload.id || payload.sub || null; }
     } catch (e) {}
+    if (userId) {
+      try {
+        const { data: u } = await supabase.from("users").select("*").eq("id", userId).single();
+        if (u) { email = email || u.email; name = name || u.name || u.full_name || u.business_name || null; phone = phone || u.phone || u.whatsapp || null; }
+      } catch (e) {}
+    }
+    let dup = null;
+    if (userId) { const { data } = await supabase.from("early_access_interests").select("id").eq("user_id", userId).eq("capability", capability).limit(1); dup = data && data[0]; }
+    else if (email) { const { data } = await supabase.from("early_access_interests").select("id").eq("email", email).eq("capability", capability).limit(1); dup = data && data[0]; }
+    if (dup) return res.json({ success: true, duplicate: true });
     const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public" });
     if (error) return res.json({ success: false, error: error.message });
     res.json({ success: true });
