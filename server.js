@@ -1108,7 +1108,34 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   try {
-    const { client_name, service, price, details, your_name, your_business, lead_facts } = req.body;
+    const { client_name, service, price, details, your_name, your_business, lead_facts, template } = req.body;
+    const templateConfig = {
+      standard: {
+        hook: "",
+        sections: ["1. Cover/Header", "2. Executive Summary (2-3 sentences)", "3. Understanding Your Needs (what problem they have)", "4. Our Proposed Solution (what we will do)", "5. Deliverables (bullet list of exactly what they get)", "6. Timeline (realistic timeline)", "7. Investment (price breakdown)", "8. Why Choose Us (2-3 points)", "9. Next Steps", "10. Terms & Validity (valid 30 days)"],
+      },
+      crm: {
+        hook: "Hook: Lead with the pain of losing customers to slow follow-ups.",
+        sections: ["1. Cover/Header", "2. Executive Summary (start with 'Every day you don't reply instantly, you lose a customer')", "3. Understanding Your Needs (frame as automation problem)", "4. Our Proposed Solution (CRM + automated follow-up system)", "5. Deliverables (bullet list, emphasize TIME SAVED: '5 hours/week back in your schedule')", "6. Timeline", "7. Investment", "8. Why Choose Us", "9. Next Steps", "10. Guarantee: If this doesn't save you 5+ hours per week in the first month, full refund.", "11. Terms & Validity (valid 30 days)"],
+      },
+      website: {
+        hook: "Hook: Lead with the opportunity of being found online.",
+        sections: ["1. Cover/Header", "2. Executive Summary (start with 'Your competitors are online—are you?')", "3. Understanding Your Needs (frame as visibility problem)", "4. Our Proposed Solution (website that converts visitors to enquiries)", "5. Deliverables (bullet list, emphasize MORE ENQUIRIES: '20% more customer enquiries from online')", "6. Timeline", "7. Investment", "8. Why Choose Us", "9. Next Steps", "10. Guarantee: If you don't see more enquiries in 30 days, I'll optimize it free until you do.", "11. Terms & Validity (valid 30 days)"],
+      },
+      social: {
+        hook: "Hook: Lead with the power of social proof and engagement.",
+        sections: ["1. Cover/Header", "2. Executive Summary (start with 'Your customers are on social media—are you reaching them?')", "3. Understanding Your Needs (frame as engagement problem)", "4. Our Proposed Solution (content strategy that grows followers and customers)", "5. Deliverables (bullet list, emphasize GROWTH: '2x more followers, 3x more engagement')", "6. Timeline", "7. Investment", "8. Why Choose Us", "9. Next Steps", "10. Guarantee: If engagement doesn't increase in 4 weeks, I'll post for free until it does.", "11. Terms & Validity (valid 30 days)"],
+      },
+      booking: {
+        hook: "Hook: Lead with the cost of no-shows and missed bookings.",
+        sections: ["1. Cover/Header", "2. Executive Summary (start with 'Every no-show costs you money—are you tired of empty slots?')", "3. Understanding Your Needs (frame as reliability problem)", "4. Our Proposed Solution (booking system + automated reminders)", "5. Deliverables (bullet list, emphasize RELIABILITY: '50% fewer no-shows, 24/7 booking')", "6. Timeline", "7. Investment", "8. Why Choose Us", "9. Next Steps", "10. Guarantee: If no-shows don't drop 50% in the first month, I'll refund you.", "11. Terms & Validity (valid 30 days)"],
+      },
+      winback: {
+        hook: "Hook: Lead with the value of past customers and a special offer.",
+        sections: ["1. Cover/Header", "2. Executive Summary (start with 'We miss you—and we have something special')", "3. Understanding Your Needs (frame as re-engagement opportunity)", "4. Our Proposed Solution (win-back campaign with exclusive offer)", "5. Deliverables (bullet list, emphasize URGENCY: 'limited-time offer, only 10 spots')", "6. Timeline", "7. Investment (frame as special discount)", "8. Why Choose Us", "9. Next Steps (act now)", "10. Guarantee: If you don't see value in the first week, no charge.", "11. Terms & Validity (valid 14 days—urgency)"],
+      }
+    };
+    const config = templateConfig[template] || templateConfig.standard;
     const todayStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const prompt = `You are a professional business proposal writer for Nigerian entrepreneurs.
 
@@ -1122,17 +1149,10 @@ Write a complete, professional business proposal with these details:
 - VERIFIED FACTS about this client (use ONLY these when describing the client): ${lead_facts && Object.values(lead_facts).some(Boolean) ? Object.entries(lead_facts).filter(([k,v])=>v).map(([k,v])=>k+"="+v).join(", ") : "none provided"}
 - VERIFIED FACTS about this client (use ONLY these when describing the client): ${lead_facts && Object.values(lead_facts).some(Boolean) ? Object.entries(lead_facts).filter(([k,v])=>v).map(([k,v])=>k+"="+v).join(", ") : "none provided"}
 
+${config.hook}
+
 Write a complete proposal with these sections:
-1. Cover/Header
-2. Executive Summary (2-3 sentences)
-3. Understanding Your Needs (what problem they have)
-4. Our Proposed Solution (what we will do)
-5. Deliverables (bullet list of exactly what they get)
-6. Timeline (realistic timeline)
-7. Investment (price breakdown)
-8. Why Choose Us (2-3 points)
-9. Next Steps
-10. Terms & Validity (valid 30 days)
+${config.sections.join("\n")}
 
 In "Understanding Your Needs", NEVER assert problems the client currently has unless a VERIFIED FACT states them. Phrase generally instead: "Businesses like yours often..." or "This service addresses...".
 In "Understanding Your Needs", NEVER assert problems the client currently has unless a VERIFIED FACT states them. Phrase generally instead: "Businesses like yours often..." or "This service addresses...".

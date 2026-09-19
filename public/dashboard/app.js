@@ -2111,7 +2111,16 @@ function renderProposal(){
         <input id="pr_price" placeholder="Price / Budget (e.g. ₦150,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
         <textarea id="pr_details" placeholder="Any specific details, requirements, or scope of work..." style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box"></textarea>
       </div>
-
+        <label style="display:block;margin-top:10px;margin-bottom:6px;font-size:12px;color:#94a3b8">Template (pick your angle):</label>
+        <select id="pr_template" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <option value="standard">📋 Standard (professional, all-purpose)</option>
+          <option value="crm">⚡ CRM Pitch (automation + time saved)</option>
+          <option value="website">🌐 Website Pitch (more enquiries online)</option>
+          <option value="social">📱 Social Media Pitch (more followers/customers)</option>
+          <option value="booking">📅 Booking & Automation (fewer no-shows)</option>
+          <option value="winback">💌 Win-back Offer (re-engage past clients)</option>
+        </select>
+      </div>
       <button onclick="generateProposal()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;margin-bottom:15px">📄 Generate Proposal</button>
 
       <div id="proposal_result"></div>
@@ -2150,6 +2159,7 @@ async function generateProposal(){
         price: document.getElementById("pr_price")?.value,
         details: document.getElementById("pr_details")?.value,
         your_name: document.getElementById("pr_your_name")?.value,
+        template: document.getElementById("pr_template")?.value || "standard",
         your_business: document.getElementById("pr_your_biz")?.value,
         lead_facts: {
           business_type: selectedLead.type || selectedLead.category || null,
