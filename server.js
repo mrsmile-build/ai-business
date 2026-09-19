@@ -2970,7 +2970,7 @@ app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
 
 app.post("/api/early-access", async (req, res) => {
   try {
-    const { name, email, phone, business_type, capability, source } = req.body || {};
+    let { name, email, phone, business_type, capability, source } = req.body || {};
     if (!capability) return res.json({ success: false, error: "Pick a capability" });
     let userId = null;
     let authUser = null;
