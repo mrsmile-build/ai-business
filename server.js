@@ -2246,7 +2246,7 @@ ${list.length === 0 ? '<p style="color:#64748b">No posts yet. Check back soon.</
   <div class="post-date">${p.published_at ? new Date(p.published_at).toLocaleDateString() : ""}</div>
 </a>`).join("")}
 </div>
-</body>
+<script src="/movebar.js"></script></body>
 </html>`);
   } catch(err) { res.status(500).send("Error loading blog"); }
 });
@@ -2293,7 +2293,7 @@ ${post.cover_image_url ? `<img src="${post.cover_image_url}" class="cover">` : "
 <a href="/auth?signup=true">Try AI Business Free</a>
 </div>
 </div>
-</body>
+<script src="/movebar.js"></script></body>
 </html>`);
   } catch(err) { res.status(500).send("Error loading post"); }
 });
@@ -2411,7 +2411,7 @@ async function submitEnquiry(e){
   }
 }
 </script>
-</body>
+<script src="/movebar.js"></script></body>
 </html>`);
   } catch(err) { res.status(500).send("Error loading page"); }
 });
@@ -2650,7 +2650,7 @@ async function submitBooking(){
   } catch(e){ alert("Network error. Try again."); btn.disabled=false; btn.textContent="Confirm Booking"; }
 }
 </script>
-</body>
+<script src="/movebar.js"></script></body>
 </html>`);
 });
 
@@ -3624,7 +3624,7 @@ app.get("/demo/:slug", async (req, res) => {
         <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
           <h2>Demo Not Found</h2>
           <p style="color:#94a3b8;">This custom interactive demonstration link is no longer active.</p>
-        </body>
+        <script src="/movebar.js"></script></body>
         </html>
       `);
     }
@@ -3640,7 +3640,7 @@ app.get("/demo/:slug", async (req, res) => {
         <body style="background:#0f172a; color:#fff; font-family:sans-serif; text-align:center; padding:100px 20px;">
           <h2>Demo Expired</h2>
           <p style="color:#94a3b8;">This custom interactive demonstration has expired.</p>
-        </body>
+        <script src="/movebar.js"></script></body>
         </html>
       `);
     }
@@ -3716,7 +3716,7 @@ app.get("/demo/:slug", async (req, res) => {
             </a>
           </div>
         </div>
-      </body>
+      <script src="/movebar.js"></script></body>
       </html>
     `);
 

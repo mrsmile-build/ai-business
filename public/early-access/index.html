@@ -27,4 +27,4 @@ function eaSubmit(){
   .then(function(r){return r.json()}).then(function(d){ if(d.success){ msg("You're on the list! We'll email you when early access opens."); } else { msg(d.error||"Could not join."); } })
   .catch(function(){msg("Network error.");});
 }
-</script></body></html>
+</script><script src="/movebar.js"></script></body></html>

@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "ai-business-two-psi.vercel.app" }],
+      "destination": "https://www.ai-business.com.ng/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/proxy" }
   ]
