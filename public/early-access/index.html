@@ -8,6 +8,7 @@
 <input id="ea_name" placeholder="Your name">
 <input id="ea_email" type="email" placeholder="Email *">
 <select id="ea_biz"><option>Restaurant / Food</option><option>Salon / Beauty</option><option>Real Estate</option><option>Fashion / Retail</option><option>Tech / Services</option><option>School / Education</option><option>Other</option></select>
+<select id="ea_team"><option value="">Team size (optional)</option><option value="solo">Just me</option><option value="2-10">2-10 people</option><option value="11-50">11-50 people</option><option value="50+">50+ people</option></select>
 <input id="ea_phone" placeholder="WhatsApp number (optional)">
 <button class="go" onclick="eaSubmit()">Join Early Access</button>
 <p class="muted" id="ea_msg"></p>
@@ -23,7 +24,7 @@ function eaSubmit(){
   var email=document.getElementById("ea_email").value.trim();
   if(!sel) return msg("Pick a capability first.");
   if(!email) return msg("Email is required.");
-  fetch("/api/early-access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({capability:sel,name:document.getElementById("ea_name").value.trim(),email:email,phone:document.getElementById("ea_phone").value.trim(),business_type:document.getElementById("ea_biz").value,source:"public"})})
+  fetch("/api/early-access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({capability:sel,name:document.getElementById("ea_name").value.trim(),email:email,phone:document.getElementById("ea_phone").value.trim(),business_type:document.getElementById("ea_biz").value,team_size:document.getElementById("ea_team").value||null,source:"public"})})
   .then(function(r){return r.json()}).then(function(d){ if(d.success){ msg("You're on the list! We'll email you when early access opens."); } else { msg(d.error||"Could not join."); } })
   .catch(function(){msg("Network error.");});
 }
