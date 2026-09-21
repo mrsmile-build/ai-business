@@ -3066,7 +3066,7 @@ async function renderBizPage(){
     const { page } = await res.json();
     const p = page || {};
     const slug = p.slug || currentUser?.id?.substring(0,8) || "";
-    const bizUrl = (await resolveBackend()) + "/biz/" + slug;
+    const bizUrl = "https://www.ai-business.com.ng" + "/biz/" + slug;
 
     setView(`
       <div class="card">
@@ -3162,7 +3162,7 @@ async function saveBizPage(){
     var data = await res.json();
     if(data.success){
       var slug = data.slug || document.getElementById("bp_slug")?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,"-") || "";
-      var bizUrl = (await resolveBackend()) + "/biz/" + slug;
+      var bizUrl = "https://www.ai-business.com.ng" + "/biz/" + slug;
       renderBizPageSuccess(bizUrl);
     }
     else alert("Error. Try again.");
@@ -4545,7 +4545,8 @@ async function renderAffiliate(){
       html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand promotional scripts, posts, and direct referral links. (Scripts auto-rotate weekly!)</p>';
 
       const affCode = (typeof aff !== "undefined" && aff && aff.affiliate_code) ? aff.affiliate_code : "YOUR_CODE";
-      const originUrl = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "https://ai-business-two-psi.vercel.app";
+      const _rawOrigin = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "https://www.ai-business.com.ng";
+      const originUrl = (/onrender\.com|vercel\.app/.test(_rawOrigin)) ? "https://www.ai-business.com.ng" : _rawOrigin;
       const baseUrl = originUrl + "/auth?aff=" + affCode;
 
       const makeAcc = (id, icon, title, content) => `
