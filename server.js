@@ -2976,7 +2976,7 @@ app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
     const OWNER_EMAIL = "mrsmile4569@gmail.com";
     let userEmail = req.user.email;
     if (!userEmail && req.user.id) {
-      const { data: usr } = await supabase.from("users").select("email").eq("id", req.user.id).single();
+      const { data: usr } = await supabase.from("users").select("*").eq("id", req.user.id).single();
       userEmail = usr ? usr.email : null;
     }
     if (userEmail !== OWNER_EMAIL) return res.json({ success: false, error: "Admin only" });
