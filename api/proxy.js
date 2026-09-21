@@ -39,6 +39,12 @@ export default async (req, res) => {
         res.setHeader(key, value);
       });
       
+      // Forward headers from backend (especially Location for redirects)
+      for (const [key, val] of response.headers) {
+        if (!['content-encoding','content-length','transfer-encoding','connection'].includes(key.toLowerCase())) {
+          res.setHeader(key, val);
+        }
+      }
       res.status(response.status).send(text);
       return;
       
