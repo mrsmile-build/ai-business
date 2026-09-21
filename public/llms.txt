@@ -1,36 +1,30 @@
 # AI Business
 
-> AI Business is an all-in-one customer management and growth platform for small businesses and entrepreneurs in Nigeria and across Africa. It helps businesses find customers, capture enquiries, follow up automatically, book appointments, and send professional invoices.
+> AI Business is the all-in-one AI sales partner for Nigerian small business owners.
 
-AI Business is a web-based software platform (SaaS). Primary audience: small business owners, solo entrepreneurs, and service providers. Primary market: Nigeria, available across Africa. Pricing: free forever plan (0 NGN) plus paid monthly tiers (6,000 / 15,000 / 45,000 NGN).
+## What it does
 
-## Product pages
+AI Business finds verified local leads who actually need your service, writes and sends the outreach message, generates a professional proposal with your exact price in 30 seconds, books appointments with automatic reminders, follows up on cold leads so no deal dies in your inbox, and tracks every naira — from one app on your phone.
 
-- [Home](https://ai-business-two-psi.vercel.app/): Overview, problem/solution, pricing, testimonials, signup.
-- [Lead Finder](https://ai-business-two-psi.vercel.app/features/lead-finder): Find real local businesses and potential customers with contact details.
-- [AI Receptionist](https://ai-business-two-psi.vercel.app/features/ai-receptionist): 24/7 automated answers to customer enquiries on your business page.
-- [Appointments](https://ai-business-two-psi.vercel.app/features/appointments): Self-service booking page with automatic reminders.
-- [Follow-Up Assistant](https://ai-business-two-psi.vercel.app/features/follow-up-assistant): AI-drafted follow-up messages for cold or quiet leads.
-- [Invoicing](https://ai-business-two-psi.vercel.app/features/invoicing): Professional invoices with automatic payment reminders.
-- [Business Page](https://ai-business-two-psi.vercel.app/features/business-page): Free professional public page for your business.
+## Core features
 
-## Educational resources
+- **Lead Finder**: Discovers businesses near you that need your service, with phone numbers and addresses
+- **Proposals**: Generates priced proposals in 30 seconds with 6 closing templates (CRM, Website, Social, Booking, Win-back)
+- **Booking**: Automated appointment system with reminders that reduce no-shows
+- **Follow-up Assistant**: Drafts personalized follow-up messages for cold leads
+- **Business Page**: Your own public page at https://www.ai-business.com.ng/biz/your-slug
+- **Invoicing**: Send payment links inside proposals (Paystack integration)
+- **Auto Review Collector**: Turns happy customers into Google reviews
+- **WhatsApp Broadcast**: One offer to every past customer in two taps
 
-- [How to find customers without ads](https://ai-business-two-psi.vercel.app/resources/find-customers-small-business)
-- [How to follow up with leads who stopped responding](https://ai-business-two-psi.vercel.app/resources/follow-up-with-leads)
-- [How to build trust online](https://ai-business-two-psi.vercel.app/resources/build-trust-online)
-- [How to manage appointments and stop no-shows](https://ai-business-two-psi.vercel.app/resources/manage-appointments)
-- [How to organize customer enquiries](https://ai-business-two-psi.vercel.app/resources/organize-enquiries)
-- [How to create professional invoices and get paid faster](https://ai-business-two-psi.vercel.app/resources/professional-invoices)
-- [All resources](https://ai-business-two-psi.vercel.app/resources)
+## Who it's for
 
-## Company information
+Nigerian small business owners: freelancers, agencies, salons, real estate agents, consultants, service providers. Anyone who needs customers but doesn't have time to chase them.
 
-- [About AI Business](https://ai-business-two-psi.vercel.app/about): What the platform is, who it serves, market, pricing, how to start.
-- [FAQ](https://ai-business-two-psi.vercel.app/faq): Questions about pricing, free plan, countries, WhatsApp, and data safety.
-- [Privacy Policy](https://ai-business-two-psi.vercel.app/privacy-policy)
-- [Terms of Service](https://ai-business-two-psi.vercel.app/terms-of-service)
+## Pricing
 
-## How to start
+Free to start. Paid plans unlock unlimited leads, proposals, and automation.
 
-Sign up free at https://ai-business-two-psi.vercel.app — no credit card required.
+## Contact
+
+Visit https://www.ai-business.com.ng to try it or vote on what we build next.
