@@ -2990,7 +2990,7 @@ app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
 
 app.post("/api/early-access", async (req, res) => {
   try {
-    let { name, email, phone, business_type, capability, source } = req.body || {};
+    let { name, email, phone, business_type, capability, source, team_size } = req.body || {};
     if (!capability) return res.json({ success: false, error: "Pick a capability" });
     let userId = null;
     let authUser = null;
@@ -3014,7 +3014,7 @@ app.post("/api/early-access", async (req, res) => {
     if (userId) { const { data } = await supabase.from("early_access_interests").select("id").eq("user_id", userId).eq("capability", capability).limit(1); dup = data && data[0]; }
     else if (email) { const { data } = await supabase.from("early_access_interests").select("id").eq("email", email).eq("capability", capability).limit(1); dup = data && data[0]; }
     if (dup) return res.json({ success: true, duplicate: true });
-    const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public" });
+    const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public", team_size: team_size || null });
     if (error) return res.json({ success: false, error: error.message });
     res.json({ success: true });
   } catch (e) { res.json({ success: false, error: e.message }); }
