@@ -5526,7 +5526,7 @@ async function moveLead(id, status){
     {k:"broadcast", label:"WhatsApp Broadcast Campaigns", desc:"Send one offer to every past customer in two taps"}
   ];
   window.eaVoteX = function(k, btn){
-    fetch("/api/early-access", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")}, body: JSON.stringify({capability:k, source:"dashboard"})})
+    fetch("/api/early-access", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")}, body: JSON.stringify({capability:k, team_size:(document.getElementById("dash_team")||{}).value||null, source:"dashboard"})})
       .then(function(r){return r.json();}).then(function(d){ if(d.success){ btn.textContent="✓ Joined early access"; btn.disabled=true; btn.style.borderColor="#10b981"; } else { alert(d.error||"Could not join"); } })
       .catch(function(){alert("Network error");});
   };
@@ -5546,7 +5546,8 @@ async function moveLead(id, status){
     EA_CAPS.forEach(function(c){
       html += '<button type="button" onclick="eaVoteX(\''+c.k+'\', this)" style="display:block;width:100%;text-align:left;margin-bottom:6px;padding:10px 12px;background:#131d2e;border:1px solid #1e2d42;border-radius:8px;color:#f1f5f9;cursor:pointer;font-size:12px"><strong>'+c.label+'</strong><span style="display:block;color:#64748b;font-size:11px;margin-top:2px">'+c.desc+'</span></button>';
     });
-    html += '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p>';
+    html += '<select id="dash_team" style="display:block;width:100%;margin:10px 0 0;padding:10px 12px;background:#131d2e;border:1px solid #1e2d42;border-radius:8px;color:#f1f5f9;font-size:12px"><option value="">Team size (optional)</option><option value="solo">Just me</option><option value="2-10">2-10 people</option><option value="11-50">11-50 people</option><option value="50+">50+ people</option></select>' +
+      '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p>';
     card.innerHTML = html;
     box.parentNode.insertBefore(card, box);
   }
