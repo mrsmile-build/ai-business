@@ -226,9 +226,13 @@ window.signup = async () => {
       <p id="otp_msg" style="color:#64748b;font-size:13px;text-align:center;margin-top:12px"></p>
     `;
     window._otpEmail = emailForOTP;
+  } catch (err) {
+    if(err.message) alert("Signup error: " + err.message);
+    return;
   }
+}
 
-  async function verifyOTP() {
+window.verifyOTP = async function() {
     const code = document.getElementById("otp_code").value.trim();
     if(code.length !== 6) return alert("Enter the 6-digit code from your email");
     const { error } = await supabase.auth.verifyOtp({
@@ -241,7 +245,7 @@ window.signup = async () => {
     window.location.href = "/dashboard/";
   }
 
-  async function resendOTP() {
+  window.resendOTP = async function() {
     const { error } = await supabase.auth.resend({
       type: 'signup',
       email: window._otpEmail
