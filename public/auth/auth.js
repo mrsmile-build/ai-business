@@ -215,8 +215,41 @@ window.signup = async () => {
     }
     if(typeof gtag!=='undefined'){gtag('event','sign_up',{method:'email'});}
     apiFetch('/api/welcome-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name:username})}).catch(()=>{});
-    alert("Account created. Please login.");
-    toggleForm();
+    // Show OTP entry
+    const emailForOTP = email;
+    document.getElementById("auth_form").innerHTML = `
+      <h2>Check your email</h2>
+      <p style="color:#64748b;font-size:14px;margin:16px 0">We sent a 6-digit code to <strong>${emailForOTP}</strong>. Enter it below to confirm your account.</p>
+      <input type="text" id="otp_code" placeholder="6-digit code" maxlength="6" style="width:100%;padding:12px;border:1px solid #1e2d42;border-radius:8px;background:#0f172a;color:#f1f5f9;font-size:16px;text-align:center;letter-spacing:4px;margin:16px 0">
+      <button onclick="verifyOTP()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin:8px 0">Verify & Continue</button>
+      <button onclick="resendOTP()" style="width:100%;padding:12px;background:transparent;color:#3b82f6;border:1px solid #3b82f6;border-radius:8px;font-weight:600;cursor:pointer;margin:8px 0">Resend code</button>
+      <p id="otp_msg" style="color:#64748b;font-size:13px;text-align:center;margin-top:12px"></p>
+    `;
+    window._otpEmail = emailForOTP;
+  }
+
+  async function verifyOTP() {
+    const code = document.getElementById("otp_code").value.trim();
+    if(code.length !== 6) return alert("Enter the 6-digit code from your email");
+    const { error } = await supabase.auth.verifyOtp({
+      email: window._otpEmail,
+      token: code,
+      type: 'signup'
+    });
+    if(error) return alert("Invalid or expired code: " + error.message);
+    // Verification successful, redirect to dashboard
+    window.location.href = "/dashboard/";
+  }
+
+  async function resendOTP() {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: window._otpEmail
+    });
+    const msg = document.getElementById("otp_msg");
+    if(error) msg.textContent = "Error: " + error.message;
+    else msg.textContent = "Code resent. Check your email.";
+
   } catch (err) {
     alert(getErrorMessage(err));
   }
