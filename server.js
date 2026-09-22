@@ -95,6 +95,25 @@ function getFormattedPlanPricing(planKey) {
   };
 }
 
+
+/* ---- enh: in-memory rate limiting (security hardening) ---- */
+const _rlBuckets = new Map();
+setInterval(function(){ const now = Date.now(); for (const [k, arr] of _rlBuckets) { const f = arr.filter(t => now - t < 60000); if (f.length) _rlBuckets.set(k, f); else _rlBuckets.delete(k); } }, 60000);
+function rateLimit(max, windowMs){
+  windowMs = windowMs || 60000;
+  return function(req, res, next){
+    const ip = String(req.headers["x-forwarded-for"] || req.ip || "x").split(",")[0].trim();
+    const key = ip + " " + req.path;
+    const now = Date.now();
+    const arr = (_rlBuckets.get(key) || []).filter(t => now - t < windowMs);
+    arr.push(now);
+    _rlBuckets.set(key, arr);
+    if (arr.length > max) return res.status(429).json({ success: false, error: "Too many requests - slow down a little." });
+    next();
+  };
+}
+app.use("/api", rateLimit(120, 60000));
+
 app.get("/api/config/pricing", (req, res) => {
   const formattedPlans = {};
   for (const key in PLANS) {
@@ -355,7 +374,7 @@ app.post("/api/paystack/init", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- PAYSTACK VERIFY ---------------- */
-app.get("/api/paystack/verify", async (req, res) => {
+app.get("/api/paystack/verify", rateLimit(20, 60000), async (req, res) => {
   try {
     const { reference } = req.query;
     const response = await fetch("https://api.paystack.co/transaction/verify/" + reference, {
@@ -392,7 +411,7 @@ app.get("/api/paystack/verify", async (req, res) => {
 });
 
 /* ---------------- REFRESH TOKEN ---------------- */
-app.post("/api/refresh", async (req, res) => {
+app.post("/api/refresh", rateLimit(10, 60000), async (req, res) => {
   try {
     const { refresh_token } = req.body;
     const refreshClient = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -1212,7 +1231,7 @@ app.get("/api/referral", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post("/api/referral/track", async (req, res) => {
+app.post("/api/referral/track", rateLimit(30, 60000), async (req, res) => {
   try {
     const { referral_code, email } = req.body;
     if(!referral_code || !email) return res.json({ success: false });
@@ -1756,7 +1775,7 @@ app.get("/api/testimonials/public", async (req, res) => {
 /* ---------------- CHAT WIDGET (public) ---------------- */
 
 
-app.post("/api/widget/chat", async (req, res) => {
+app.post("/api/widget/chat", rateLimit(10, 60000), async (req, res) => {
   try {
     const { user_id, question, visitor_name, visitor_phone } = req.body;
     if(!user_id || !question) return res.status(400).json({ error: "Missing fields" });
@@ -2050,7 +2069,7 @@ app.get("/api/book/:userId/services", async (req, res) => {
   }
 });
 
-app.post("/api/book/:userId", async (req, res) => {
+app.post("/api/book/:userId", rateLimit(5, 60000), async (req, res) => {
   try {
     const { service_ids, customer_name, customer_phone, customer_email, booking_date, booking_time, notes } = req.body;
     if(!service_ids || !Array.isArray(service_ids) || service_ids.length === 0){
@@ -2194,7 +2213,7 @@ app.post("/api/biz-settings", authMiddleware, async (req, res) => {
 });
 
 // Public biz page
-app.post("/api/biz/:userId/enquiry", async (req, res) => {
+app.post("/api/biz/:userId/enquiry", rateLimit(5, 60000), async (req, res) => {
   try {
     const { name, phone, message } = req.body;
     if(!name || !phone) return res.status(400).json({ success: false, error: "Name and phone required" });
@@ -2832,7 +2851,7 @@ app.post("/api/affiliate/withdraw", authMiddleware, async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post("/api/affiliate/track-click", async (req, res) => {
+app.post("/api/affiliate/track-click", rateLimit(30, 60000), async (req, res) => {
   try {
     const { affiliate_code } = req.body;
     if(!affiliate_code) return res.json({ success: false });
@@ -2988,7 +3007,7 @@ app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
   } catch (e) { res.json({ success: false, error: e.message }); }
 });
 
-app.post("/api/early-access", async (req, res) => {
+app.post("/api/early-access", rateLimit(10, 60000), async (req, res) => {
   try {
     let { name, email, phone, business_type, capability, source, team_size } = req.body || {};
     if (!capability) return res.json({ success: false, error: "Pick a capability" });
