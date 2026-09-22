@@ -246,18 +246,18 @@ window.verifyOTP = async function() {
   }
 
   window.resendOTP = async function() {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: window._otpEmail
-    });
-    const msg = document.getElementById("otp_msg");
-    if(error) msg.textContent = "Error: " + error.message;
-    else msg.textContent = "Code resent. Check your email.";
-
-  } catch (err) {
-    alert(getErrorMessage(err));
-  }
-};
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: window._otpEmail
+      });
+      const msg = document.getElementById("otp_msg");
+      if(error) msg.textContent = "Error: " + error.message;
+      else msg.textContent = "Code resent. Check your email.";
+    } catch (err) {
+      alert(getErrorMessage(err));
+    }
+  };
 
 window.forgotPassword = async () => {
   const email = document.getElementById("email").value.trim();
