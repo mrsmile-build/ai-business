@@ -394,3 +394,50 @@ Make AI Business clearly understandable and discoverable by search engines and A
 - Preserve existing working UI/features. Do not redesign the website unnecessarily.
 - Every new page must contain genuinely useful information, not just SEO filler.
 - Verify all technical implementations against official Google and Schema.org documentation.
+
+## PLATFORM & GROWTH ENHANCEMENTS
+Cross-cutting improvements. Prioritized by evidence. Must NOT create multiple
+NOW items or override Lane A. Promote to NEXT/NOW only with evidence
+(growth/conversion/retention actually blocked).
+
+### Global & International Readiness [LATER]
+- Remove NG-specific assumptions: locations, phone formats, currencies, payment methods, dates, lead sources
+- Regional configuration replaces hard-coded defaults
+
+### Currency & Regional Pricing [PROMOTE-WHEN-first foreign user pays]
+- Per-user currency selector; currency-aware dashboard, invoices, proposals
+- Conversion infra + regional checkout only when demanded
+
+### Product Activation & Event Tracking [NEXT-CANDIDATE]
+- Events: signup → first value → activation → engagement → conversion → retention
+- Drop-off evidence feeds decisions, not guesses
+
+### Mobile / PWA [PARTIAL-DONE]
+- Installable PWA live; ongoing deliberate UX passes on dashboard, forms, workflows
+
+### Performance & Reliability [PARTIAL-DONE]
+- Backend failover + uptime monitoring live; ongoing: loading/error/empty states, request diet
+
+### SEO & Discoverability [CORE-DONE]
+- Sitemap, robots, canonicals, JSON-LD, llms.txt live; ongoing: public biz-page meta
+
+### Security Hardening [FIRST-BUILD]
+- RLS + auth checks, API protection, cross-business data isolation — BEFORE traffic scales
+
+### Onboarding & Activation UX [LATER]
+- Signup → first meaningful result fast; contextual empty states and next actions
+
+### Monetization & Growth Infra [LATER]
+- Free→paid moments, plan limits, checkout reliability, affiliate/referral attribution
+
+### Customer Intelligence [LATER]
+- Unified communication history, intent signals, review-request + reactivation workflows
+
+### Integrations [LATER]
+- Email, calendars, payments; WhatsApp stays primary channel, not the only architecture
+
+### Distribution / Agency Expansion [FUTURE]
+- Multi-business agency workflows, white-label — only when demand validates
+
+### Product Usage Intelligence [NEXT-CANDIDATE]
+- Feature usage, drop-off, successful workflows → evidence-based prioritization
