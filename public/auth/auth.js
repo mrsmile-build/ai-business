@@ -219,8 +219,8 @@ window.signup = async () => {
     const emailForOTP = email;
     const otpBox = document.createElement("div"); otpBox.style.cssText = "position:fixed;inset:0;background:#0b1220f2;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px"; otpBox.innerHTML = `
       <div style="max-width:420px;width:100%;background:#0f172a;border:1px solid #1e2d42;border-radius:12px;padding:24px"><h2 style="margin:0 0 4px">Check your email</h2>
-      <p style="color:#64748b;font-size:14px;margin:16px 0">We sent a 6-digit code to <strong>${emailForOTP}</strong>. Enter it below to confirm your account.</p>
-      <input type="text" id="otp_code" placeholder="6-digit code" maxlength="6" style="width:100%;padding:12px;border:1px solid #1e2d42;border-radius:8px;background:#0f172a;color:#f1f5f9;font-size:16px;text-align:center;letter-spacing:4px;margin:16px 0">
+      <p style="color:#64748b;font-size:14px;margin:16px 0">We sent a verification code to <strong>${emailForOTP}</strong>. Enter it below to confirm your account.</p>
+      <input type="text" id="otp_code" placeholder="Enter code" maxlength="10" style="width:100%;padding:12px;border:1px solid #1e2d42;border-radius:8px;background:#0f172a;color:#f1f5f9;font-size:16px;text-align:center;letter-spacing:4px;margin:16px 0">
       <button onclick="verifyOTP()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin:8px 0">Verify & Continue</button>
       <button onclick="resendOTP()" style="width:100%;padding:12px;background:transparent;color:#3b82f6;border:1px solid #3b82f6;border-radius:8px;font-weight:600;cursor:pointer;margin:8px 0">Resend code</button>
       <p id="otp_msg" style="color:#64748b;font-size:13px;text-align:center;margin-top:12px"></p></div>
@@ -234,8 +234,8 @@ window.signup = async () => {
 }
 
 window.verifyOTP = async function() {
-    const code = document.getElementById("otp_code").value.trim();
-    if(code.length !== 6) return alert("Enter the 6-digit code from your email");
+    const code = document.getElementById("otp_code").value.trim().replace(/\s+/g,"");
+    if(code.length < 6) return alert("Enter the full code from your email");
     const { error } = await supabase.auth.verifyOtp({
       email: window._otpEmail,
       token: code,
