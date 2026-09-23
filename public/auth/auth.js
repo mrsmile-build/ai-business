@@ -228,7 +228,13 @@ window.signup = async () => {
     document.body.appendChild(otpBox);
     window._otpEmail = emailForOTP;
   } catch (err) {
-    if(err.message) alert("Signup error: " + err.message);
+    if(err.message) {
+      const m = String(err.message);
+      if(/rate limit/i.test(m)) alert("Too many confirmation emails from this network right now - our anti-spam protection is doing its job. Please wait about 1 hour, then try once. Nothing is lost.");
+      else if(/already registered/i.test(m)) alert("This email already has an account. Tap 'Back to login' and sign in instead.");
+      else if(/invalid or expired/i.test(m)) alert("That code is no longer valid - codes expire and resending kills the old one. Open the NEWEST email and enter its full code.");
+      else alert("Signup error: " + m);
+    }
     return;
   }
 }
