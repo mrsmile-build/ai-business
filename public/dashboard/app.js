@@ -1346,6 +1346,13 @@ function renderSettings(){
       ${header("⚙️ Settings","dashboard")}
 
       <div style="margin-top:15px">
+        <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #1e293b">
+          <label style="display:block;font-size:13px;color:#94a3b8;margin-bottom:6px">Display Currency</label>
+          <select id="set_currency" onchange="saveCurrency(this.value)" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+            ${currencyOptions}
+          </select>
+          <p style="font-size:11px;color:#475569;margin-top:4px">All prices display in this currency</p>
+        </div>
         <p onclick="loadPage('profile')" style="cursor:pointer">👤 View Profile</p>
         <p onclick="loadPage('editProfile')" style="cursor:pointer">✏️ Edit Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
