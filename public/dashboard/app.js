@@ -215,7 +215,7 @@ function showPaymentSuccessModal(plan) {
   const modal = document.createElement("div");
   modal.id = "payment_success_modal";
   modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px";
-  modal.innerHTML = `
+  modal.innerHTML = \`
     <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:30px;max-width:400px;width:100%;text-align:center">
       <div style="font-size:48px;margin-bottom:10px">🎉</div>
       <h2 style="margin:0 0 10px;color:\${color}">Welcome to \${label}!</h2>
@@ -230,7 +230,7 @@ function showPaymentSuccessModal(plan) {
       </div>
       <button onclick="closePaymentModal()" style="width:100%;padding:12px;background:\${color};color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Let's Go!</button>
     </div>
-  `;
+  \`;
   document.body.appendChild(modal);
 }
 
@@ -1767,7 +1767,7 @@ async function showWidgetCode(){
     box.innerHTML = `
       <p style="font-size:12px;color:#64748b;margin:8px 0 4px">Paste this on your website:</p>
       <textarea style="width:100%;padding:8px;border-radius:6px;border:1px solid #334155;background:#0b1220;color:#10b981;font-size:11px;height:60px;resize:none;box-sizing:border-box;font-family:monospace">${code}</textarea>
-      <button onclick="navigator.clipboard.writeText(`${code}`).then(()=>alert('Copied!'))" style="margin-top:6px;padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Copy Code</button>
+      <button onclick="navigator.clipboard.writeText(\`${code}\`).then(()=>alert('Copied!'))" style="margin-top:6px;padding:6px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Copy Code</button>
     `;
   }
 }
@@ -3383,7 +3383,7 @@ Return ONLY the JSON, no markdown.`})
     });
     var data = await res.json();
     var content;
-    try { content = JSON.parse(data.reply.replace(/```json|```/g,"").trim()); }
+    try { content = JSON.parse(data.reply.replace(/\`\`\`json|\`\`\`/g,"").trim()); }
     catch(e) { content = null; }
 
     if(!content){
@@ -4760,7 +4760,7 @@ async function renderAffiliate(){
       currentWa.forEach(s => {
         waHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
           <strong style="color:#22c55e;display:block;margin-bottom:4px;">${s.style}</strong>${s.text}
-          <button onclick="navigator.clipboard.writeText(`${s.text}`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
+          <button onclick="navigator.clipboard.writeText(\`${s.text}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Script', 2000);" style="display:block;margin-top:6px;background:#15803d;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Script</button>
         </div>`;
       });
 
@@ -4769,7 +4769,7 @@ async function renderAffiliate(){
       currentSoc.forEach(sc => {
         socHtml += `<div style="background:#0f172a;padding:10px;border-radius:6px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#cbd5e1;">
           <strong style="color:#38bdf8;display:block;margin-bottom:4px;">${sc.platform} - ${sc.hook}</strong>${sc.content}
-          <button onclick="navigator.clipboard.writeText(`${sc.content}`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
+          <button onclick="navigator.clipboard.writeText(\`${sc.content}\`); this.innerText='Copied!'; setTimeout(()=>this.innerText='Copy Post', 2000);" style="display:block;margin-top:6px;background:#0284c7;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:10px;cursor:pointer;">Copy Post</button>
         </div>`;
       });
 
