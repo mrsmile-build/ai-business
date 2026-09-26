@@ -198,7 +198,21 @@ async function loadUserCurrency() {
   try {
     const res = await apiFetch("/api/me/currency", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
     const data = await res.json();
-    window.userCurrency = data.currency || "NGN";
+    let currency = data.currency;
+    
+    // If no currency set, auto-detect from profile country
+    if (!currency && currentProfile?.country) {
+      const countryCode = String(currentProfile.country).slice(0,2).toUpperCase();
+      currency = COUNTRY_TO_CURRENCY[countryCode] || "NGN";
+      // Save it so we don't re-detect next time
+      await apiFetch("/api/me/currency", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") },
+        body: JSON.stringify({ currency })
+      }).catch(()=>{});
+    }
+    
+    window.userCurrency = currency || "NGN";
     window.currencySymbol = CURRENCY_MAP[window.userCurrency]?.symbol || "₦";
   } catch(e) { console.log("Currency load failed, using NGN"); }
 }
@@ -469,6 +483,7 @@ function startBusinessGoal(goal){
           </div>
         </div>
 
+      ${currency !== "NGN" ? `<p style="font-size:11px;color:#64748b;margin-top:10px;padding:8px;background:#1e293b;border-radius:6px">💳 Billed in ₦ equivalent at checkout. International card billing (Stripe) coming soon.</p>` : ""}
       </div>
     </div>
   `);
@@ -1253,23 +1268,20 @@ async function renderSubscription(){
   const colorMap = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
   const color = colorMap[plan] || "#64748b";
 
-  let currency = "NGN", symbol = "₦", rate = 1;
-  try {
-    const geo = await fetch("https://ipapi.co/json/").then(r=>r.json());
-    currency = geo.currency || "NGN";
-    if(currency !== "NGN"){
-      const fx = await fetch("https://api.frankfurter.app/latest?from=NGN&to="+currency).then(r=>r.json());
-      rate = fx.rates?.[currency] || 1;
-      const sym = {USD:"$",GBP:"£",EUR:"€",KES:"KSh",GHS:"₵",ZAR:"R",CAD:"C$",AUD:"A$"};
-      symbol = sym[currency] || currency+" ";
-    }
-  } catch(e){}
-
-  const fmt = (n) => currency==="NGN" ? "₦"+n.toLocaleString() : symbol+(n*rate).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  // Use regional pricing (clean round numbers per market)
+  const currency = window.userCurrency || "NGN";
+  const symbol = window.currencySymbol || "₦";
+  
+  const getRegionalPrice = (planKey) => {
+    const prices = REGIONAL_PRICES[planKey] || {};
+    return prices[currency] || prices.NGN;
+  };
+  
+  const fmt = (amount) => symbol + parseFloat(amount || 0).toLocaleString();
   const allPlans = [
-    {key:"starter",label:"🌟 Starter",color:"#10b981",leads:"50 leads",ai:"40 AI/month",price:6000,features:"Basic AI tools"},
-    {key:"pro",label:"⭐ Pro",color:"#3b82f6",leads:"500 leads",ai:"80 AI/month",price:15000,features:"CSV export · Full AI tools"},
-    {key:"business",label:"🚀 Business",color:"#8b5cf6",leads:"Unlimited",ai:"200 AI/month",price:45000,features:"Team access · Weekly report"},
+    {key:"starter",label:"🌟 Starter",color:"#10b981",leads:"50 leads",ai:"40 AI/month",price:getRegionalPrice("starter"),features:"Basic AI tools"},
+    {key:"pro",label:"⭐ Pro",color:"#3b82f6",leads:"500 leads",ai:"80 AI/month",price:getRegionalPrice("pro"),features:"CSV export · Full AI tools"},
+    {key:"business",label:"🚀 Business",color:"#8b5cf6",leads:"Unlimited",ai:"200 AI/month",price:getRegionalPrice("business"),features:"Team access · Weekly report"},
   ];
   const order = ["free","starter","pro","business"];
   const upgrades = allPlans.filter(p=>order.indexOf(p.key)>order.indexOf(plan));

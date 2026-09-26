@@ -117,12 +117,16 @@ app.use("/api", rateLimit(120, 60000));
 app.get("/api/config/pricing", (req, res) => {
   const formattedPlans = {};
   for (const key in PLANS) {
-    formattedPlans[key] = getFormattedPlanPricing(key);
+    formattedPlans[key] = {
+      ...PLANS[key],
+      regional_prices: REGIONAL_PRICES[key] || {}
+    };
   }
   res.json({
     success: true,
-    exchange_rate: EXCHANGE_RATE_USD_NGN,
-    plans: formattedPlans
+    plans: formattedPlans,
+    currency_symbols: CURRENCY_SYMBOLS,
+    country_to_currency: COUNTRY_TO_CURRENCY
   });
 });
 // ---------------------------------------
@@ -151,6 +155,25 @@ app.post("/api/me/currency", authMiddleware, async (req, res) => {
     res.json({ success: true, currency: c });
   } catch(e) { res.json({ success: false, error: e.message }); }
 });
+
+
+
+/* ---- Regional Pricing Table (market-appropriate round numbers) ---- */
+const REGIONAL_PRICES = {
+  starter: { NGN: 6000, USD: 6, GBP: 5, EUR: 6, GHS: 60, KES: 800, ZAR: 110, CAD: 8, AUD: 9, INR: 500 },
+  pro:     { NGN: 15000, USD: 15, GBP: 12, EUR: 15, GHS: 220, KES: 2000, ZAR: 270, CAD: 20, AUD: 23, INR: 1250 },
+  business:{ NGN: 45000, USD: 45, GBP: 36, EUR: 45, GHS: 650, KES: 6000, ZAR: 800, CAD: 60, AUD: 68, INR: 3750 }
+};
+
+const CURRENCY_SYMBOLS = {
+  NGN: "₦", USD: "$", GBP: "£", EUR: "€", GHS: "₵", 
+  KES: "KSh", ZAR: "R", CAD: "C$", AUD: "A$", INR: "₹"
+};
+
+const COUNTRY_TO_CURRENCY = {
+  NG: "NGN", US: "USD", GB: "GBP", UK: "GBP", DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR",
+  GH: "GHS", KE: "KES", ZA: "ZAR", CA: "CAD", AU: "AUD", IN: "INR"
+};
 
 /* ---------------- AUTH MIDDLEWARE ---------------- */
 async function authMiddleware(req, res, next) {
