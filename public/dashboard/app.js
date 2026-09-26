@@ -181,6 +181,15 @@ let currentUser = null;
 /* ---- Currency System ---- */
 window.userCurrency = "NGN";
 window.currencySymbol = "₦";
+window.REGIONAL_PRICES = window.REGIONAL_PRICES || {
+  starter: { NGN:6000, USD:6, GBP:5, EUR:6, GHS:60, KES:800, ZAR:110, CAD:8, AUD:9, INR:500 },
+  pro:     { NGN:15000, USD:15, GBP:12, EUR:15, GHS:220, KES:2000, ZAR:270, CAD:20, AUD:23, INR:1250 },
+  business:{ NGN:45000, USD:45, GBP:36, EUR:45, GHS:650, KES:6000, ZAR:800, CAD:60, AUD:68, INR:3750 }
+};
+window.COUNTRY_TO_CURRENCY = window.COUNTRY_TO_CURRENCY || {
+  NG:"NGN", GH:"GHS", KE:"KES", ZA:"ZAR", US:"USD", GB:"GBP", DE:"EUR", FR:"EUR",
+  CA:"CAD", AU:"AUD", IN:"INR", ZA:"ZAR"
+};
 const CURRENCY_MAP = {
   NGN: { symbol: "₦", name: "Nigerian Naira" },
   USD: { symbol: "$", name: "US Dollar" },
@@ -203,7 +212,7 @@ async function loadUserCurrency() {
     // If no currency set, auto-detect from profile country
     if (!currency && currentProfile?.country) {
       const countryCode = String(currentProfile.country).slice(0,2).toUpperCase();
-      currency = COUNTRY_TO_CURRENCY[countryCode] || "NGN";
+      currency = (window.COUNTRY_TO_CURRENCY || {})[countryCode] || "NGN";
       // Save it so we don't re-detect next time
       await apiFetch("/api/me/currency", {
         method: "POST",
@@ -233,7 +242,7 @@ async function saveCurrency(currency) {
     if (data.success) {
       window.userCurrency = currency;
       window.currencySymbol = CURRENCY_MAP[currency]?.symbol || "₦";
-      loadPage(currentPage || "dashboard");
+      loadPage("settings");
     }
   } catch(e) { alert("Failed to save currency"); }
 }
@@ -1273,7 +1282,7 @@ async function renderSubscription(){
   const symbol = window.currencySymbol || "₦";
   
   const getRegionalPrice = (planKey) => {
-    const prices = REGIONAL_PRICES[planKey] || {};
+    const prices = (window.REGIONAL_PRICES || {})[planKey] || {};
     return prices[currency] || prices.NGN;
   };
   
