@@ -178,6 +178,54 @@ const app = document.getElementById("app");
 
 let currentUser = null;
 
+/* ---- Currency System ---- */
+window.userCurrency = "NGN";
+window.currencySymbol = "₦";
+const CURRENCY_MAP = {
+  NGN: { symbol: "₦", name: "Nigerian Naira" },
+  USD: { symbol: "$", name: "US Dollar" },
+  GBP: { symbol: "£", name: "British Pound" },
+  EUR: { symbol: "€", name: "Euro" },
+  GHS: { symbol: "₵", name: "Ghanaian Cedi" },
+  KES: { symbol: "KSh", name: "Kenyan Shilling" },
+  ZAR: { symbol: "R", name: "South African Rand" },
+  CAD: { symbol: "C$", name: "Canadian Dollar" },
+  AUD: { symbol: "A$", name: "Australian Dollar" },
+  INR: { symbol: "₹", name: "Indian Rupee" }
+};
+
+async function loadUserCurrency() {
+  try {
+    const res = await apiFetch("/api/me/currency", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+    const data = await res.json();
+    window.userCurrency = data.currency || "NGN";
+    window.currencySymbol = CURRENCY_MAP[window.userCurrency]?.symbol || "₦";
+  } catch(e) { console.log("Currency load failed, using NGN"); }
+}
+
+function fmt(amount) {
+  const n = parseFloat(amount) || 0;
+  return window.currencySymbol + n.toLocaleString();
+}
+
+async function saveCurrency(currency) {
+  try {
+    const res = await apiFetch("/api/me/currency", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + localStorage.getItem("token") },
+      body: JSON.stringify({ currency })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.userCurrency = currency;
+      window.currencySymbol = CURRENCY_MAP[currency]?.symbol || "₦";
+      loadPage(currentPage || "dashboard");
+    }
+  } catch(e) { alert("Failed to save currency"); }
+}
+
+
+
 /* =========================
    INIT USER
 ========================= */
@@ -219,7 +267,7 @@ async function init(){
   checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
-  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadPage("dashboard"); }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => loadPage("dashboard")); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -899,7 +947,7 @@ async function renderLeadDetailObj(lead){
         <p style="margin:0 0 10px;font-size:13px;font-weight:bold">⏰ Follow-up Reminder</p>
         <p style="margin:0 0 6px;font-size:12px;color:#64748b">Set a date to follow up with this lead</p>
         <input type="date" id="ld_followup" value="${lead.follow_up_date||""}" min="${new Date().toISOString().split("T")[0]}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
-        <input id="ld_sale" type="number" placeholder="Sale amount ₦ (if won)" value="${lead.sale_amount||""}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <input id="ld_sale" type="number" placeholder="Sale amount (if won)" value="${lead.sale_amount||""}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
         <button onclick="saveLeadFollowup('${lead.id}')" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save Follow-up Date</button>
         <div id="followup_save_result" style="margin-top:6px"></div>
       </div>
@@ -1287,6 +1335,12 @@ async function upgradePlan(plan){
    SETTINGS
 ========================= */
 function renderSettings(){
+
+  const currencyOptions = Object.entries(CURRENCY_MAP).map(([code, info]) => 
+    `<option value="${code}" ${window.userCurrency === code ? "selected" : ""}>${info.symbol} ${code} - ${info.name}</option>`
+  ).join("");
+  
+
   setView(`
     <div class="card">
       ${header("⚙️ Settings","dashboard")}
@@ -1541,7 +1595,7 @@ async function renderAgents(){
           <p style="margin:0 0 10px;font-size:12px;color:#64748b">Generate instant professional quotes</p>
           <input id="qa_service" placeholder="Service" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <input id="qa_client" placeholder="Client name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-          <input id="qa_price" placeholder="Your price (e.g. ₦80,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="qa_price" placeholder="Your price (e.g. 80,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <button onclick="runQuoteAgent()" style="width:100%;padding:10px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Generate Quote</button>
           <div id="quote_result" style="margin-top:10px"></div>
         </div>
@@ -1569,7 +1623,7 @@ function renderAgentSetup(){
       <input id="as_name" placeholder="Business name *" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <textarea id="as_desc" placeholder="What does your business do? *" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
       <textarea id="as_services" placeholder="List your services (e.g. Hair styling, Braiding, Treatment)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
-      <textarea id="as_prices" placeholder="Your prices (e.g. Hair styling - ₦5,000, Braiding - ₦8,000)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
+      <textarea id="as_prices" placeholder="Your prices (e.g. Hair styling - 5,000, Braiding - 8,000)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
       <input id="as_hours" placeholder="Opening hours (e.g. Mon-Sat 9am-7pm)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <input id="as_location" placeholder="Location / Address" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <input id="as_whatsapp" placeholder="WhatsApp number" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
@@ -2060,11 +2114,11 @@ async function renderRevenue(){
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px">
           <div style="background:#0f172a;padding:15px;border-radius:10px;text-align:center;border-top:3px solid #10b981">
             <p style="margin:0;font-size:11px;color:#64748b">TOTAL REVENUE</p>
-            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#10b981">₦${total.toLocaleString()}</p>
+            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#10b981">${fmt(total)}</p>
           </div>
           <div style="background:#0f172a;padding:15px;border-radius:10px;text-align:center;border-top:3px solid #3b82f6">
             <p style="margin:0;font-size:11px;color:#64748b">THIS MONTH</p>
-            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#3b82f6">₦${monthly.toLocaleString()}</p>
+            <p style="margin:5px 0;font-size:22px;font-weight:bold;color:#3b82f6">${fmt(monthly)}</p>
           </div>
         </div>
 
@@ -2081,7 +2135,7 @@ async function renderRevenue(){
                 <p style="margin:0;font-size:13px;font-weight:bold">${d.name}</p>
                 <p style="margin:2px 0;font-size:11px;color:#64748b">${new Date(d.created_at).toLocaleDateString()}</p>
               </div>
-              <span style="color:#10b981;font-weight:bold">₦${parseFloat(d.sale_amount||0).toLocaleString()}</span>
+              <span style="color:#10b981;font-weight:bold">${fmt(d.sale_amount||0)}</span>
             </div>
           `).join("")}
         ` : `<p style="color:#64748b;text-align:center;padding:20px">No won deals yet. Mark leads as Won to track revenue.</p>`}
@@ -2108,7 +2162,7 @@ function renderProposal(){
         <input id="pr_your_biz" placeholder="Your business name" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
         <input id="pr_client" placeholder="Client / Business name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
         <input id="pr_service" placeholder="Service you are offering *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-        <input id="pr_price" placeholder="Price / Budget (e.g. ₦150,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="pr_price" placeholder="Price / Budget (e.g. 150,000)" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
         <textarea id="pr_details" placeholder="Any specific details, requirements, or scope of work..." style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:80px;resize:none;box-sizing:border-box"></textarea>
       </div>
         <label style="display:block;margin-top:10px;margin-bottom:6px;font-size:12px;color:#94a3b8">Template (pick your angle):</label>
@@ -2440,7 +2494,7 @@ async function renderAnalytics(){
             <p style="margin:4px 0 0;font-size:12px;color:#64748b">Deals Won</p>
           </div>
           <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #f59e0b">
-            <p style="margin:0;font-size:22px;font-weight:800;color:#f59e0b">₦${revenue.toLocaleString()}</p>
+            <p style="margin:0;font-size:22px;font-weight:800;color:#f59e0b">${fmt(revenue)}</p>
             <p style="margin:4px 0 0;font-size:12px;color:#64748b">Total Revenue</p>
           </div>
           <div style="background:#0f172a;padding:15px;border-radius:10px;border-top:3px solid #8b5cf6">
@@ -2470,7 +2524,7 @@ async function renderAnalytics(){
           <p style="margin:0 0 10px;font-size:13px;font-weight:bold">This Month</p>
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b">
             <span style="font-size:13px;color:#64748b">Revenue</span>
-            <span style="font-size:13px;color:#10b981;font-weight:bold">₦${monthly.toLocaleString()}</span>
+            <span style="font-size:13px;color:#10b981;font-weight:bold">${fmt(monthly)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1e293b">
             <span style="font-size:13px;color:#64748b">Conversion Rate</span>
@@ -2583,7 +2637,7 @@ async function renderAppointments(){
           <input id="svc_name" placeholder="Service name *" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <div style="display:flex;gap:8px;margin-bottom:8px">
             <input id="svc_duration" placeholder="Duration (mins)" type="number" value="60" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
-            <input id="svc_price" placeholder="Price (₦)" type="number" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
+            <input id="svc_price" placeholder="Price" type="number" style="flex:1;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px">
           </div>
           <input id="svc_desc" placeholder="Description (optional)" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <button onclick="addService()" style="width:100%;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">Save Service</button>
@@ -2595,7 +2649,7 @@ async function renderAppointments(){
               <div style="background:#0f172a;padding:12px;border-radius:8px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
                 <div>
                   <p style="margin:0;font-size:13px;font-weight:600">${s.name}</p>
-                  <p style="margin:2px 0 0;font-size:11px;color:#64748b">${s.duration_minutes}min · ₦${parseFloat(s.price||0).toLocaleString()}</p>
+                  <p style="margin:2px 0 0;font-size:11px;color:#64748b">${s.duration_minutes}min · ${fmt(s.price||0)}</p>
                 </div>
                 <button onclick="deleteService('${s.id}')" style="padding:5px 10px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;cursor:pointer;font-size:11px">Remove</button>
               </div>`).join("")}
@@ -2954,11 +3008,11 @@ function renderInvoice(){
         <div id="inv_items">
           <div class="inv-item" style="display:flex;gap:6px;margin-bottom:6px">
             <input placeholder="Description *" style="flex:2;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px">
-            <input placeholder="Amount (₦)" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()">
+            <input placeholder="Amount" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()">
           </div>
         </div>
         <div style="text-align:right;margin-top:10px;padding-top:10px;border-top:1px solid #1e293b">
-          <p style="font-size:15px;font-weight:bold">Total: ₦<span id="inv_total">0</span></p>
+          <p style="font-size:15px;font-weight:bold">Total: <span id="inv_total">0</span></p>
         </div>
       </div>
 
@@ -2977,7 +3031,7 @@ function addInvoiceItem(){
   var div = document.createElement("div");
   div.className = "inv-item";
   div.style = "display:flex;gap:6px;margin-bottom:6px";
-  div.innerHTML = '<input placeholder="Description" style="flex:2;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px"><input placeholder="Amount (₦)" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()"><button onclick="this.parentElement.remove();updateInvoiceTotal()" style="padding:8px 10px;background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:7px;cursor:pointer;font-size:12px">×</button>';
+  div.innerHTML = '<input placeholder="Description" style="flex:2;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px"><input placeholder="Amount" type="number" style="flex:1;padding:8px;border-radius:7px;border:1px solid #334155;background:#0b1220;color:white;font-size:12px" oninput="updateInvoiceTotal()"><button onclick="this.parentElement.remove();updateInvoiceTotal()" style="padding:8px 10px;background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:7px;cursor:pointer;font-size:12px">×</button>';
   document.getElementById("inv_items").appendChild(div);
 }
 
@@ -3044,8 +3098,8 @@ td{padding:10px 12px;border-bottom:1px solid #f1f5f9;font-size:14px}
 ${due?`<div class="date-item"><div class="date-label">Due Date</div><div class="date-value">${due}</div></div>`:""}
 </div>
 <table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead><tbody>
-${items.map(i=>`<tr><td>${i.desc}</td><td style="text-align:right">₦${i.amt.toLocaleString()}</td></tr>`).join("")}
-<tr class="total-row"><td>Total</td><td style="text-align:right">₦${total.toLocaleString()}</td></tr>
+${items.map(i=>`<tr><td>${i.desc}</td><td style="text-align:right">${fmt(i.amt)}</td></tr>`).join("")}
+<tr class="total-row"><td>Total</td><td style="text-align:right">${fmt(total)}</td></tr>
 </tbody></table>
 ${notes?`<div class="notes"><strong>Payment Info:</strong> ${notes}</div>`:""}
 <div style="text-align:center;margin-bottom:16px"><button onclick="window.print()" style="padding:10px 24px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;margin-right:8px">🖨️ Print / Save as PDF</button></div>
