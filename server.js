@@ -134,6 +134,24 @@ const PLANS = {
   business: { leads: Infinity, ai_per_month: 200,     label: "Business", price: 45000 }
 };
 
+
+/* ---- enh: user currency preference ---- */
+app.get("/api/me/currency", authMiddleware, async (req, res) => {
+  try {
+    const { data } = await supabase.from("profiles").select("display_currency").eq("id", req.user.id).single();
+    res.json({ success: true, currency: (data?.display_currency || "NGN") });
+  } catch(e) { res.json({ success: true, currency: "NGN" }); }
+});
+app.post("/api/me/currency", authMiddleware, async (req, res) => {
+  try {
+    const allowed = ["NGN","USD","GBP","EUR","GHS","KES","ZAR","CAD","AUD","INR"];
+    const c = String(req.body.currency || "NGN").toUpperCase();
+    if (!allowed.includes(c)) return res.json({ success: false, error: "Unsupported currency" });
+    await supabase.from("profiles").update({ display_currency: c }).eq("id", req.user.id);
+    res.json({ success: true, currency: c });
+  } catch(e) { res.json({ success: false, error: e.message }); }
+});
+
 /* ---------------- AUTH MIDDLEWARE ---------------- */
 async function authMiddleware(req, res, next) {
   try {
