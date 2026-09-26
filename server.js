@@ -418,6 +418,13 @@ app.post("/api/paystack/init", authMiddleware, async (req, res) => {
 app.get("/api/paystack/verify", rateLimit(20, 60000), async (req, res) => {
   try {
     const { reference } = req.query;
+    
+    // Idempotency: check if already processed
+    const { data: existingPayment } = await supabase.from("payments").select("status").eq("reference", reference).single();
+    if (existingPayment?.status === "success") {
+      return res.redirect("/dashboard?payment=success&already_processed=true");
+    }
+    
     const response = await fetch("https://api.paystack.co/transaction/verify/" + reference, {
       headers: { Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY }
     });
@@ -432,11 +439,16 @@ app.get("/api/paystack/verify", rateLimit(20, 60000), async (req, res) => {
         return res.redirect("/dashboard?payment=failed");
       }
       const plan = expectedPlan;
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const user = users.users.find(u => u.email === email);
+      const { data: userRecord } = await supabase.from("profiles").select("id").eq("email", email).single();
+      const user = userRecord ? { id: userRecord.id } : null;
       if (user) {
         try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {}
         try { await supabase.from("referrals").update({ referred_plan: plan }).eq("referred_email", email).is("referred_plan", null); } catch(e) {}
+        // Store payment record
+        await supabase.from("payments").insert({
+          user_id: user.id, email, plan, amount, reference, status: "success"
+        });
+        
         await supabase.from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
