@@ -205,6 +205,8 @@ const CURRENCY_MAP = {
 
 
 
+
+
 /* ---- Payment Success Welcome Modal ---- */
 function showPaymentSuccessModal(plan) {
   const planLabels = { starter: "Starter", pro: "Pro", business: "Business" };
@@ -215,36 +217,31 @@ function showPaymentSuccessModal(plan) {
   const modal = document.createElement("div");
   modal.id = "payment_success_modal";
   modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px";
-  modal.innerHTML = \`
-    <div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:30px;max-width:400px;width:100%;text-align:center">
-      <div style="font-size:48px;margin-bottom:10px">🎉</div>
-      <h2 style="margin:0 0 10px;color:\${color}">Welcome to \${label}!</h2>
-      <p style="color:#94a3b8;margin:0 0 20px;font-size:14px">Your payment was successful. All \${label} features are now active.</p>
-      <div style="background:#1e293b;border-radius:8px;padding:15px;margin-bottom:20px;text-align:left">
-        <p style="margin:0 0 8px;font-size:13px;color:#94a3b8">What's next:</p>
-        <ul style="margin:0;padding-left:20px;font-size:13px;color:#e2e8f0">
-          <li style="margin-bottom:6px">Add more leads to your pipeline</li>
-          <li style="margin-bottom:6px">Send professional proposals</li>
-          <li>Publish your business page</li>
-        </ul>
-      </div>
-      <button onclick="closePaymentModal()" style="width:100%;padding:12px;background:\${color};color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Let's Go!</button>
-    </div>
-  \`;
+  modal.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:30px;max-width:400px;width:100%;text-align:center">' +
+    '<div style="font-size:48px;margin-bottom:10px">🎉</div>' +
+    '<h2 style="margin:0 0 10px;color:' + color + '">Welcome to ' + label + '!</h2>' +
+    '<p style="color:#94a3b8;margin:0 0 20px;font-size:14px">Your payment was successful. All ' + label + ' features are now active.</p>' +
+    '<div style="background:#1e293b;border-radius:8px;padding:15px;margin-bottom:20px;text-align:left">' +
+    '<p style="margin:0 0 8px;font-size:13px;color:#94a3b8">What\'s next:</p>' +
+    '<ul style="margin:0;padding-left:20px;font-size:13px;color:#e2e8f0">' +
+    '<li style="margin-bottom:6px">Add more leads to your pipeline</li>' +
+    '<li style="margin-bottom:6px">Send professional proposals</li>' +
+    '<li>Publish your business page</li>' +
+    '</ul></div>' +
+    '<button onclick="closePaymentModal()" style="width:100%;padding:12px;background:' + color + ';color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Let\'s Go!</button>' +
+    '</div>';
   document.body.appendChild(modal);
 }
 
 function closePaymentModal() {
   const modal = document.getElementById("payment_success_modal");
   if (modal) modal.remove();
-  // Clean URL
   const url = new URL(window.location);
   url.searchParams.delete("payment");
   url.searchParams.delete("already_processed");
   window.history.replaceState({}, "", url);
 }
 
-// Check for payment success on dashboard load
 function checkPaymentSuccess() {
   const params = new URLSearchParams(window.location.search);
   if (params.get("payment") === "success") {
