@@ -146,8 +146,9 @@ app.get("/api/attention", authMiddleware, async (req, res) => {
   try {
     const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const uid = req.user.id;
-    const { data: prof } = await wc.from("profiles").select("last_seen").eq("id", uid).single();
-    const ls = (prof && prof.last_seen) || {};
+    const { data: seenRows } = await wc.from("feature_seen").select("feature, seen_at").eq("user_id", uid);
+    const ls = {};
+    (seenRows || []).forEach(r => { ls[r.feature] = r.seen_at; });
     const out = { leads:0, appointments:0, followup:0, testimonials:0, analytics:0, total:0 };
     try {
       let q = wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid);
@@ -189,10 +190,7 @@ app.post("/api/seen", authMiddleware, async (req, res) => {
     const feature = String(req.body.feature || "");
     if (!feature) return res.json({ success: false });
     const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    const { data: prof } = await wc.from("profiles").select("last_seen").eq("id", req.user.id).single();
-    const ls = (prof && prof.last_seen) || {};
-    ls[feature] = new Date().toISOString();
-    await wc.from("profiles").update({ last_seen: ls }).eq("id", req.user.id);
+    await wc.from("feature_seen").upsert({ user_id: req.user.id, feature: feature, seen_at: new Date().toISOString() }, { onConflict: "user_id,feature" });
     res.json({ success: true });
   } catch(e) { res.json({ success: false }); }
 });
@@ -211,7 +209,7 @@ app.get("/api/celebrations", authMiddleware, async (req, res) => {
     const celebrations = (data || []).map(e => ({
       event_type: e.event_type,
       icon: icons[e.event_type] || "✨",
-      message: WARMTH_MESSAGES[e.event_type] || "Congratulations!"
+      message: (WARMTH_MESSAGES[e.event_type] || (e.event_type.indexOf("first_lead_")===0 ? "First lead of the month! Momentum is building. Keep going." : "Congratulations!"))
     }));
     
     res.json({ success: true, celebrations });
