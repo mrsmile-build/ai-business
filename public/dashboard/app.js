@@ -291,6 +291,35 @@ async function checkCelebrations() {
   } catch(e) {}
 }
 
+
+async function loadSummaryCard(){
+  try {
+    var res = await apiFetch("/api/summary", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+    var d = await res.json();
+    if (!d.success) return;
+    var t=d.today||{}, w=d.week||{}, m=d.month||{};
+    var el = document.getElementById("summary_card");
+    if (!el) return;
+    el.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px">' +
+      '<p style="margin:0 0 10px;font-size:13px;font-weight:700">📊 Your Summary</p>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">' +
+      '<div><p style="margin:0;font-size:18px;font-weight:800;color:#3b82f6">'+(t.leads||0)+'</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">TODAY</p></div>' +
+      '<div><p style="margin:0;font-size:18px;font-weight:800;color:#10b981">'+(w.leads||0)+'</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">THIS WEEK</p></div>' +
+      '<div><p style="margin:0;font-size:18px;font-weight:800;color:#f59e0b">'+(m.leads||0)+'</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">THIS MONTH</p></div>' +
+      '</div>' +
+      '<p style="margin:10px 0 8px;font-size:12px;color:#94a3b8">Week: '+(w.proposals||0)+' proposals · '+(w.bookings||0)+' bookings · '+(w.won||0)+' won. Month: '+(m.won||0)+' won, revenue '+(m.revenue||0)+'.</p>' +
+      '<button onclick="emailSummary()" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:white;font-size:12px;cursor:pointer">📧 Email me this summary</button>' +
+      '</div>';
+  } catch(e){}
+}
+async function emailSummary(){
+  try {
+    var res = await apiFetch("/api/summary/email", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token") } });
+    var d = await res.json();
+    alert(d.success ? "Summary sent to your email!" : "Could not send summary.");
+  } catch(e){ alert("Could not send summary."); }
+}
+
 async function loadUserCurrency() {
   try {
     const res = await apiFetch("/api/me/currency", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
@@ -389,7 +418,7 @@ async function init(){
   checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
-  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); refreshAttention(); }); }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); refreshAttention(); loadSummaryCard(); }); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -645,6 +674,7 @@ function renderDashboard(){
 
         <div style="padding:0 14px">${renderOnboarding()}</div>
         <div id="followup_box" style="display:none"></div>
+        <div id="summary_card" style="padding:0 14px 14px"></div>
 
         <div style="padding:14px 14px 4px">
           <div style="background:linear-gradient(135deg,#111c35,#172554);border:1px solid #3b82f655;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.18)">

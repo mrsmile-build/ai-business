@@ -195,6 +195,48 @@ app.post("/api/seen", authMiddleware, async (req, res) => {
   } catch(e) { res.json({ success: false }); }
 });
 
+
+app.get("/api/summary", authMiddleware, async (req, res) => {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const uid = req.user.id;
+    const now = new Date();
+    const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
+    const weekStart = new Date(now.getTime() - 7*864e5);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    async function stats(start){
+      const iso = start.toISOString();
+      const o = { leads:0, proposals:0, bookings:0, won:0, revenue:0 };
+      try { const r = await wc.from("leads").select("*",{count:"exact",head:true}).eq("user_id",uid).gte("created_at",iso); o.leads=r.count||0; } catch(e){}
+      try { const r = await wc.from("proposals").select("*",{count:"exact",head:true}).eq("user_id",uid).gte("created_at",iso); o.proposals=r.count||0; } catch(e){}
+      try { const r = await wc.from("bookings").select("*",{count:"exact",head:true}).eq("user_id",uid).gte("created_at",iso); o.bookings=r.count||0; } catch(e){}
+      try { const { data } = await wc.from("leads").select("sale_amount").eq("user_id",uid).eq("status","won").gte("updated_at",iso); o.won=(data||[]).length; o.revenue=(data||[]).reduce((a,b)=>a+(b.sale_amount||0),0); } catch(e){}
+      return o;
+    }
+    const today = await stats(dayStart);
+    const week = await stats(weekStart);
+    const month = await stats(monthStart);
+    res.json({ success:true, today, week, month });
+  } catch(e){ res.json({ success:false }); }
+});
+
+app.post("/api/summary/email", authMiddleware, async (req, res) => {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: prof } = await wc.from("profiles").select("email, display_name").eq("id", req.user.id).single();
+    const r = await fetch(process.env.BASE_URL + "/api/summary", { headers: { Authorization: req.headers.authorization } });
+    const d = await r.json();
+    const m = d.month || {}, w = d.week || {}, t = d.today || {};
+    const html = "<div style='font-family:Arial,sans-serif;max-width:500px;padding:20px;background:#0f172a;color:#f1f5f9;border-radius:12px'><h2 style='color:#2563eb'>Your AI Business Summary</h2>" +
+      "<p><strong>Today:</strong> " + t.leads + " leads, " + t.proposals + " proposals, " + t.bookings + " bookings</p>" +
+      "<p><strong>This week:</strong> " + w.leads + " leads, " + w.proposals + " proposals, " + w.bookings + " bookings, " + w.won + " won</p>" +
+      "<p><strong>This month:</strong> " + m.leads + " leads, " + m.proposals + " proposals, " + m.bookings + " bookings, " + m.won + " won, revenue " + (m.revenue||0) + "</p>" +
+      "<p style='color:#64748b;font-size:13px'>Keep going — momentum compounds.</p></div>";
+    if (prof?.email) sendEmail(prof.email, "Your AI Business Summary", html).catch(()=>{});
+    res.json({ success:true });
+  } catch(e){ res.json({ success:false }); }
+});
+
 app.get("/api/celebrations", authMiddleware, async (req, res) => {
   try {
     const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
