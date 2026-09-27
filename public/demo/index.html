@@ -98,6 +98,14 @@ label{display:block;font-size:13px;color:#94a3b8;margin-top:12px}
     <div class="demo-box" id="booking_box"></div>
     <div class="badge" id="reminder_badge" style="display:none">✅ Reminder sent automatically 2 hours before</div>
     <button class="cta" onclick="claimForMe()" id="claim_btn">🎯 Do this for MY business — free</button>
+    <a href="https://wa.me/2348127538882" target="_blank" class="cta" style="display:block;text-align:center;text-decoration:none;background:#25d366;margin-top:10px">💬 Chat with the founder on WhatsApp</a>
+    <div style="margin-top:18px;background:#0f1623;border:1px solid #1e2d42;border-radius:10px;padding:14px">
+      <p class="muted" style="margin:0 0 8px">Not ready to sign up? Leave your WhatsApp and I'll set you up personally.</p>
+      <input id="demo_name" placeholder="Your name">
+      <input id="demo_phone" placeholder="Your WhatsApp number">
+      <button class="next" style="width:100%" onclick="demoCapture()">Send me my setup →</button>
+      <p class="muted" id="demo_cap_msg" style="margin:8px 0 0"></p>
+    </div>
   </div>
 
 </div>
@@ -222,6 +230,19 @@ function showBooking(){
   box.appendChild(card);
   setTimeout(function(){ card.classList.add("show"); }, 100);
   setTimeout(function(){ document.getElementById("reminder_badge").style.display = "inline-block"; }, 800);
+}
+
+
+function demoCapture(){
+  var name = document.getElementById("demo_name").value.trim();
+  var phone = document.getElementById("demo_phone").value.trim();
+  var msg = document.getElementById("demo_cap_msg");
+  if(!phone){ msg.textContent = "Please enter your WhatsApp number."; return; }
+  fetch("/api/early-access", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ capability:"demo_lead", name:name, email:(phone+"@demo.placeholder"), phone:phone, business_type:document.getElementById("demo_niche").value, team_size:null, source:"demo" }) })
+  .then(function(r){ return r.json(); })
+  .then(function(res){ msg.textContent = res.success ? "✅ Got it! I'll WhatsApp you your setup shortly." : (res.error||"Could not save."); })
+  .catch(function(){ msg.textContent = "Network error."; });
 }
 
 function claimForMe(){
