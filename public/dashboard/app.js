@@ -49,6 +49,7 @@ const API_BACKENDS = [
   "https://ai-business-1orz.onrender.com",
   "https://ai-business-90n6.onrender.com"
 ];
+const PUBLIC_BASE = "https://www.ai-business.com.ng";
 let _activeBackend = null;
 let _backendCheckPromise = null;
 
@@ -2682,7 +2683,7 @@ async function renderAppointments(){
     const bd = page.blocked_dates || [];
     window._blockedDates = bd.slice();
     const uid = currentUser?.id || "";
-    const bookLink = (await resolveBackend()) + "/book/" + uid;
+    const bookLink = PUBLIC_BASE + "/book/" + uid;
 
     const today = new Date().toISOString().split("T")[0];
     const upcoming = (bookings||[]).filter(b => b.booking_date >= today && b.status !== "cancelled");
@@ -4643,7 +4644,7 @@ async function renderAffiliate(){
     var aff = data.affiliate || {};
     var convs = data.conversions || [];
     var code = aff.affiliate_code || "";
-    var refLink = window.location.origin + "/auth?aff=" + code;
+    var refLink = PUBLIC_BASE + "/auth?aff=" + code;
     var balance = parseFloat(aff.balance||0);
     var pending = convs.filter(function(cv){return cv.status==="pending";}).reduce(function(s,cv){return s+parseFloat(cv.commission||0);},0);
 
@@ -4674,7 +4675,7 @@ async function renderAffiliate(){
       html += '<p style="margin:0 0 14px 0;font-size:12px;color:#94a3b8;">Tap any category below to expand promotional scripts, posts, and direct referral links. (Scripts auto-rotate weekly!)</p>';
 
       const affCode = (typeof aff !== "undefined" && aff && aff.affiliate_code) ? aff.affiliate_code : "YOUR_CODE";
-      const _rawOrigin = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "https://www.ai-business.com.ng";
+      const _rawOrigin = PUBLIC_BASE;
       const originUrl = (/onrender\.com|vercel\.app/.test(_rawOrigin)) ? "https://www.ai-business.com.ng" : _rawOrigin;
       const baseUrl = originUrl + "/auth?aff=" + affCode;
 
@@ -4904,7 +4905,7 @@ async function renderReferral(){
     if(!data.success) throw new Error(data.error);
     
     const code = data.code || "loading...";
-    const baseUrl = window.location.origin;
+    const baseUrl = PUBLIC_BASE;
     const refLink = baseUrl + "/auth?ref=" + code;
     const stats = data.stats || {};
     const reward = data.reward;
@@ -5263,7 +5264,7 @@ async function generateVideoScript(){
     var res = await apiFetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer " + localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + window.location.origin.replace(/^https?:\/\//,"") + ". Nigerian audience, emotional, powerful."})
+      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + PUBLIC_BASE.replace(/^https?:\/\//,"") + ". Nigerian audience, emotional, powerful."})
     });
     var data = await res.json();
     if(data.success && data.reply){
