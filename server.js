@@ -251,7 +251,7 @@ app.get("/api/celebrations", authMiddleware, async (req, res) => {
     const celebrations = (data || []).map(e => ({
       event_type: e.event_type,
       icon: icons[e.event_type] || "✨",
-      message: (WARMTH_MESSAGES[e.event_type] || (e.event_type.indexOf("first_lead_")===0 ? "First lead of the month! Momentum is building. Keep going." : "Congratulations!"))
+      message: celebrationMessage(e.event_type)
     }));
     
     res.json({ success: true, celebrations });
@@ -406,6 +406,7 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
     await pushNotification(req.user.id, "lead", (leadCount===1 ? "You added your first lead: " : "Lead saved ("+ord+"): ") + name).catch(()=>{});
     if (leadCount === 1) celebrate(req.user.id, "first_lead");
     celebrate(req.user.id, "first_lead_" + new Date().toISOString().slice(0,7));
+    if (leadCount > 1) celebrate(req.user.id, "lead_save_" + leadCount);
     res.json({ success: true, lead: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -3289,6 +3290,14 @@ const COUNTRY_OCCASIONS = {
   GB: [{month:1, day:1, name:"New Year", msg:"Happy New Year! 🇬🇧 Fresh starts and bold moves ahead."}]
 };
 
+function ordFor(n){ n = parseInt(n,10)||0; return n===1?"1st":n===2?"2nd":n===3?"3rd":n+"th"; }
+function celebrationMessage(t){
+  if (WARMTH_MESSAGES[t]) return WARMTH_MESSAGES[t];
+  if (t.indexOf("first_lead_") === 0) return "First lead of the month! Momentum is building. Keep going.";
+  if (t.indexOf("lead_save_") === 0) return ordFor(t.split("_")[2]) + " lead saved! Your pipeline is growing. Keep the momentum.";
+  return "Congratulations on this milestone!";
+}
+
 async function celebrate(userId, eventType) {
   try {
     const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -3297,9 +3306,7 @@ async function celebrate(userId, eventType) {
     
     if (existing) return; // Already celebrated
     
-    let msg = WARMTH_MESSAGES[eventType];
-    if (!msg && eventType.indexOf("first_lead_") === 0) msg = "First lead of the month! Momentum is building. Keep going.";
-    if (!msg) msg = "Congratulations on this milestone!";
+    let msg = celebrationMessage(eventType);
     const icons = {welcome:"🎉",first_lead:"📩",first_proposal:"📄",first_booking:"📅",first_won:"🏆",upgrade:"⬆️",signup_iversary:"🎂"};
     const icon = icons[eventType] || "✨";
     
