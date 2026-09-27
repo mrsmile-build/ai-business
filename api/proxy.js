@@ -1,7 +1,7 @@
 const BACKENDS = [
-  'https://ai-business-90n6.onrender.com',
+  'https://ai-business-1orz.onrender.com',
   'https://ai-business-1-ok3x.onrender.com',
-  'https://ai-business-1orz.onrender.com'
+  'https://ai-business-90n6.onrender.com'
 ];
 
 // Skip memory: don't retry a dead backend for 5 minutes
