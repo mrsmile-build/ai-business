@@ -292,6 +292,8 @@ async function saveCurrency(currency) {
       window.userCurrency = currency;
       window.currencySymbol = CURRENCY_MAP[currency]?.symbol || "₦";
       loadPage("settings");
+    } else {
+      alert("Save failed: " + (data.error || "unknown error"));
     }
   } catch(e) { alert("Failed to save currency"); }
 }
