@@ -292,14 +292,35 @@ async function checkCelebrations() {
 }
 
 
+async function loadPulse(){
+  try {
+    var res = await apiFetch("/api/summary", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+    var d = await res.json();
+    if (!d.success) return;
+    var t = d.today || {};
+    var el = document.getElementById("dashboard_pulse");
+    if (!el) return;
+    el.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="loadPage(\'analytics\')">' +
+      '<div style="font-size:12px;color:#94a3b8">📊 <strong style="color:#e2e8f0">Today:</strong> '+(t.leads||0)+' leads · '+(t.proposals||0)+' proposals · '+(t.bookings||0)+' bookings</div>' +
+      '<div style="font-size:11px;color:#3b82f6;font-weight:600">Full report →</div></div>';
+  } catch(e){}
+}
+
 async function loadSummaryCard(){
   try {
     var res = await apiFetch("/api/summary", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
     var d = await res.json();
     if (!d.success) return;
     var t=d.today||{}, w=d.week||{}, m=d.month||{};
-    var el = document.getElementById("summary_card");
-    if (!el) return;
+    var el = document.getElementById("summary_card_anchor");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "summary_card_anchor";
+      var appEl = document.getElementById("app");
+      if (appEl && appEl.firstChild) appEl.insertBefore(el, appEl.firstChild);
+      else if (appEl) appEl.appendChild(el);
+      else return;
+    }
     el.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px">' +
       '<p style="margin:0 0 10px;font-size:13px;font-weight:700">📊 Your Summary</p>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">' +
@@ -418,7 +439,7 @@ async function init(){
   checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
-  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); refreshAttention(); loadSummaryCard(); }); }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); refreshAttention(); loadPulse(); }); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -489,6 +510,7 @@ function loadPage(page){
 
   var fnName = routes[page];
   try { markSeen(page); } catch(e){}
+  if (page === "analytics") { setTimeout(function(){ loadSummaryCard(); }, 1200); setTimeout(function(){ loadSummaryCard(); }, 2600); }
   var fn = (fnName && typeof window[fnName] === 'function') ? window[fnName] : null;
   if(fn){ fn(); } else { renderDashboard(); }
 }
@@ -674,7 +696,7 @@ function renderDashboard(){
 
         <div style="padding:0 14px">${renderOnboarding()}</div>
         <div id="followup_box" style="display:none"></div>
-        <div id="summary_card" style="padding:0 14px 14px"></div>
+        <div id="dashboard_pulse" style="padding:0 14px 14px"></div>
 
         <div style="padding:14px 14px 4px">
           <div style="background:linear-gradient(135deg,#111c35,#172554);border:1px solid #3b82f655;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.18)">
@@ -2684,7 +2706,7 @@ function bookingChartsHTML(bk){
 }
 
 async function renderAnalytics(){
-  setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  setView(`<div id="summary_card_anchor"></div><div class="card">${header("📊 Analytics","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
   try {
     const [leadsRes, revenueRes, bookingsRes] = await Promise.all([
       apiFetch("/api/leads",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),
@@ -2810,7 +2832,7 @@ async function renderAnalytics(){
       </div>
     `);
   } catch(e){
-    setView(`<div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`);
+    setView(`<div id="summary_card_anchor"></div><div class="card">${header("📊 Analytics","dashboard")}<p style="color:red">Error: ${e.message}</p></div>`);
   }
 }
 
