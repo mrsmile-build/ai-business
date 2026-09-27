@@ -296,8 +296,8 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
       .single();
     if (error) throw error;
     await pushNotification(req.user.id, "lead", "You added a new lead: " + name).catch(()=>{});
-    const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
-    if (count === 1) celebrate(req.user.id, "first_lead");
+    const { count: leadCount } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
+    if (leadCount === 1) celebrate(req.user.id, "first_lead");
     res.json({ success: true, lead: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
