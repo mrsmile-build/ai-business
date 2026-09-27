@@ -441,3 +441,40 @@ NOW items or override Lane A. Promote to NEXT/NOW only with evidence
 
 ### Product Usage Intelligence [NEXT-CANDIDATE]
 - Feature usage, drop-off, successful workflows → evidence-based prioritization
+
+---
+
+## ✅ SHIPPED — Infrastructure & Trust Sprint (this session)
+
+**Security & Auth**
+- [x] Rate limiting on public endpoints (IP-based)
+- [x] Row-Level Security + ownership checks (users see only their data)
+- [x] Email confirmation (OTP) enforced — Confirm email ON
+- [x] Friendly auth error messages (rate limit / duplicate / expired code)
+- [x] OTP input accepts full code length (6–10 chars), strips spaces
+
+**Global-Ready Pricing**
+- [x] Currency selector UI in Settings (10 currencies)
+- [x] Regional price table (market-appropriate round numbers, not raw FX)
+- [x] Country → currency auto-follow on signup
+- [x] Honest checkout note for non-NGN (Stripe = Lane B)
+
+**Payment Chain (money path)**
+- [x] `payments` audit table (reference, amount, plan, status)
+- [x] Idempotency guard (refresh after verify won't double-process)
+- [x] Optimized user lookup (no more `auth.admin.listUsers()`)
+- [x] Payment-success welcome modal (🎉 + next steps)
+
+**Activation**
+- [x] 5-step onboarding checklist — verified already existed (closed by discovery)
+
+**Share-Proof & Links**
+- [x] OG meta tags on `/biz/:slug` pages (title/desc/image/url + twitter card)
+- [x] Real 1200×630 `og-image.png` (WhatsApp/Facebook previews render)
+- [x] `PUBLIC_BASE` consolidation — booking, biz, affiliate, marketing, video links all use `www.ai-business.com.ng` (no render-URL leaks)
+
+**⏳ PENDING (manual, in Render dashboard)**
+- [ ] Pause `ai-business-1-ok3x` and `ai-business-1orz`; keep `90n6` running (solves monthly-hour suspension)
+- [ ] Verify `BASE_URL` = `https://www.ai-business.com.ng` on Render + Vercel
+
+**Metric that matters:** strangers = 0 → (growth routine begins next)
