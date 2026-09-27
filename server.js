@@ -140,6 +140,27 @@ const PLANS = {
 
 
 /* ---- enh: user currency preference (service client, upsert-safe, honest errors) ---- */
+
+app.get("/api/celebrations", authMiddleware, async (req, res) => {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data } = await wc.from("warmth_events")
+      .select("event_type, celebrated_at")
+      .eq("user_id", req.user.id)
+      .order("celebrated_at", { ascending: false })
+      .limit(1);
+    
+    const icons = {welcome:"🎉",first_lead:"📩",first_proposal:"📄",first_booking:"📅",first_won:"🏆",upgrade:"⬆️"};
+    const celebrations = (data || []).map(e => ({
+      event_type: e.event_type,
+      icon: icons[e.event_type] || "✨",
+      message: WARMTH_MESSAGES[e.event_type] || "Congratulations!"
+    }));
+    
+    res.json({ success: true, celebrations });
+  } catch(e) { res.json({ success: true, celebrations: [] }); }
+});
+
 app.get("/api/me/currency", authMiddleware, async (req, res) => {
   try {
     const cur = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
@@ -275,6 +296,8 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
       .single();
     if (error) throw error;
     await pushNotification(req.user.id, "lead", "You added a new lead: " + name).catch(()=>{});
+    const { count } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
+    if (count === 1) celebrate(req.user.id, "first_lead");
     res.json({ success: true, lead: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -304,6 +327,8 @@ app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
     if(error) throw error;
     if(status === "won" && data){
       await pushNotification(req.user.id, "lead", "🎉 " + (data.name || "A lead") + " marked as Won!").catch(()=>{});
+      const { count: wonCount } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", req.user.id).eq("status", "won");
+      if (wonCount === 1) celebrate(req.user.id, "first_won");
     }
     res.json({ success: true, lead: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -1187,6 +1212,8 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 /* ---------------- PROPOSAL GENERATOR ---------------- */
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
+  const { count: propCount } = await supabase.from("proposals").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
+  if (propCount === 1) celebrate(req.user.id, "first_proposal");
   try {
     const { client_name, service, price, details, your_name, your_business, lead_facts, template } = req.body;
     const templateConfig = {
@@ -3131,6 +3158,96 @@ app.post("/api/notifications/read-all", authMiddleware, async (req, res) => {
     res.json({ success: true });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+
+
+/* ---- Warmth Engine: celebrate milestones ---- */
+const WARMTH_MESSAGES = {
+  welcome: "Congratulations on choosing AI Business! Here's to smarter, smoother business. We're glad it's you.",
+  first_lead: "Your first lead is saved! This is where momentum begins. Go talk to them.",
+  first_proposal: "First proposal sent! You just did in 30 seconds what used to take hours. That's the power.",
+  first_booking: "First booking confirmed! Someone trusted you enough to book. That's real.",
+  first_won: "Your first won deal! This is what winning looks like. Celebrate it, then do it again.",
+  upgrade: "Welcome to your new plan! More tools, more power, more wins ahead.",
+  signup_iversary: "One year of never losing a customer to silence. Here's to the next year."
+};
+
+const COUNTRY_OCCASIONS = {
+  NG: [{month:10, day:1, name:"Independence Day", msg:"Happy Independence Day! 🇳🇬 Nigeria's entrepreneurs are building the future."}],
+  GH: [{month:3, day:6, name:"Independence Day", msg:"Happy Independence Day! 🇬🇭 Ghana's businesses are thriving."}],
+  KE: [{month:12, day:12, name:"Jamhuri Day", msg:"Happy Jamhuri Day! 🇰🇪 Kenya's innovation is inspiring."}],
+  ZA: [{month:4, day:27, name:"Freedom Day", msg:"Happy Freedom Day! 🇿🇦 South Africa's resilience is legendary."}],
+  US: [{month:7, day:4, name:"Independence Day", msg:"Happy Independence Day! 🇺🇸 American entrepreneurship leads the world."}],
+  GB: [{month:1, day:1, name:"New Year", msg:"Happy New Year! 🇬🇧 Fresh starts and bold moves ahead."}]
+};
+
+async function celebrate(userId, eventType) {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: existing } = await wc.from("warmth_events")
+      .select("id").eq("user_id", userId).eq("event_type", eventType).single();
+    
+    if (existing) return; // Already celebrated
+    
+    const msg = WARMTH_MESSAGES[eventType] || "Congratulations on this milestone!";
+    const icons = {welcome:"🎉",first_lead:"📩",first_proposal:"📄",first_booking:"📅",first_won:"🏆",upgrade:"⬆️",signup_iversary:"🎂"};
+    const icon = icons[eventType] || "✨";
+    
+    await wc.from("warmth_events").insert({ user_id: userId, event_type: eventType });
+    await pushNotification(userId, "celebration", icon + " " + msg);
+    
+    // Send email for major milestones
+    if (["welcome","first_won","upgrade","signup_iversary"].includes(eventType)) {
+      const { data: profile } = await wc.from("profiles").select("email, display_name").eq("user_id", userId).single();
+      if (profile?.email) {
+        const name = profile.display_name || "there";
+        const subject = eventType === "welcome" ? "Welcome to AI Business, " + name : "🎉 " + msg.substring(0,40);
+        const html = "<div style='font-family:Arial,sans-serif;max-width:500px;padding:20px;background:#0f172a;color:#f1f5f9;border-radius:12px'><div style='font-size:48px;text-align:center;margin-bottom:16px'>" + icon + "</div><h2 style='color:#2563eb;margin:0 0 12px'>" + msg.split("!")[0] + "!</h2><p style='line-height:1.6;color:#94a3b8'>" + msg + "</p><p style='margin-top:20px;color:#64748b;font-size:13px'>— The AI Business team</p></div>";
+        sendEmail(profile.email, subject, html).catch(()=>{});
+      }
+    }
+    
+    console.log("🎉 Celebrated:", eventType, "for user:", userId);
+  } catch(e) { console.log("Celebrate error:", e.message); }
+}
+
+async function checkCountryOccasion(userId) {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: profile } = await wc.from("profiles").select("country, user_id").eq("user_id", userId).single();
+    if (!profile?.country) return;
+    
+    const countryCode = String(profile.country).slice(0,2).toUpperCase();
+    const occasions = COUNTRY_OCCASIONS[countryCode] || [];
+    const today = new Date();
+    
+    for (const occ of occasions) {
+      if (today.getMonth() + 1 === occ.month && today.getDate() === occ.day) {
+        const eventType = "occasion_" + countryCode + "_" + occ.month + "_" + occ.day;
+        await celebrate(userId, eventType);
+        // Also push the specific message
+        await pushNotification(userId, "occasion", "🌍 " + occ.msg);
+      }
+    }
+  } catch(e) {}
+}
+
+async function checkSignupIversary(userId) {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: profile } = await wc.from("profiles").select("created_at").eq("user_id", userId).single();
+    if (!profile?.created_at) return;
+    
+    const signupDate = new Date(profile.created_at);
+    const today = new Date();
+    const yearsSinceSignup = today.getFullYear() - signupDate.getFullYear();
+    
+    if (yearsSinceSignup > 0 && today.getMonth() === signupDate.getMonth() && today.getDate() === signupDate.getDate()) {
+      const eventType = "signup_iversary_" + yearsSinceSignup;
+      await celebrate(userId, eventType);
+    }
+  } catch(e) {}
+}
 
 async function pushNotification(userId, type, message){
   try {

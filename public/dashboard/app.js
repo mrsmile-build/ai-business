@@ -252,6 +252,44 @@ function checkPaymentSuccess() {
   }
 }
 
+
+
+/* ---- Celebration Modal ---- */
+function showCelebrationModal(icon, message) {
+  var existing = document.getElementById("celebration_modal");
+  if (existing) existing.remove();
+  
+  var modal = document.createElement("div");
+  modal.id = "celebration_modal";
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.3s";
+  modal.innerHTML = '<div style="background:linear-gradient(135deg,#0f172a,#1a2540);border:1px solid #2563eb;border-radius:16px;padding:40px;max-width:420px;width:100%;text-align:center;animation:scaleIn 0.4s">' +
+    '<div style="font-size:64px;margin-bottom:20px;animation:bounce 0.6s">' + icon + '</div>' +
+    '<h2 style="margin:0 0 16px;color:#2563eb;font-size:22px">' + message.split('!')[0] + '!</h2>' +
+    '<p style="color:#94a3b8;font-size:14px;line-height:1.6;margin:0 0 24px">' + message + '</p>' +
+    '<button onclick="closeCelebrationModal()" style="width:100%;padding:14px;background:#2563eb;color:white;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px">Thank you! →</button>' +
+    '</div>';
+  document.body.appendChild(modal);
+  
+  setTimeout(closeCelebrationModal, 8000);
+}
+
+function closeCelebrationModal() {
+  var modal = document.getElementById("celebration_modal");
+  if (modal) modal.remove();
+}
+
+// Check for celebrations on dashboard load
+async function checkCelebrations() {
+  try {
+    var res = await apiFetch("/api/celebrations", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+    var data = await res.json();
+    if (data.celebrations && data.celebrations.length > 0) {
+      var latest = data.celebrations[0];
+      showCelebrationModal(latest.icon || "✨", latest.message);
+    }
+  } catch(e) {}
+}
+
 async function loadUserCurrency() {
   try {
     const res = await apiFetch("/api/me/currency", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
@@ -350,7 +388,7 @@ async function init(){
   checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
-  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); }); }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); }); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
