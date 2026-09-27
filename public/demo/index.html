@@ -1,0 +1,239 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>See AI Business Work in 30 Seconds | Demo</title>
+<meta property="og:title" content="See AI Business Work in 30 Seconds | Demo">
+<meta property="og:description" content="Watch AI Business find customers, write proposals, and book appointments — all in 30 seconds. Free to start.">
+<meta property="og:image" content="https://www.ai-business.com.ng/og-image.png">
+<meta property="og:url" content="https://www.ai-business.com.ng/demo">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="canonical" href="https://www.ai-business.com.ng/demo">
+<style>
+body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",sans-serif;margin:0;padding:24px;min-height:100vh}
+h1{font-family:"Syne",sans-serif;font-size:28px;margin:0 0 10px}
+h2{font-family:"Syne",sans-serif;font-size:20px;margin:0 0 12px}
+.wrap{max-width:560px;margin:30px auto}
+.muted{color:#64748b;font-size:13px;line-height:1.6}
+.step{background:#131d2e;border:1px solid #1e2d42;border-radius:12px;padding:20px;margin:20px 0;display:none}
+.step.active{display:block}
+.demo-box{background:#0f1623;border:1px solid #1e2d42;border-radius:10px;padding:16px;margin:12px 0;min-height:100px}
+.lead-card{background:#1a2540;border-left:3px solid #2563eb;padding:12px;margin:8px 0;border-radius:8px;opacity:0;transform:translateY(10px);transition:all 0.4s}
+.lead-card.show{opacity:1;transform:translateY(0)}
+.lead-name{font-weight:700;margin:0 0 4px}
+.lead-phone{color:#94a3b8;font-size:13px;margin:0}
+.proposal-line{background:#0f1623;padding:8px 12px;margin:6px 0;border-radius:6px;font-size:13px;opacity:0;transition:opacity 0.3s}
+.proposal-line.show{opacity:1}
+.booking-card{background:#1a2540;border-left:3px solid #10b981;padding:12px;border-radius:8px;opacity:0;transition:opacity 0.4s}
+.booking-card.show{opacity:1}
+.badge{display:inline-block;padding:4px 10px;background:#10b981;color:white;border-radius:12px;font-size:11px;font-weight:600;margin-top:8px}
+button.cta{width:100%;padding:16px;background:#2563eb;border:none;border-radius:12px;color:white;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;transition:background 0.2s}
+button.cta:hover{background:#1d4ed8}
+button.cta:disabled{background:#334155;cursor:not-allowed}
+button.next{padding:10px 20px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:white;font-size:14px;cursor:pointer;margin-top:12px}
+.progress{display:flex;gap:8px;margin:20px 0}
+.dot{width:10px;height:10px;border-radius:50%;background:#1e293b}
+.dot.active{background:#2563eb}
+.dot.done{background:#10b981}
+.typing{overflow:hidden;border-right:2px solid #2563eb;white-space:nowrap;animation:typing 1.5s steps(40,end),blink 0.75s step-end infinite}
+@keyframes typing{from{width:0}to{width:100%}}
+@keyframes blink{from,to{border-color:transparent}50%{border-color:#2563eb}}
+input,select{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #1e2d42;background:#0f1623;color:#f1f5f9;font-size:14px;box-sizing:border-box}
+label{display:block;font-size:13px;color:#94a3b8;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Watch AI Business work — 30 seconds</h1>
+  <p class="muted">No signup needed. See what happens when you use AI Business for your business.</p>
+  
+  <div class="progress">
+    <div class="dot active" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+    <div class="dot" id="dot4"></div>
+  </div>
+
+  <!-- STEP 1: Pick niche + city -->
+  <div class="step active" id="step1">
+    <h2>Step 1: What's your business?</h2>
+    <label>Business type</label>
+    <select id="demo_niche">
+      <option value="salon">Salon / Beauty</option>
+      <option value="realestate">Real Estate</option>
+      <option value="fashion">Fashion / Retail</option>
+      <option value="restaurant">Restaurant / Food</option>
+      <option value="freelance">Freelance / Services</option>
+    </select>
+    <label>City</label>
+    <input id="demo_city" placeholder="e.g. Lagos" value="Lagos">
+    <button class="cta" onclick="startDemo()">Show me how it works →</button>
+  </div>
+
+  <!-- STEP 2: Lead Finder magic -->
+  <div class="step" id="step2">
+    <h2>Step 2: AI finds customers near you</h2>
+    <p class="muted">AI Business searches for businesses in <strong id="show_city">Lagos</strong> that need your service...</p>
+    <div class="demo-box" id="leads_box">
+      <p class="muted" id="searching_msg">🔍 Searching...</p>
+    </div>
+    <button class="next" onclick="nextStep(3)" disabled id="btn_step3">Next: Watch a proposal write itself →</button>
+  </div>
+
+  <!-- STEP 3: Proposal magic -->
+  <div class="step" id="step3">
+    <h2>Step 3: You write a proposal in 30 seconds</h2>
+    <p class="muted">Click on <strong id="first_lead_name">a lead</strong> — AI Business writes a professional, priced proposal instantly:</p>
+    <div class="demo-box" id="proposal_box" style="cursor:pointer" onclick="generateProposal()">
+      <p class="muted">👆 Tap here to generate</p>
+    </div>
+    <button class="next" onclick="nextStep(4)" disabled id="btn_step4">Next: See the booking come in →</button>
+  </div>
+
+  <!-- STEP 4: Booking + reminder magic -->
+  <div class="step" id="step4">
+    <h2>Step 4: They book, you get paid</h2>
+    <p class="muted">The customer sees your proposal, books an appointment, and pays a deposit — all inside the link:</p>
+    <div class="demo-box" id="booking_box"></div>
+    <div class="badge" id="reminder_badge" style="display:none">✅ Reminder sent automatically 2 hours before</div>
+    <button class="cta" onclick="claimForMe()" id="claim_btn">🎯 Do this for MY business — free</button>
+  </div>
+
+</div>
+
+<script>
+var sampleLeads = {
+  salon: [
+    {name:"Beauty Hub Lekki", phone:"+234 812 345 6789", type:"salon"},
+    {name:"Glow Up Studio", phone:"+234 803 456 7890", type:"salon"},
+    {name:"Hair Palace VI", phone:"+234 805 567 8901", type:"salon"}
+  ],
+  realestate: [
+    {name:"Lagos Prime Properties", phone:"+234 810 111 2222", type:"agent"},
+    {name:"Ikoyi Homes Ltd", phone:"+234 812 333 4444", type:"agent"},
+    {name:"Lekki Realty Group", phone:"+234 803 555 6666", type:"agent"}
+  ],
+  fashion: [
+    {name:"Chic Boutique Surulere", phone:"+234 815 777 8888", type:"boutique"},
+    {name:"Style Avenue Yaba", phone:"+234 806 999 0000", type:"boutique"},
+    {name:"Fashion Forward Ikeja", phone:"+234 812 111 2233", type:"boutique"}
+  ],
+  restaurant: [
+    {name:"Mama's Kitchen Lekki", phone:"+234 803 444 5555", type:"restaurant"},
+    {name:"Taste of Lagos", phone:"+234 812 666 7777", type:"restaurant"},
+    {name:"Spice Route VI", phone:"+234 805 888 9999", type:"restaurant"}
+  ],
+  freelance: [
+    {name:"Tech Startup Hub", phone:"+234 810 222 3333", type:"startup"},
+    {name:"Digital Agency Lagos", phone:"+234 812 444 5566", type:"agency"},
+    {name:"Creative Studio VI", phone:"+234 803 777 8899", type:"studio"}
+  ]
+};
+
+var proposalTemplates = {
+  salon: {service:"Hair styling package", price:"₦15,000", duration:"2 hours"},
+  realestate: {service:"Property listing photography", price:"₦45,000", duration:"4 hours"},
+  fashion: {service:"Custom outfit design", price:"₦35,000", duration:"1 week"},
+  restaurant: {service:"Catering for 50 guests", price:"₦150,000", duration:"Full day"},
+  freelance: {service:"Website design + development", price:"₦250,000", duration:"3 weeks"}
+};
+
+var selectedNiche = "salon";
+var selectedCity = "Lagos";
+var firstLeadName = "";
+
+function startDemo(){
+  selectedNiche = document.getElementById("demo_niche").value;
+  selectedCity = document.getElementById("demo_city").value.trim() || "Lagos";
+  document.getElementById("show_city").textContent = selectedCity;
+  nextStep(2);
+  setTimeout(showLeads, 800);
+}
+
+function nextStep(n){
+  var steps = document.querySelectorAll(".step");
+  for(var i=0;i<steps.length;i++) steps[i].classList.remove("active");
+  document.getElementById("step"+n).classList.add("active");
+  
+  var dots = document.querySelectorAll(".dot");
+  for(var i=0;i<dots.length;i++){
+    dots[i].classList.remove("active","done");
+    if(i < n-1) dots[i].classList.add("done");
+    if(i === n-1) dots[i].classList.add("active");
+  }
+}
+
+function showLeads(){
+  var leads = sampleLeads[selectedNiche] || sampleLeads.salon;
+  var box = document.getElementById("leads_box");
+  document.getElementById("searching_msg").style.display = "none";
+  
+  firstLeadName = leads[0].name;
+  document.getElementById("first_lead_name").textContent = firstLeadName;
+  
+  for(var i=0;i<leads.length;i++){
+    var card = document.createElement("div");
+    card.className = "lead-card";
+    card.innerHTML = '<p class="lead-name">'+leads[i].name+'</p><p class="lead-phone">'+leads[i].phone+'</p>';
+    box.appendChild(card);
+    (function(c,delay){ setTimeout(function(){ c.classList.add("show"); }, delay); })(card, i*400);
+  }
+  
+  setTimeout(function(){
+    document.getElementById("btn_step3").disabled = false;
+  }, leads.length*400 + 300);
+}
+
+function generateProposal(){
+  var box = document.getElementById("proposal_box");
+  if(box.querySelector(".proposal-line")) return;
+  box.innerHTML = "";
+  
+  var tmpl = proposalTemplates[selectedNiche] || proposalTemplates.salon;
+  var lines = [
+    "📄 Professional Proposal",
+    "To: "+firstLeadName,
+    "Service: "+tmpl.service,
+    "Duration: "+tmpl.duration,
+    "Price: "+tmpl.price,
+    "✅ Payment link included",
+    "📤 Sent via WhatsApp"
+  ];
+  
+  for(var i=0;i<lines.length;i++){
+    var line = document.createElement("div");
+    line.className = "proposal-line";
+    line.textContent = lines[i];
+    box.appendChild(line);
+    (function(l,delay){ setTimeout(function(){ l.classList.add("show"); }, delay); })(line, i*200);
+  }
+  
+  setTimeout(function(){
+    document.getElementById("btn_step4").disabled = false;
+  }, lines.length*200 + 400);
+}
+
+function showBooking(){
+  var box = document.getElementById("booking_box");
+  var card = document.createElement("div");
+  card.className = "booking-card";
+  card.innerHTML = '<p style="margin:0;font-weight:700">📅 New Booking from '+firstLeadName+'</p><p style="margin:4px 0 0;font-size:13px;color:#94a3b8">Tomorrow at 2:00 PM · '+proposalTemplates[selectedNiche].service+'</p><p style="margin:4px 0 0;font-size:13px;color:#10b981;font-weight:600">💰 Deposit: ₦5,000 paid</p>';
+  box.appendChild(card);
+  setTimeout(function(){ card.classList.add("show"); }, 100);
+  setTimeout(function(){ document.getElementById("reminder_badge").style.display = "inline-block"; }, 800);
+}
+
+function claimForMe(){
+  var params = new URLSearchParams();
+  params.set("niche", selectedNiche);
+  params.set("city", selectedCity);
+  window.location.href = "/auth?" + params.toString();
+}
+
+// Wire step 4 booking display
+document.getElementById("btn_step4").addEventListener("click", function(){
+  setTimeout(showBooking, 200);
+});
+</script>
+</body></html>
