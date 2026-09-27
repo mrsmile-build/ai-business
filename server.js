@@ -141,6 +141,62 @@ const PLANS = {
 
 /* ---- enh: user currency preference (service client, upsert-safe, honest errors) ---- */
 
+
+app.get("/api/attention", authMiddleware, async (req, res) => {
+  try {
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const uid = req.user.id;
+    const { data: prof } = await wc.from("profiles").select("last_seen").eq("id", uid).single();
+    const ls = (prof && prof.last_seen) || {};
+    const out = { leads:0, appointments:0, followup:0, testimonials:0, analytics:0, total:0 };
+    try {
+      let q = wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid);
+      if (ls.leads) q = q.gt("created_at", ls.leads);
+      const r = await q; out.leads = r.count || 0;
+    } catch(e){}
+    try {
+      const r = await wc.from("bookings").select("*", { count: "exact", head: true }).eq("user_id", uid).eq("status", "pending");
+      out.appointments = r.count || 0;
+    } catch(e){}
+    try {
+      const cutoff = new Date(Date.now() - 3*864e5).toISOString();
+      const r = await wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid).not("status", "in", '("won","lost")').lt("updated_at", cutoff);
+      out.followup = r.count || 0;
+    } catch(e){}
+    try {
+      const r = await wc.from("testimonials").select("*", { count: "exact", head: true }).eq("user_id", uid).eq("status", "pending");
+      out.testimonials = r.count || 0;
+    } catch(e){}
+    try {
+      let a = 0;
+      let q1 = wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid);
+      if (ls.analytics) q1 = q1.gt("created_at", ls.analytics);
+      const r1 = await q1; a += r1.count || 0;
+      let q2 = wc.from("bookings").select("*", { count: "exact", head: true }).eq("user_id", uid);
+      if (ls.analytics) q2 = q2.gt("created_at", ls.analytics);
+      const r2 = await q2; a += r2.count || 0;
+      out.analytics = a;
+    } catch(e){}
+    out.total = out.leads + out.appointments + out.followup + out.testimonials + out.analytics;
+    res.json(Object.assign({ success: true }, out));
+  } catch(e) {
+    res.json({ success: true, leads:0, appointments:0, followup:0, testimonials:0, analytics:0, total:0 });
+  }
+});
+
+app.post("/api/seen", authMiddleware, async (req, res) => {
+  try {
+    const feature = String(req.body.feature || "");
+    if (!feature) return res.json({ success: false });
+    const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: prof } = await wc.from("profiles").select("last_seen").eq("id", req.user.id).single();
+    const ls = (prof && prof.last_seen) || {};
+    ls[feature] = new Date().toISOString();
+    await wc.from("profiles").update({ last_seen: ls }).eq("id", req.user.id);
+    res.json({ success: true });
+  } catch(e) { res.json({ success: false }); }
+});
+
 app.get("/api/celebrations", authMiddleware, async (req, res) => {
   try {
     const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);

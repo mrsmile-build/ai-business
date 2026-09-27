@@ -388,7 +388,7 @@ async function init(){
   checkNotifications();
   var storedNiche = localStorage.getItem("aib_niche");
   if(currentProfile && !currentProfile.business_type && storedNiche){ currentProfile.business_type = storedNiche; }
-  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); }); }
+  if(currentUser && currentProfile && !currentProfile.business_type && !storedNiche){ renderNicheSelect(); } else { loadUserCurrency().then(() => { loadPage("dashboard"); checkPaymentSuccess(); checkCelebrations(); refreshAttention(); }); }
   // Update topbar avatar
   const av = document.getElementById("topbar_avatar");
   if(av) av.innerHTML = avatarHTML(32);
@@ -458,6 +458,7 @@ function loadPage(page){
   };
 
   var fnName = routes[page];
+  try { markSeen(page); } catch(e){}
   var fn = (fnName && typeof window[fnName] === 'function') ? window[fnName] : null;
   if(fn){ fn(); } else { renderDashboard(); }
 }
@@ -1605,10 +1606,75 @@ function toggleFaq(i){
 /* =========================
    MENU CONTROL
 ========================= */
+
+/* ---- Attention Badges (red-dot engine) ---- */
+var ATTENTION = {leads:0,appointments:0,followup:0,testimonials:0,analytics:0,total:0};
+var SEEN_MAP = {leads:"leads", appointments:"appointments", followup:"followup", testimonials:"testimonials", analytics:"analytics", bizpage:"bizpage"};
+var LABEL_MAP = [["Customers","leads"],["Leads","leads"],["Appointments","appointments"],["Follow-Up","followup"],["Testimonials","testimonials"],["Reports","analytics"],["Analytics","analytics"]];
+
+function menuOpen(){ var m=document.getElementById("menu"); return m && m.style.display==="block"; }
+
+async function refreshAttention(){
+  try{
+    var res = await apiFetch("/api/attention",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var d = await res.json();
+    if(d && d.success){ ATTENTION = d; decorateHamburger(); if(menuOpen()) decorateMenu(); }
+  }catch(e){}
+}
+
+function markSeen(page){
+  var f = SEEN_MAP[page];
+  if(!f) return;
+  apiFetch("/api/seen",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({feature:f})}).catch(()=>{});
+  setTimeout(refreshAttention, 800);
+}
+
+function badgeSpan(count){
+  var s=document.createElement("span");
+  s.className="att_badge";
+  s.style.cssText="display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;margin-left:6px;background:#ef4444;color:white;border-radius:9px;font-size:11px;font-weight:700;text-align:center;vertical-align:middle";
+  s.textContent=count;
+  return s;
+}
+
+function decorateMenu(){
+  var m=document.getElementById("menu"); if(!m) return;
+  var items=m.children;
+  for(var i=0;i<items.length;i++){
+    var el=items[i];
+    var old=el.querySelector(".att_badge"); if(old) old.remove();
+    var txt=(el.textContent||"");
+    for(var j=0;j<LABEL_MAP.length;j++){
+      if(txt.indexOf(LABEL_MAP[j][0])!==-1){
+        var c=ATTENTION[LABEL_MAP[j][1]]||0;
+        if(c>0) el.appendChild(badgeSpan(c));
+        break;
+      }
+    }
+  }
+}
+
+function decorateHamburger(){
+  var btns=document.querySelectorAll('[onclick*="toggleMenu"]');
+  for(var b=0;b<btns.length;b++){
+    var btn=btns[b];
+    var old=btn.querySelector(".att_dot"); if(old) old.remove();
+    if(ATTENTION.total>0){
+      var d=document.createElement("span");
+      d.className="att_dot";
+      d.style.cssText="position:absolute;top:2px;right:2px;min-width:16px;height:16px;line-height:16px;padding:0 4px;background:#ef4444;color:white;border-radius:8px;font-size:10px;font-weight:700;text-align:center";
+      d.textContent=ATTENTION.total;
+      btn.style.position="relative";
+      btn.appendChild(d);
+    }
+  }
+}
+
 function toggleMenu(){
   const m = document.getElementById("menu");
   if(!m) return;
   m.style.display = m.style.display === "block" ? "none" : "block";
+  if(m.style.display === "block") decorateMenu();
 }
 
 function closeMenu(){
