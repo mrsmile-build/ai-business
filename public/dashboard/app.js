@@ -50,6 +50,7 @@ const API_BACKENDS = [
   "https://ai-business-90n6.onrender.com"
 ];
 const PUBLIC_BASE = "https://www.ai-business.com.ng";
+const PUBLIC_BASE = "https://www.ai-business.com.ng";
 let _activeBackend = null;
 let _backendCheckPromise = null;
 
