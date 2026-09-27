@@ -276,6 +276,7 @@ function showCelebrationModal(icon, message) {
 function closeCelebrationModal() {
   var modal = document.getElementById("celebration_modal");
   if (modal) modal.remove();
+  try { apiFetch("/api/celebrations/ack", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token") } }).catch(()=>{}); } catch(e){}
 }
 
 // Check for celebrations on dashboard load
@@ -1625,6 +1626,9 @@ async function refreshAttention(){
 function markSeen(page){
   var f = SEEN_MAP[page];
   if(!f) return;
+  ATTENTION[f] = 0;
+  ATTENTION.total = (ATTENTION.leads||0)+(ATTENTION.appointments||0)+(ATTENTION.followup||0)+(ATTENTION.testimonials||0)+(ATTENTION.analytics||0);
+  decorateHamburger(); if(menuOpen()) decorateMenu();
   apiFetch("/api/seen",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({feature:f})}).catch(()=>{});
   setTimeout(refreshAttention, 800);
 }
