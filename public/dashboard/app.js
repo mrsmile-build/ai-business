@@ -321,6 +321,15 @@ async function init(){
         menuEl.insertBefore(blogLink, menuEl.firstChild);
       }
 
+      if(!document.getElementById("demo_share_link")){
+        var demoLink = document.createElement("div");
+        demoLink.id = "demo_share_link";
+        demoLink.setAttribute("onclick", "window.open('/demo','_blank')");
+        demoLink.textContent = "▶ Public Demo (share this link)";
+        demoLink.style.cssText = "color:#2563eb;font-weight:600";
+        menuEl.insertBefore(demoLink, menuEl.firstChild);
+      }
+
       if(!document.getElementById("testimonials_admin_link")){
         var testimonialLink = document.createElement("div");
         testimonialLink.id = "testimonials_admin_link";
