@@ -8,6 +8,9 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/proxy" }
+    { "source": "/blog(.*)", "destination": "/api/proxy/blog$1" },
+    { "source": "/affiliate(.*)", "destination": "/api/proxy/affiliate$1" },
+    { "source": "/book(.*)", "destination": "/api/proxy/book$1" },
+    { "source": "/biz(.*)", "destination": "/api/proxy/biz$1" }
   ]
 }
