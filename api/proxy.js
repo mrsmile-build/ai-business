@@ -1,3 +1,18 @@
+
+export async function debugHandler(req, res) {
+  const url = new URL(req.url, `https://${req.headers.host}`);
+  if (url.pathname === '/api/debug-backends') {
+    res.setHeader('content-type', 'application/json');
+    res.status(200).send(JSON.stringify({
+      backends: BACKENDS,
+      first: BACKENDS[0],
+      deployed: new Date().toISOString(),
+      skipUntil
+    }));
+    return;
+  }
+}
+
 const BACKENDS = [
   'https://ai-business-90n6.onrender.com',
   'https://ai-business-1orz.onrender.com',
@@ -8,6 +23,13 @@ const BACKENDS = [
 const skipUntil = {};
 
 export default async (req, res) => {
+  const url = new URL(req.url, `https://${req.headers.host}`);
+  if (url.pathname === '/api/debug-backends') {
+    res.setHeader('content-type', 'application/json');
+    res.status(200).send(JSON.stringify({ backends: BACKENDS, first: BACKENDS[0], skipUntil, now: new Date().toISOString() }));
+    return;
+  }
+
   const url = new URL(req.url, `https://${req.headers.host}`);
   const path = url.pathname + url.search;
 
@@ -99,3 +121,4 @@ export default async (req, res) => {
     </html>
   `);
 };
+// Force redeploy: Mon Sep 28 15:31:33 WAT 2026
