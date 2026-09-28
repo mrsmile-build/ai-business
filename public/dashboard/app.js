@@ -459,6 +459,12 @@ function header(title, backPage){
 }
 function setView(html){
   app.innerHTML = html;
+  // Safety net: remove duplicate-id elements (keep first) so double-rendered fields never confuse editing
+  var seen = {};
+  var nodes = app.querySelectorAll("[id]");
+  for (var i = 0; i < nodes.length; i++) {
+    if (seen[nodes[i].id]) { nodes[i].remove(); } else { seen[nodes[i].id] = true; }
+  }
 }
 
 /* =========================
