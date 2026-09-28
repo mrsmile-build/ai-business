@@ -6,11 +6,5 @@
       "destination": "https://www.ai-business.com.ng/:path*",
       "permanent": true
     }
-  ],
-  "rewrites": [
-    { "source": "/blog(.*)", "destination": "/api/proxy/blog$1" },
-    { "source": "/affiliate(.*)", "destination": "/api/proxy/affiliate$1" },
-    { "source": "/book(.*)", "destination": "/api/proxy/book$1" },
-    { "source": "/biz(.*)", "destination": "/api/proxy/biz$1" }
   ]
 }
