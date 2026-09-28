@@ -4314,6 +4314,8 @@ function renderBlogEditor(id){
       <textarea id="bp_excerpt" placeholder="Short excerpt (shows in blog list)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box">${p.excerpt||''}</textarea>
       <textarea id="bp_content" placeholder="Full content (plain text or Markdown)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:200px;resize:vertical;box-sizing:border-box">${p.content||''}</textarea>
       <input id="bp_category" placeholder="Category (e.g. Business Tips)" value="${p.category||''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <p style="font-size:11px;color:#64748b;margin:0 0 4px">📅 Schedule for (optional — leave empty to publish now)</p>
+      <input id="bp_schedule" type="datetime-local" value="${(p.status==='scheduled' && p.published_at) ? new Date(p.published_at).toISOString().slice(0,16) : ''}" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <div style="margin-bottom:10px">
         <input type="file" id="bp_cover_file" accept="image/*" onchange="previewBlogCover(this)" style="display:none">
         <button onclick="document.getElementById('bp_cover_file').click()" style="width:100%;padding:10px;background:#334155;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📷 Choose Cover Image from Gallery</button>
@@ -4357,6 +4359,14 @@ async function saveBlogPost(id, status){
     seo_description: document.getElementById("bp_seo_desc").value.trim(),
     status: status
   };
+  var schedVal = (document.getElementById("bp_schedule") || {}).value || "";
+  if (status === "published" && schedVal) {
+    var schedDate = new Date(schedVal);
+    if (!isNaN(schedDate) && schedDate > new Date()) {
+      body.status = "scheduled";
+      body.published_at = schedDate.toISOString();
+    }
+  }
   if(!body.title){ alert("Title is required."); return; }
   try {
     var url = id ? "/api/admin/blog/" + id : "/api/admin/blog";
@@ -4367,7 +4377,7 @@ async function saveBlogPost(id, status){
       body: JSON.stringify(body)
     });
     var data = await res.json();
-    if(data.success){ alert(status === "published" ? "Published!" : "Draft saved."); renderBlogAdmin(); }
+    if(data.success){ alert(body.status === "published" ? "Published!" : body.status === "scheduled" ? "Scheduled! It goes live automatically at the chosen time." : "Draft saved."); renderBlogAdmin(); }
     else { alert(data.error || "Error saving."); }
   } catch(e){ alert("Network error."); }
 }

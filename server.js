@@ -2426,7 +2426,8 @@ app.post("/api/biz/:userId/enquiry", rateLimit(5, 60000), async (req, res) => {
 
 app.get("/blog", async (req, res) => {
   try {
-    const { data: posts } = await supabase.from("blog_posts").select("title, slug, excerpt, category, cover_image_url, published_at").eq("status", "published").order("published_at", { ascending: false });
+    const nowIso = new Date().toISOString();
+    const { data: posts } = await supabase.from("blog_posts").select("title, slug, excerpt, category, cover_image_url, published_at").or("status.eq.published,and(status.eq.scheduled,published_at.lte." + nowIso + ")").order("published_at", { ascending: false });
     const list = posts || [];
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -3631,14 +3632,16 @@ function slugify(title){
 
 app.get("/api/blog", async (req, res) => {
   try {
-    const { data } = await supabase.from("blog_posts").select("*").eq("status", "published").order("published_at", { ascending: false });
+    const nowIso = new Date().toISOString();
+    const { data } = await supabase.from("blog_posts").select("*").or("status.eq.published,and(status.eq.scheduled,published_at.lte." + nowIso + ")").order("published_at", { ascending: false });
     res.json({ success: true, posts: data || [] });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get("/api/blog/:slug", async (req, res) => {
   try {
-    const { data } = await supabase.from("blog_posts").select("*").eq("slug", req.params.slug).eq("status", "published").single();
+    const nowIso = new Date().toISOString();
+    const { data } = await supabase.from("blog_posts").select("*").eq("slug", req.params.slug).or("status.eq.published,and(status.eq.scheduled,published_at.lte." + nowIso + ")").single();
     if(!data) return res.status(404).json({ success: false, error: "Post not found" });
     res.json({ success: true, post: data });
   } catch(err) { res.status(500).json({ error: err.message }); }
@@ -3722,7 +3725,7 @@ app.post("/api/admin/blog", authMiddleware, async (req, res) => {
     const insert = {
       title, slug, content, excerpt, cover_image_url, category, tags, seo_title, seo_description,
       status: status || "draft", author: "AI Business",
-      published_at: status === "published" ? new Date() : null
+      published_at: status === "published" ? new Date() : (status === "scheduled" && req.body.published_at ? new Date(req.body.published_at) : null)
     };
     const blogClient1 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const { data, error } = await blogClient1.from("blog_posts").insert(insert).select().single();
@@ -3737,6 +3740,7 @@ app.patch("/api/admin/blog/:id", authMiddleware, async (req, res) => {
     const updates = { ...req.body, updated_at: new Date() };
     if(req.body.title) updates.slug = slugify(req.body.title);
     if(req.body.status === "published") updates.published_at = new Date();
+    if(req.body.status === "scheduled" && req.body.published_at) updates.published_at = new Date(req.body.published_at);
     const blogClient2 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     const { data, error } = await blogClient2.from("blog_posts").update(updates).eq("id", req.params.id).select().single();
     if(error) throw error;
