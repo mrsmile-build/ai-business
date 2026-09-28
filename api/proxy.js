@@ -31,7 +31,7 @@ export default async (req, res) => {
         headers,
         body: req.method !== 'GET' && req.method !== 'HEAD' ? req.body : undefined,
         redirect: 'manual',
-        signal: AbortSignal.timeout(45000) // 45s timeout (Render cold start takes 30-50s)
+        signal: AbortSignal.timeout(4000) // 45s timeout (Render cold start takes 30-50s)
       });
 
       const text = await response.text();
@@ -57,6 +57,10 @@ export default async (req, res) => {
         }
       });
 
+      delete responseHeaders['cache-control'];
+      delete responseHeaders['etag'];
+      delete responseHeaders['age'];
+      res.setHeader('cache-control', 'no-store, max-age=0');
       Object.entries(responseHeaders).forEach(([key, value]) => {
         res.setHeader(key, value);
       });
