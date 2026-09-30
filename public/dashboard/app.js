@@ -2865,7 +2865,10 @@ async function renderAnalytics(){
    APPOINTMENTS
 ========================= */
 async function renderAppointments(){
-  setView(`<div class="card">${header("📅 Appointments","dashboard")}<p style="color:#64748b">Loading...</p></div>`);
+  setView(`<div class="card">${header("📅 Appointments","dashboard")}
+  <div style="background:#1e293b;border-left:3px solid #3b82f6;padding:10px 12px;border-radius:6px;margin:12px 0">
+    <p style="font-size:12px;color:#cbd5e1;margin:0"><strong>How this works:</strong> Share your Booking Link on WhatsApp status or Instagram bio. New bookings land here as Pending — tap <strong>Confirm</strong> to approve (they get a reminder) or <strong>Cancel</strong> to decline. The red badge counts bookings that arrived since your last visit.</p>
+  </div><p style="color:#64748b">Loading...</p></div>`);
   try {
     const [svcRes, bookRes, bizRes] = await Promise.all([
       apiFetch("/api/services",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}),

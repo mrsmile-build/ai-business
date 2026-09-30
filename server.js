@@ -157,8 +157,9 @@ app.get("/api/attention", authMiddleware, async (req, res) => {
       const r = await q; out.leads = r.count || 0;
     } catch(e){}
     try {
-      const r = await wc.from("bookings").select("*", { count: "exact", head: true }).eq("user_id", uid).eq("status", "pending");
-      out.appointments = r.count || 0;
+      let bq = wc.from("bookings").select("*", { count: "exact", head: true }).eq("user_id", uid).eq("status", "pending");
+      if (ls.appointments) bq = bq.gt("created_at", ls.appointments);
+      const r = await bq; out.appointments = r.count || 0;
     } catch(e){}
     try {
       const cutoff = new Date(Date.now() - 3*864e5).toISOString();
