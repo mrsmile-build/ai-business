@@ -494,6 +494,7 @@ function loadPage(page){
     subscription: 'renderSubscription',
     settings: 'renderSettings',
     support: 'renderSupport',
+    help: 'renderHelp',
     editProfile: 'renderEditProfile',
     leadFinder: 'renderLeadFinder',
     proposal: 'renderProposal',
@@ -1537,7 +1538,7 @@ function renderSettings(){
         <p onclick="loadPage('editProfile')" style="cursor:pointer">✏️ Edit Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
-        <p onclick="window.open('/help','_blank')" style="cursor:pointer">📘 Help & Guides</p>
+        <p onclick="loadPage('help')" style="cursor:pointer">📘 Help & Guides</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
         <hr style="border:none;border-top:1px solid #1e293b;margin:10px 0">
         <p onclick="deleteAccount()" style="color:#ef4444;cursor:pointer;font-size:13px">🗑 Delete Account</p>
@@ -1550,6 +1551,21 @@ function renderSettings(){
    SUPPORT
 ========================= */
 let supportHistory = [];
+
+function renderHelp(){
+  setView(`<div class="card">${header("📘 Help Center","dashboard")}
+  <p style="color:#94a3b8;font-size:13px;margin-bottom:14px">Quick answers, no email needed. Tap a topic to open it.</p>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">🚀 Getting started in 5 minutes</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">1. Create your free account (no card).<br>2. Open Lead Finder, search your city + industry.<br>3. Save one lead to your CRM.<br>4. Use AI Tools to write and send your first WhatsApp message.<br>5. Generate a proposal and mark the deal Won.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">📥 Adding & managing leads</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">Add leads from Customers → + Add Lead, or save straight from Lead Finder. Move them through New → Contacted → Interested → Negotiation → Won/Lost. Your pipeline updates automatically.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">⏰ Follow-ups: what they do (and don't do)</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">A follow-up date is a reminder for YOU. On that date we flag the lead and draft a message you send with one tap. <strong style="color:#fbbf24">Nothing is ever sent to your customer automatically.</strong> Quiet leads (3+ days) appear in Follow-Up Assistant with ready messages.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">📄 Proposals in 2 minutes</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">Open a lead → Generate Proposal. The AI writes it from the details YOU provide — no made-up facts. Edit anything, then share the link.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">📅 Bookings & your public page</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">Your Business Page is your free mini-website with services, reviews and a booking button. Share it on WhatsApp status. Bookings land in Appointments — confirm with one tap.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">💳 Plans & getting paid</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">Free: 10 leads, 20 AI uses/day. Starter ₦6k, Pro ₦15k, Business ₦45k/month unlock more. Customers pay you via Paystack on proposals/invoices.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">🤝 Affiliate: earn 50% + 20%</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0">Share your referral link (menu → Affiliate). You earn 50% of the first payment plus 20% recurring while they stay subscribed.</p></details>
+  <details style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">❓ Quick FAQ</summary><p style="font-size:12px;color:#cbd5e1;margin:10px 0 0"><strong>Is my data safe?</strong> Only you see your leads.<br><strong>Does it message customers alone?</strong> No — it drafts, you approve.<br><strong>"Warming up"?</strong> Free hosting sleeps; wakes in ~30s. Paid never sleeps.<br><strong>Export leads?</strong> Yes — CSV in Leads page.</p></details>
+  <p style="margin-top:14px;font-size:12px;color:#94a3b8">Still stuck?  Support sends your issue straight to the founder.</p>
+  </div>`);
+}
 
 function renderSupport(){
   supportHistory = [];
