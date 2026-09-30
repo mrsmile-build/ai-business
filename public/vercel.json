@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/blog",
-      "destination": "https://ai-business-1-ok3x.onrender.com/blog"
+      "destination": "https://ai-business-90n6.onrender.com/blog"
     },
     {
       "source": "/blog/:slug",
-      "destination": "https://ai-business-1-ok3x.onrender.com/blog/:slug"
+      "destination": "https://ai-business-90n6.onrender.com/blog/:slug"
     },
     {
       "source": "/biz/:slug",
