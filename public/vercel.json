@@ -76,5 +76,12 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/help",
+      "destination": "/help.html",
+      "permanent": false
+    }
   ]
 }

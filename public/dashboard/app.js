@@ -1574,7 +1574,7 @@ function renderSupport(){
       ${header("🆘 Support","dashboard")}
 
       <p style="color:#94a3b8;font-size:13px;margin-bottom:12px">Tell our AI support what you need help with. It will collect your issue and send it directly to our team.</p>
-      <p style="margin:0 0 12px"><a href="/help" target="_blank" style="color:#3b82f6;font-size:12px">📘 Or browse the Help Center for quick guides →</a></p>
+      <p style="margin:0 0 12px"><a href="/help.html" target="_blank" style="color:#3b82f6;font-size:12px">📘 Or browse the Help Center for quick guides →</a></p>
 
       <div id="support_chat" style="min-height:60px;max-height:40vh;overflow-y:auto;margin-bottom:10px"></div>
 
