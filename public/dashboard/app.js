@@ -5646,6 +5646,9 @@ async function renderFollowupAssistantUI(containerId = 'app') {
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
       <h2 style="margin-top:0; color:#22c55e;">🎯 AI Sales Follow-Up Assistant</h2>
       <p style="color:#94a3b8; font-size:14px;">Generate high-converting follow-up messages and objection destroyers for cold prospects.</p>
+      <div style="background:#1e293b;border-left:3px solid #10b981;padding:10px 12px;border-radius:6px;margin-top:12px">
+        <p style="font-size:12px;color:#cbd5e1;margin:0"><strong>How this works:</strong> Your red badge = leads that went quiet 3+ days. Type their name + what you last sent below, and the AI writes a follow-up you paste into WhatsApp. Opening this page clears the badge; it returns only when a new lead goes quiet.</p>
+      </div>
       
       <form id="followup-form" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;">
         <div>

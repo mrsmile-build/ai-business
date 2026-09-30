@@ -162,8 +162,13 @@ app.get("/api/attention", authMiddleware, async (req, res) => {
     } catch(e){}
     try {
       const cutoff = new Date(Date.now() - 3*864e5).toISOString();
-      const r = await wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid).not("status", "in", '("won","lost")').lt("updated_at", cutoff);
-      out.followup = r.count || 0;
+      let fq = wc.from("leads").select("*", { count: "exact", head: true }).eq("user_id", uid).not("status", "in", '("won","lost")').lt("updated_at", cutoff);
+      if (ls.followup) {
+        // Only count leads that went quiet AFTER the user last opened Follow-Up
+        const sinceSeen = new Date(new Date(ls.followup).getTime() - 3*864e5).toISOString();
+        fq = fq.gt("updated_at", sinceSeen);
+      }
+      const r = await fq; out.followup = r.count || 0;
     } catch(e){}
     try {
       const r = await wc.from("testimonials").select("*", { count: "exact", head: true }).eq("user_id", uid).eq("status", "pending");
