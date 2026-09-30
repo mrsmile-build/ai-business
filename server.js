@@ -26,6 +26,7 @@ app.use(express.json());
     const path = require('path');
     app.get('/about', (req, res) => res.sendFile(path.join(__dirname, 'public/about.html')));
     app.get('/faq', (req, res) => res.sendFile(path.join(__dirname, 'public/faq.html')));
+    app.get('/help', (req, res) => res.sendFile(path.join(__dirname, 'public/help.html')));
     app.get('/privacy-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/privacy-policy.html')));
     app.get('/terms-of-service', (req, res) => res.sendFile(path.join(__dirname, 'public/terms-of-service.html')));
     app.get('/resources', (req, res) => res.sendFile(path.join(__dirname, 'public/resources/index.html')));

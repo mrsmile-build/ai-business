@@ -1129,6 +1129,7 @@ async function renderLeadDetailObj(lead){
         <p style="margin:0 0 10px;font-size:13px;font-weight:bold">⏰ Follow-up Reminder</p>
         <p style="margin:0 0 6px;font-size:12px;color:#64748b">Set a date to follow up with this lead</p>
         <input type="date" id="ld_followup" value="${lead.follow_up_date||""}" min="${new Date().toISOString().split("T")[0]}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
+        <p style="font-size:11px;color:#64748b;margin:0 0 8px">⏰ Reminder only — AI Business reminds YOU on this date. Nothing is sent automatically without you.</p>
         <input id="ld_sale" type="number" placeholder="Sale amount (if won)" value="${lead.sale_amount||""}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
         <button onclick="saveLeadFollowup('${lead.id}')" style="width:100%;padding:10px;background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save Follow-up Date</button>
         <div id="followup_save_result" style="margin-top:6px"></div>
@@ -1186,7 +1187,7 @@ async function saveLeadFollowup(id){
     var data = await res.json();
     if(data.success){
       if(window._allLeads){ var l=window._allLeads.find(x=>x.id===id); if(l && date) l.follow_up_date=date; }
-      if(result) result.innerHTML = "<p style='color:#10b981;font-size:12px'>✅ Follow-up date saved!</p>";
+      if(result) result.innerHTML = "<p style='color:#10b981;font-size:12px'>✅ Reminder saved! We\'ll nudge you on that date — nothing sends without you.</p>";
       setTimeout(()=>{ if(result) result.innerHTML=""; },3000);
     } else { if(result) result.innerHTML = "<p style='color:red;font-size:12px'>Error saving.</p>"; }
   } catch(e){ if(result) result.innerHTML = "<p style='color:red;font-size:12px'>Network error.</p>"; }
@@ -1536,6 +1537,7 @@ function renderSettings(){
         <p onclick="loadPage('editProfile')" style="cursor:pointer">✏️ Edit Profile</p>
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
+        <p onclick="window.open('/help','_blank')" style="cursor:pointer">📘 Help & Guides</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
         <hr style="border:none;border-top:1px solid #1e293b;margin:10px 0">
         <p onclick="deleteAccount()" style="color:#ef4444;cursor:pointer;font-size:13px">🗑 Delete Account</p>
@@ -1556,6 +1558,7 @@ function renderSupport(){
       ${header("🆘 Support","dashboard")}
 
       <p style="color:#94a3b8;font-size:13px;margin-bottom:12px">Tell our AI support what you need help with. It will collect your issue and send it directly to our team.</p>
+      <p style="margin:0 0 12px"><a href="/help" target="_blank" style="color:#3b82f6;font-size:12px">📘 Or browse the Help Center for quick guides →</a></p>
 
       <div id="support_chat" style="min-height:60px;max-height:40vh;overflow-y:auto;margin-bottom:10px"></div>
 
