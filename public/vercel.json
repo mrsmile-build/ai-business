@@ -10,11 +10,11 @@
     },
     {
       "source": "/biz/:slug",
-      "destination": "https://ai-business-1-ok3x.onrender.com/biz/:slug"
+      "destination": "https://ai-business-90n6.onrender.com/biz/:slug"
     },
     {
       "source": "/book/:userId",
-      "destination": "https://ai-business-1-ok3x.onrender.com/book/:userId"
+      "destination": "https://ai-business-90n6.onrender.com/book/:userId"
     },
     {
       "source": "/api/:path*",
