@@ -710,11 +710,19 @@ function showMomentBanner(){
     }
     if (ms.length===0) { localStorage.setItem(key,"1"); return; }
     localStorage.setItem(key,"1");
-    box.innerHTML = '🎊 <b>' + ms.map(function(x){ return x.text; }).join('</b><br>🎊 <b>') + '</b> <button id="moment_see" style="margin-left:8px;background:#2563eb;color:#fff;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px">View details 🎊</button> <button id="moment_close" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:14px">✕</button>';
+    box.innerHTML = '🎊 <b>' + ms.map(function(x){ return x.text; }).join('</b><br>🎊 <b>') + '</b> <span style="color:#94a3b8;font-size:11px;margin-left:6px">tap for details</span> <button id="moment_close" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:14px">✕</button>';
+    box.style.cursor = "pointer";
     document.body.appendChild(box);
-    document.getElementById("moment_see").onclick = function(){ box.remove(); loadPage('moments'); };
-    document.getElementById("moment_close").onclick = function(){ box.remove(); };
-    setTimeout(function(){ var b=document.getElementById("moment_banner"); if(b) b.remove(); }, 15000);
+    box.onclick = function(e){ if(e.target && e.target.id==="moment_close") return; box.remove(); loadPage('moments'); };
+    document.getElementById("moment_close").onclick = function(e){ e.stopPropagation(); localStorage.setItem(key,"1"); box.remove(); };
+    setTimeout(function(){
+      var b=document.getElementById("moment_banner");
+      if(!b) return;
+      b.innerHTML = '🎊';
+      b.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:9999;background:#1e293b;border:1px solid #f59e0b;border-radius:999px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)";
+      b.title = "Today's celebration - tap to view";
+      b.onclick = function(){ b.remove(); loadPage('moments'); };
+    }, 8000);
   } catch(e){}
 }
 
@@ -5731,9 +5739,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // --- AI FOLLOWUP ASSISTANT UI ---
+function calUrl(title, details){
+  var d = new Date(); d.setDate(d.getDate()+1); d.setHours(10,0,0,0);
+  var e = new Date(d.getTime()+30*60000);
+  function f(x){ return x.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""); }
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(title)+"&dates="+f(d)+"/"+f(e)+"&details="+encodeURIComponent(details);
+}
+async function injectWaitingList(containerId){
+  var container = document.getElementById(containerId);
+  if(!container) return;
+  var host = document.createElement("div");
+  host.id = "waiting_list";
+  host.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:16px"><h3 style="margin:0 0 4px;color:#f59e0b">⏳ Waiting on you</h3><p style="color:#64748b;font-size:12px;margin:0 0 10px">Leads quiet 3+ days or past their follow-up date. Nothing sends without you.</p><div id="waiting_items"><p style="color:#64748b;font-size:12px">Checking…</p></div></div>';
+  container.insertBefore(host, container.firstChild);
+  try {
+    var res = await apiFetch("/api/followup-assistant", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
+    var items = (res && res.followups) || [];
+    var box = document.getElementById("waiting_items");
+    if(!items.length){ box.innerHTML = '<p style="color:#10b981;font-size:12px">🎉 Nobody is waiting on you right now. Great follow-up discipline!</p>'; return; }
+    box.innerHTML = items.map(function(f){
+      var msg = f.message || f.msg || f.text || "";
+      var days = (f.days != null) ? f.days : "";
+      var wa = f.phone ? 'https://wa.me/' + String(f.phone).replace(/[^0-9]/g,"").replace(/^0/,"234") + '?text=' + encodeURIComponent(msg) : '';
+      return '<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px">'+ (f.name||'Lead') +'</b><span style="font-size:11px;color:#f59e0b">'+ (days? days+' days quiet':'needs follow-up') +'</span></div>' +
+        (f.business? '<div style="font-size:11px;color:#64748b">'+f.business+'</div>':'') +
+        '<div style="background:#0b1220;border-left:3px solid #25d366;padding:8px 10px;border-radius:6px;margin:8px 0;font-size:12px;color:#cbd5e1">"'+ msg +'"</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+          (wa? '<a href="'+wa+'" target="_blank" style="padding:6px 10px;background:#25d366;color:#06281a;border-radius:6px;text-decoration:none;font-size:11px;font-weight:700">💬 Send WhatsApp</a>':'') +
+          '<a href="'+ calUrl('Follow up: '+(f.name||'lead'), msg) +'" target="_blank" style="padding:6px 10px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-size:11px">📅 Remind me</a>' +
+        '</div></div>';
+    }).join('');
+  } catch(e){ var b2=document.getElementById("waiting_items"); if(b2) b2.innerHTML='<p style="color:#64748b;font-size:12px">Could not load waiting list.</p>'; }
+}
+
 async function renderFollowupAssistantUI(containerId = 'app') {
   const container = document.getElementById(containerId);
   if (!container) return;
+  injectWaitingList(containerId);
 
   container.innerHTML = `
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
