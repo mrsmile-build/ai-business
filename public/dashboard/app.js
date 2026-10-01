@@ -5751,7 +5751,9 @@ async function injectWaitingList(containerId){
   var host = document.createElement("div");
   host.id = "waiting_list";
   host.innerHTML = '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:16px"><h3 style="margin:0 0 4px;color:#f59e0b">⏳ Waiting on you</h3><p style="color:#64748b;font-size:12px;margin:0 0 10px">Leads quiet 3+ days or past their follow-up date. Nothing sends without you.</p><div id="waiting_items"><p style="color:#64748b;font-size:12px">Checking…</p></div></div>';
-  container.insertBefore(host, container.firstChild);
+  var form = container.querySelector("#followup-form");
+  if (form && form.parentNode) form.parentNode.insertBefore(host, form);
+  else container.insertBefore(host, container.firstChild);
   try {
     var res = await apiFetch("/api/followup-assistant", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
     var items = (res && res.followups) || [];
@@ -5776,7 +5778,7 @@ async function injectWaitingList(containerId){
 async function renderFollowupAssistantUI(containerId = 'app') {
   const container = document.getElementById(containerId);
   if (!container) return;
-  injectWaitingList(containerId);
+  setTimeout(function(){ injectWaitingList(containerId); }, 60);
 
   container.innerHTML = `
     <div style="background:#0f172a; padding:24px; border-radius:12px; color:#f8fafc; border:1px solid #1e293b;">
