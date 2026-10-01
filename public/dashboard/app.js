@@ -655,7 +655,54 @@ function startBusinessGoal(goal){
     </div>
   `);
 }
+var MOMENTS = [
+  {md:"01-01", scope:"ALL", text:"Happy New Year! May this year bring you every customer you deserve."},
+  {md:"02-14", scope:"ALL", text:"Happy Valentine's Day! Your customers would love a check-in today."},
+  {md:"05-01", scope:"ALL", text:"Happy Workers' Day! Rest well - the follow-ups can wait for you."},
+  {md:"12-25", scope:"ALL", text:"Merry Christmas!"},
+  {md:"12-26", scope:"ALL", text:"Happy Boxing Day!"},
+  {md:"10-01", scope:"NG", text:"Happy Independence Day, Nigeria! 66 years strong - and your business is part of the story."},
+  {md:"06-12", scope:"NG", text:"Happy Democracy Day, Nigeria!"},
+  {md:"03-06", scope:"GH", text:"Happy Independence Day, Ghana!"},
+  {md:"07-01", scope:"GH", text:"Happy Republic Day, Ghana!"},
+  {md:"06-01", scope:"KE", text:"Happy Madaraka Day, Kenya!"},
+  {md:"12-12", scope:"KE", text:"Jamhuri Day, Kenya!"},
+  {md:"04-27", scope:"ZA", text:"Happy Freedom Day, South Africa!"},
+  {md:"07-04", scope:"US", text:"Happy Independence Day, USA!"}
+];
+function momentCountry(){ try { return localStorage.getItem("ab_country") || ""; } catch(e){ return ""; } }
+function showMomentBanner(){
+  try {
+    var now = new Date();
+    var md = String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+    var key = "ab_moment_" + md;
+    if (localStorage.getItem(key)) return;
+    var c = momentCountry();
+    var m = null;
+    for (var i=0;i<MOMENTS.length;i++){ if (MOMENTS[i].md===md && (MOMENTS[i].scope==="ALL" || MOMENTS[i].scope===c)) { m = MOMENTS[i]; break; } }
+    var box = document.createElement("div");
+    box.id = "moment_banner";
+    box.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 16px;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px;color:#e2e8f0";
+    if (!m && !c) {
+      var todayScoped = MOMENTS.some(function(x){ return x.md===md && x.scope!=="ALL"; });
+      if (!todayScoped) return;
+      box.innerHTML = '🎊 <b>Today is a special day somewhere!</b> <span style="color:#94a3b8">Pick your country so we celebrate YOUR days:</span> <select id="ab_country_sel" style="margin-left:8px;background:#0b1220;color:#fff;border:1px solid #334155;border-radius:6px;padding:4px"><option value="NG">Nigeria</option><option value="GH">Ghana</option><option value="KE">Kenya</option><option value="ZA">South Africa</option><option value="US">United States</option><option value="GB">United Kingdom</option></select> <button id="ab_country_save" style="margin-left:6px;background:#2563eb;color:#fff;border:0;border-radius:6px;padding:5px 10px;cursor:pointer">Save</button> <button id="moment_close" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer">✕</button>';
+      document.body.appendChild(box);
+      document.getElementById("ab_country_save").onclick = function(){ localStorage.setItem("ab_country", document.getElementById("ab_country_sel").value); box.remove(); showMomentBanner(); };
+      document.getElementById("moment_close").onclick = function(){ localStorage.setItem(key,"1"); box.remove(); };
+      return;
+    }
+    if (!m) { localStorage.setItem(key,"1"); return; }
+    localStorage.setItem(key,"1");
+    box.innerHTML = '🎊 <b>' + m.text + '</b> <span style="color:#94a3b8">- from your AI Business family</span> <button id="moment_close" style="margin-left:10px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:14px">✕</button>';
+    document.body.appendChild(box);
+    document.getElementById("moment_close").onclick = function(){ box.remove(); };
+    setTimeout(function(){ var b=document.getElementById("moment_banner"); if(b) b.remove(); }, 15000);
+  } catch(e){}
+}
+
 function renderDashboard(){
+  setTimeout(showMomentBanner, 900);
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
   var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
