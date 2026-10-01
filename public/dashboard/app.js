@@ -495,6 +495,7 @@ function loadPage(page){
     settings: 'renderSettings',
     support: 'renderSupport',
     help: 'renderHelp',
+    moments: 'renderMoments',
     editProfile: 'renderEditProfile',
     leadFinder: 'renderLeadFinder',
     proposal: 'renderProposal',
@@ -670,6 +671,22 @@ var MOMENTS = [
   {md:"04-27", scope:"ZA", text:"Happy Freedom Day, South Africa!"},
   {md:"07-04", scope:"US", text:"Happy Independence Day, USA!"}
 ];
+var MOMENT_DETAILS = {
+"10-01-NG": "Nigeria gained independence from British colonial rule on 1 October 1960, with Abubakar Tafawa Balewa as first Prime Minister and Nnamdi Azikiwe as Governor-General - later first President when Nigeria became a Federal Republic on 1 October 1963. The independence movement was driven by leaders like Nnamdi Azikiwe, Obafemi Awolowo, Ahmadu Bello and Anthony Enahoro. The green-white-green flag was first raised that day.",
+"06-12-NG": "Democracy Day commemorates the 12 June 1993 presidential election, widely believed won by MKO Abiola but annulled by the military regime. Officially renamed Democracy Day in 2018, honoring the struggle for civilian rule.",
+"01-01-ALL": "January 1 opens the Gregorian calendar year. The January start dates to Julius Caesar's calendar reform of 45 BC; today it is marked worldwide with fireworks, resolutions and family gatherings.",
+"02-14-ALL": "Valentine's Day is named after St. Valentine; its link to romantic love grew from 14th-century poetry, especially Chaucer, into today's global day of affection.",
+"05-01-ALL": "International Workers' Day traces to the 1886 Haymarket affair in Chicago and the global fight for the eight-hour workday. A public holiday in over 80 countries.",
+"12-25-ALL": "Christmas Day commemorates the birth of Jesus Christ. Modern customs - gift-giving, family meals, charity - grew from 19th-century traditions across Europe and beyond.",
+"12-26-ALL": "Boxing Day traditionally gave gifts to servants and the needy the day after Christmas; today a public holiday across Commonwealth nations.",
+"03-06-GH": "Ghana became the first sub-Saharan African colony to gain independence from Britain on 6 March 1957, led by Kwame Nkrumah - a spark for independence movements across the continent.",
+"07-01-GH": "Republic Day marks Ghana becoming a republic on 1 July 1960, with Kwame Nkrumah as its first President.",
+"06-01-KE": "Madaraka Day marks 1 June 1963, when Kenya attained internal self-governance from Britain.",
+"12-12-KE": "Jamhuri Day marks 12 December 1964, when Kenya became a republic - 'jamhuri' means republic in Swahili.",
+"04-27-ZA": "Freedom Day commemorates 27 April 1994, South Africa's first non-racial democratic elections, in which Nelson Mandela voted and was later inaugurated President.",
+"07-04-US": "Independence Day marks the 1776 Declaration of Independence, when thirteen colonies declared themselves free from British rule."
+};
+
 function momentCountry(){ try { return localStorage.getItem("ab_country") || ""; } catch(e){ return ""; } }
 function showMomentBanner(){
   try {
@@ -678,12 +695,11 @@ function showMomentBanner(){
     var key = "ab_moment_" + md;
     if (localStorage.getItem(key)) return;
     var c = momentCountry();
-    var m = null;
-    for (var i=0;i<MOMENTS.length;i++){ if (MOMENTS[i].md===md && (MOMENTS[i].scope==="ALL" || MOMENTS[i].scope===c)) { m = MOMENTS[i]; break; } }
+    var ms = MOMENTS.filter(function(x){ return x.md===md && (x.scope==="ALL" || x.scope===c); });
     var box = document.createElement("div");
     box.id = "moment_banner";
     box.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 16px;max-width:92vw;box-shadow:0 8px 24px rgba(0,0,0,.5);font-size:13px;color:#e2e8f0";
-    if (!m && !c) {
+    if (ms.length===0 && !c) {
       var todayScoped = MOMENTS.some(function(x){ return x.md===md && x.scope!=="ALL"; });
       if (!todayScoped) return;
       box.innerHTML = '🎊 <b>Today is a special day somewhere!</b> <span style="color:#94a3b8">Pick your country so we celebrate YOUR days:</span> <select id="ab_country_sel" style="margin-left:8px;background:#0b1220;color:#fff;border:1px solid #334155;border-radius:6px;padding:4px"><option value="NG">Nigeria</option><option value="GH">Ghana</option><option value="KE">Kenya</option><option value="ZA">South Africa</option><option value="US">United States</option><option value="GB">United Kingdom</option></select> <button id="ab_country_save" style="margin-left:6px;background:#2563eb;color:#fff;border:0;border-radius:6px;padding:5px 10px;cursor:pointer">Save</button> <button id="moment_close" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer">✕</button>';
@@ -692,10 +708,11 @@ function showMomentBanner(){
       document.getElementById("moment_close").onclick = function(){ localStorage.setItem(key,"1"); box.remove(); };
       return;
     }
-    if (!m) { localStorage.setItem(key,"1"); return; }
+    if (ms.length===0) { localStorage.setItem(key,"1"); return; }
     localStorage.setItem(key,"1");
-    box.innerHTML = '🎊 <b>' + m.text + '</b> <span style="color:#94a3b8">- from your AI Business family</span> <button id="moment_close" style="margin-left:10px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:14px">✕</button>';
+    box.innerHTML = '🎊 <b>' + ms.map(function(x){ return x.text; }).join('</b><br>🎊 <b>') + '</b> <button id="moment_see" style="margin-left:8px;background:#2563eb;color:#fff;border:0;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:11px">View details 🎊</button> <button id="moment_close" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:14px">✕</button>';
     document.body.appendChild(box);
+    document.getElementById("moment_see").onclick = function(){ box.remove(); loadPage('moments'); };
     document.getElementById("moment_close").onclick = function(){ box.remove(); };
     setTimeout(function(){ var b=document.getElementById("moment_banner"); if(b) b.remove(); }, 15000);
   } catch(e){}
@@ -1586,6 +1603,7 @@ function renderSettings(){
         <p onclick="loadPage('subscription')" style="cursor:pointer">💳 Subscription</p>
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
         <p onclick="loadPage('help')" style="cursor:pointer">📘 Help & Guides</p>
+        <p onclick="loadPage('moments')" style="cursor:pointer">🎊 Moments</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
         <hr style="border:none;border-top:1px solid #1e293b;margin:10px 0">
         <p onclick="deleteAccount()" style="color:#ef4444;cursor:pointer;font-size:13px">🗑 Delete Account</p>
@@ -1598,6 +1616,31 @@ function renderSettings(){
    SUPPORT
 ========================= */
 let supportHistory = [];
+
+function renderMoments(){
+  var c = momentCountry();
+  var now = new Date();
+  var md = String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
+  var opts = [["NG","Nigeria"],["GH","Ghana"],["KE","Kenya"],["ZA","South Africa"],["US","United States"],["GB","United Kingdom"]];
+  var sel = '<select onchange="localStorage.setItem(\'ab_country\', this.value); loadPage(\'moments\');" style="background:#0b1220;color:#fff;border:1px solid #334155;border-radius:6px;padding:6px">' + opts.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===c?' selected':'')+'>'+o[1]+'</option>'; }).join('') + '</select>';
+  var todays = MOMENTS.filter(function(x){ return x.md===md && (x.scope==="ALL" || x.scope===c); });
+  var sorted = MOMENTS.slice().sort(function(x,y){ return x.md < y.md ? -1 : 1; });
+  var rows = sorted.map(function(x, i){
+    var status = x.md===md ? "🎊 TODAY" : (x.md < md ? "Passed" : "Upcoming");
+    var det = MOMENT_DETAILS[x.md+"-"+x.scope] || MOMENT_DETAILS[x.md+"-ALL"] || "";
+    return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><b style="font-size:13px">' + x.text + '</b><div style="font-size:11px;color:#64748b">' + x.md + ' · ' + (x.scope==="ALL"?"Global":x.scope) + ' · ' + status + '</div></div>' +
+      (det ? '<button onclick="var d=document.getElementById(\'mdet_'+i+'\'); d.style.display = d.style.display===\'none\'?\'block\':\'none\';" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer">View details</button>' : '') + '</div>' +
+      (det ? '<div id="mdet_'+i+'" style="display:none;margin-top:8px;font-size:12px;color:#cbd5e1;background:#1e293b;border-left:3px solid #f59e0b;padding:8px 10px;border-radius:6px">' + det + '</div>' : '') +
+      '</div>';
+  }).join('');
+  setView('<div class="card">' + header("🎊 Moments","dashboard") +
+    '<p style="color:#94a3b8;font-size:13px">Celebrations, holidays and important days - for you and your people. Your country: ' + sel + '</p>' +
+    (todays.length ? '<div style="background:#1e293b;border:1px solid #f59e0b;border-radius:10px;padding:10px 12px;margin:10px 0"><b style="font-size:13px">Today:</b><div style="font-size:12px;color:#cbd5e1;margin-top:4px">🎊 ' + todays.map(function(x){return x.text;}).join('<br>🎊 ') + '</div></div>' : '<p style="font-size:12px;color:#64748b">No celebration today - the calendar is quiet.</p>') +
+    '<h3 style="font-size:13px;margin:14px 0 8px">This year\'s calendar (passed + upcoming)</h3>' + rows +
+    '<p style="font-size:11px;color:#64748b;margin-top:10px">Coming in Moments v3: business anniversaries (your first Won deal 🏆), movable feasts (Eid, Easter), more countries, and language settings.</p>' +
+    '</div>');
+}
 
 function renderHelp(){
   setView(`<div class="card">${header("📘 Help Center","dashboard")}
