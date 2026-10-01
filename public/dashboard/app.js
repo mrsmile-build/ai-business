@@ -732,6 +732,7 @@ function renderDashboard(){
   setTimeout(showMomentBanner, 900);
   setTimeout(checkWelcomeBack, 1400);
   setTimeout(checkOverdueNudge, 2000);
+  setTimeout(updateRechargeFab, 1200);
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
   var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
@@ -1630,6 +1631,19 @@ function renderSettings(){
 ========================= */
 let supportHistory = [];
 
+function updateRechargeFab(){
+  var old = document.getElementById("recharge_fab");
+  if (old) old.remove();
+  var p = document.createElement("div");
+  p.id = "recharge_fab";
+  var onBreak = breakActive();
+  p.style.cssText = "position:fixed;bottom:70px;right:16px;z-index:9999;background:#1e293b;border:1px solid " + (onBreak ? "#22c55e" : "#f59e0b") + ";border-radius:999px;padding:10px 14px;font-size:12px;color:#e2e8f0;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)";
+  p.innerHTML = onBreak ? "🧘 " + breakLeft() + "m left" : "⚡";
+  p.title = onBreak ? "On a break - tap to view" : "Recharge - take a break";
+  p.onclick = function(){ loadPage('recharge'); };
+  document.body.appendChild(p);
+}
+
 function breakActive(){
   try { var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10); return until > Date.now(); } catch(e){ return false; }
 }
@@ -1648,6 +1662,44 @@ var RECHARGE_ACTIVITIES = [
   {k:"nap", icon:"😴", label:"Power nap", link:""}
 ];
 var BOOK_GENRES = ["Business","Fiction","Non-fiction","Making money","Relationships","Stories","History","Behavior"];
+var MICRO_READS = [
+ {g:"Business", t:"\"The best time to plant a tree was 20 years ago. The second best time is now.\" - Chinese proverb"},
+ {g:"Business", t:"\"Quality is not an act, it is a habit.\" - Aristotle"},
+ {g:"Fiction", t:"The fox who could not reach the grapes walked away saying: \"They are probably sour anyway.\" - Aesop"},
+ {g:"Fiction", t:"A tortoise beat a hare by simply never stopping. - Aesop"},
+ {g:"Non-fiction", t:"\"You have power over your mind - not outside events. Realize this, and you will find strength.\" - Marcus Aurelius, Meditations"},
+ {g:"Making money", t:"\"Beware of little expenses. A small leak will sink a great ship.\" - Benjamin Franklin, Poor Richard's Almanack"},
+ {g:"Relationships", t:"\"A friend is one who knows you and loves you just the same.\" - Elbert Hubbard"},
+ {g:"Stories", t:"The lion spared a mouse; the mouse later freed the lion from a net. Kindness is never wasted. - Aesop"},
+ {g:"History", t:"\"Veni, vidi, vici - I came, I saw, I conquered.\" - Julius Caesar, 47 BC"},
+ {g:"Behavior", t:"\"We are what we repeatedly do. Excellence, then, is not an act, but a habit.\" - Will Durant, summarizing Aristotle (1926)"}
+];
+function newMicroRead(){
+  var el = document.getElementById("rc_read");
+  if (!el) return;
+  var g = "";
+  var sel = document.getElementById("rc_genre");
+  if ((localStorage.getItem("ab_break_activity_pick") === "book") && sel) g = sel.value;
+  var pool = MICRO_READS.filter(function(x){ return !g || x.g === g; });
+  if (!pool.length) pool = MICRO_READS;
+  el.textContent = pool[Math.floor(Math.random()*pool.length)].t;
+}
+var breathTimer = null;
+function startBreathing(){
+  var el = document.getElementById("rc_breath");
+  if (!el) return;
+  if (breathTimer) { clearInterval(breathTimer); breathTimer = null; el.textContent = "Inhale 4 · hold 4 · exhale 4. Five rounds = one calmer brain."; return; }
+  var seq = ["Inhale… 4","Hold… 4","Exhale… 4"];
+  var i = 0, r = 0;
+  el.textContent = seq[0] + " (round 1/5)";
+  breathTimer = setInterval(function(){
+    i = (i+1) % 3;
+    if (i === 0) r++;
+    if (r >= 5) { clearInterval(breathTimer); breathTimer = null; el.textContent = "🌿 Done. Shoulders down, jaw unclenched. Back to it."; return; }
+    el.textContent = seq[i] + " (round " + (r+1) + "/5)";
+  }, 4000);
+}
+
 function renderRecharge(){
   var act = localStorage.getItem("ab_break_activity") || "";
   if (breakActive()) {
@@ -1699,12 +1751,14 @@ function startBreak(){
   localStorage.setItem("ab_break_activity", label);
   localStorage.removeItem("ab_break_ack");
   loadPage('recharge');
+  updateRechargeFab();
 }
 function endBreak(){
   localStorage.setItem("ab_break_until", String(Date.now()-1));
   localStorage.removeItem("ab_break_ack");
   checkWelcomeBack();
   loadPage('recharge');
+  updateRechargeFab();
 }
 function checkOverdueNudge(){
   try {
