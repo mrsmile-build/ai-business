@@ -6266,7 +6266,11 @@ async function moveLead(id, status){
     {k:"reviews", label:"Auto Review Collector", desc:"Happy customers get asked for a Google review automatically"},
     {k:"paystack", label:"Paystack Payment Links", desc:"Collect payment inside your proposal"},
     {k:"broadcast", label:"WhatsApp Broadcast Campaigns", desc:"Send one offer to every past customer in two taps"},
-        {k: "theme_mode", label: "🌙 Light and Dark Mode Switch", desc: "Dark, light or system default - you choose how the dashboard looks to your eyes"}
+        {k: "theme_mode", label: "🌙 Light and Dark Mode Switch", desc: "Dark, light or system default - you choose how the dashboard looks to your eyes"},
+    {k: "support_bot", label: "🤖 Support-Bot (WhatsApp Chatbot)", desc: "AI answers customer questions 24/7 on WhatsApp, escalates to you when needed"},
+    {k: "review_manager", label: "⭐ Auto Review Collector", desc: "After a sale, automatically ask happy customers for Google reviews"},
+    {k: "cashflow", label: "💰 Cash-Flow Forecast", desc: "See your next 30/60/90 days of cash, spot shortfalls before they hit"},
+    {k: "creative", label: "🎨 Social Media Generator", desc: "AI writes your Instagram captions, LinkedIn posts, and ad copy in seconds"}
   ];
   window.eaVoteX = function(k, btn){
     fetch("/api/early-access", {method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")}, body: JSON.stringify({capability:k, team_size:(document.getElementById("dash_team")||{}).value||null, source:"dashboard"})})
