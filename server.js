@@ -192,6 +192,21 @@ app.get("/api/attention", authMiddleware, async (req, res) => {
   }
 });
 
+app.post("/api/break-story", authMiddleware, async (req, res) => {
+  try {
+    const genre = String((req.body && req.body.genre) || "fiction story");
+    const prompt = "Write a relaxing micro-story (max 250 words) for a tired small-business owner on a short break. Type/theme: " + genre + ". Put a short title on the first line. End with one gentle one-line lesson. Sound warm and human. Do not mention AI.";
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "user", content: prompt }], max_tokens: 500, temperature: 0.9, reasoning_effort: "none" })
+    });
+    const groqData = await groqRes.json();
+    const story = (groqData.choices && groqData.choices[0] && groqData.choices[0].message && groqData.choices[0].message.content) || "Once upon a quiet afternoon, a builder remembered to rest - and the work waited, patiently, and was better for it. Lesson: rest is part of the work.";
+    res.json({ success: true, story });
+  } catch (e) { res.json({ success: false, story: "The storyteller is resting too. Try again in a moment." }); }
+});
+
 app.post("/api/seen", authMiddleware, async (req, res) => {
   try {
     const feature = String(req.body.feature || "");
