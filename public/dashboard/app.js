@@ -496,6 +496,7 @@ function loadPage(page){
     support: 'renderSupport',
     help: 'renderHelp',
     moments: 'renderMoments',
+    recharge: 'renderRecharge',
     editProfile: 'renderEditProfile',
     leadFinder: 'renderLeadFinder',
     proposal: 'renderProposal',
@@ -690,6 +691,7 @@ var MOMENT_DETAILS = {
 function momentCountry(){ try { return localStorage.getItem("ab_country") || ""; } catch(e){ return ""; } }
 function showMomentBanner(){
   try {
+    if (breakActive()) return;
     var now = new Date();
     var md = String(now.getMonth()+1).padStart(2,"0") + "-" + String(now.getDate()).padStart(2,"0");
     var key = "ab_moment_" + md;
@@ -728,6 +730,7 @@ function showMomentBanner(){
 
 function renderDashboard(){
   setTimeout(showMomentBanner, 900);
+  setTimeout(checkWelcomeBack, 1400);
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
   var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
@@ -1612,6 +1615,7 @@ function renderSettings(){
         <p onclick="loadPage('support')" style="cursor:pointer">🆘 Support</p>
         <p onclick="loadPage('help')" style="cursor:pointer">📘 Help & Guides</p>
         <p onclick="loadPage('moments')" style="cursor:pointer">🎊 Moments</p>
+        <p onclick="loadPage('recharge')" style="cursor:pointer">⚡ Recharge (Break)</p>
         <p onclick="logout()" style="color:red;cursor:pointer">🚪 Logout</p>
         <hr style="border:none;border-top:1px solid #1e293b;margin:10px 0">
         <p onclick="deleteAccount()" style="color:#ef4444;cursor:pointer;font-size:13px">🗑 Delete Account</p>
@@ -1624,6 +1628,99 @@ function renderSettings(){
    SUPPORT
 ========================= */
 let supportHistory = [];
+
+function breakActive(){
+  try { var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10); return until > Date.now(); } catch(e){ return false; }
+}
+function breakLeft(){
+  var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10);
+  return Math.max(0, Math.round((until - Date.now())/60000));
+}
+var RECHARGE_ACTIVITIES = [
+  {k:"book", icon:"📖", label:"Read a book", link:"https://www.gutenberg.org/"},
+  {k:"game", icon:"🎮", label:"Play a game", link:"https://poki.com/"},
+  {k:"exercise", icon:"🏃", label:"Exercise", link:"https://www.youtube.com/results?search_query=15+minute+workout+no+equipment"},
+  {k:"movie", icon:"🎬", label:"Watch a movie", link:"https://www.youtube.com/feed/trending"},
+  {k:"music", icon:"🎧", label:"Music", link:"https://music.youtube.com/"},
+  {k:"youtube", icon:"📺", label:"YouTube", link:"https://www.youtube.com/"},
+  {k:"walk", icon:"🚶", label:"Take a walk", link:""},
+  {k:"nap", icon:"😴", label:"Power nap", link:""}
+];
+var BOOK_GENRES = ["Business","Fiction","Non-fiction","Making money","Relationships","Stories","History","Behavior"];
+function renderRecharge(){
+  var act = localStorage.getItem("ab_break_activity") || "";
+  if (breakActive()) {
+    setView('<div class="card">' + header("⚡ Recharge","dashboard") +
+      '<div style="text-align:center;padding:20px 0"><div style="font-size:40px">🧘</div>' +
+      '<h2 style="margin:8px 0;color:#22c55e">On a break</h2>' +
+      '<p style="color:#94a3b8;font-size:13px">' + act + ' · <b id="break_count">' + breakLeft() + ' min left</b></p>' +
+      '<p style="color:#64748b;font-size:12px">Nudges are paused. We will welcome you back when it is over.</p>' +
+      '<button onclick="endBreak()" style="margin-top:12px;padding:10px 18px;background:#334155;color:#fff;border:0;border-radius:8px;cursor:pointer">End break early</button></div></div>');
+    var t = setInterval(function(){
+      var el = document.getElementById("break_count");
+      if (!el || !breakActive()) { clearInterval(t); if (!breakActive()) loadPage('recharge'); return; }
+      el.textContent = breakLeft() + " min left";
+    }, 30000);
+    return;
+  }
+  setView('<div class="card">' + header("⚡ Recharge","dashboard") +
+    '<p style="color:#94a3b8;font-size:13px">Too much work becomes stress. Step away sharp - come back sharper. Default break: 30 minutes.</p>' +
+    '<label style="font-size:12px;color:#cbd5e1">Break length</label>' +
+    '<select id="rc_mins" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 12px"><option value="10">10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="30" selected>30 minutes (default)</option><option value="45">45 minutes</option><option value="60">1 hour</option></select>' +
+    '<label style="font-size:12px;color:#cbd5e1">What will reset your brain?</label>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0" id="rc_acts">' +
+    RECHARGE_ACTIVITIES.map(function(x){ return '<button onclick="pickAct(this,\'' + x.k + '\')" style="padding:10px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;color:#e2e8f0;cursor:pointer;font-size:12px">' + x.icon + ' ' + x.label + '</button>'; }).join('') +
+    '</div>' +
+    '<div id="rc_genres" style="display:none;margin-bottom:10px"><label style="font-size:12px;color:#cbd5e1">Book genre</label><select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select></div>' +
+    '<div id="rc_link" style="margin-bottom:10px"></div>' +
+    '<button onclick="startBreak()" style="width:100%;padding:12px;background:#22c55e;color:#06281a;border:0;border-radius:10px;font-weight:700;cursor:pointer">⚡ Start my break</button>' +
+    '<p style="font-size:11px;color:#64748b;margin-top:10px">During your break, celebration nudges pause. When it ends, we welcome you back with what waited.</p></div>');
+}
+function pickAct(btn, k){
+  var all = document.querySelectorAll("#rc_acts button");
+  for (var i=0;i<all.length;i++) all[i].style.borderColor = "#1e293b";
+  btn.style.borderColor = "#22c55e";
+  localStorage.setItem("ab_break_activity_pick", k);
+  var g = document.getElementById("rc_genres");
+  if (g) g.style.display = (k==="book") ? "block" : "none";
+  var act = null;
+  for (var j=0;j<RECHARGE_ACTIVITIES.length;j++) if (RECHARGE_ACTIVITIES[j].k===k) act = RECHARGE_ACTIVITIES[j];
+  var lk = document.getElementById("rc_link");
+  if (lk) { lk.style.display = (act && act.link) ? "block" : "none"; lk.innerHTML = (act && act.link) ? '<a href="' + act.link + '" target="_blank" style="color:#3b82f6;font-size:12px">Open ' + act.label + ' (optional) →</a>' : ''; }
+}
+function startBreak(){
+  var mins = parseInt(document.getElementById("rc_mins").value, 10) || 30;
+  var k = localStorage.getItem("ab_break_activity_pick") || "rest";
+  var label = k;
+  for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===k) label = RECHARGE_ACTIVITIES[i].icon + " " + RECHARGE_ACTIVITIES[i].label;
+  if (k==="book") { var g = document.getElementById("rc_genre"); if (g) label += " (" + g.value + ")"; }
+  localStorage.setItem("ab_break_until", String(Date.now() + mins*60000));
+  localStorage.setItem("ab_break_activity", label);
+  localStorage.removeItem("ab_break_ack");
+  loadPage('recharge');
+}
+function endBreak(){
+  localStorage.setItem("ab_break_until", String(Date.now()-1));
+  localStorage.removeItem("ab_break_ack");
+  checkWelcomeBack();
+  loadPage('recharge');
+}
+function checkWelcomeBack(){
+  try {
+    var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10);
+    if (until > 0 && until <= Date.now() && localStorage.getItem("ab_break_ack") !== String(until)) {
+      localStorage.setItem("ab_break_ack", String(until));
+      localStorage.setItem("ab_break_until", "0");
+      var box = document.createElement("div");
+      box.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;border:1px solid #22c55e;border-radius:12px;padding:12px 16px;max-width:92vw;font-size:13px;color:#e2e8f0;box-shadow:0 8px 24px rgba(0,0,0,.5)";
+      box.innerHTML = '⚡ <b>Welcome back!</b> Brain reset complete. <button id="wb_go" style="margin-left:8px;background:#22c55e;color:#06281a;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700">See what waited</button> <button id="wb_x" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer">✕</button>';
+      document.body.appendChild(box);
+      document.getElementById("wb_go").onclick = function(){ box.remove(); loadPage('followup'); };
+      document.getElementById("wb_x").onclick = function(){ box.remove(); };
+      setTimeout(function(){ if(box.parentNode) box.remove(); }, 12000);
+    }
+  } catch(e){}
+}
 
 function renderMoments(){
   var c = momentCountry();
