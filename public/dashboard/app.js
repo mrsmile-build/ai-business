@@ -1637,10 +1637,14 @@ function updateRechargeFab(){
   var p = document.createElement("div");
   p.id = "recharge_fab";
   var onBreak = breakActive();
-  p.style.cssText = "position:fixed;bottom:70px;right:16px;z-index:9999;background:#1e293b;border:1px solid " + (onBreak ? "#22c55e" : "#f59e0b") + ";border-radius:999px;padding:10px 14px;font-size:12px;color:#e2e8f0;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.5)";
+  p.style.cssText = "position:fixed;bottom:70px;right:16px;z-index:9999;background:#1e293b;border:1px solid " + (onBreak ? "#22c55e" : "#f59e0b") + ";border-radius:999px;padding:10px 14px;font-size:12px;color:#e2e8f0;cursor:grab;box-shadow:0 6px 18px rgba(0,0,0,.5);touch-action:none;user-select:none";
+  try { var fx = localStorage.getItem("ab_fab_x"), fy = localStorage.getItem("ab_fab_y"); if (fx && fy) { p.style.left = fx; p.style.top = fy; p.style.right = "auto"; p.style.bottom = "auto"; } } catch(e){}
   p.innerHTML = onBreak ? "🧘 " + breakLeft() + "m left" : "⚡";
-  p.title = onBreak ? "On a break - tap to view" : "Recharge - take a break";
-  p.onclick = function(){ loadPage('recharge'); };
+  p.title = "Drag me anywhere - tap to open Recharge";
+  var sx=null, sy=null, ox=0, oy=0, moved=false;
+  p.addEventListener("pointerdown", function(e){ sx=e.clientX; sy=e.clientY; var r=p.getBoundingClientRect(); ox=r.left; oy=r.top; moved=false; try{p.setPointerCapture(e.pointerId);}catch(err){} });
+  p.addEventListener("pointermove", function(e){ if(sx===null) return; var dx=e.clientX-sx, dy=e.clientY-sy; if(Math.abs(dx)+Math.abs(dy)>6) moved=true; if(moved){ p.style.left=(ox+dx)+"px"; p.style.top=(oy+dy)+"px"; p.style.right="auto"; p.style.bottom="auto"; } });
+  p.addEventListener("pointerup", function(){ if(moved){ try{ localStorage.setItem("ab_fab_x", p.style.left); localStorage.setItem("ab_fab_y", p.style.top);}catch(e){} } else { loadPage('recharge'); } sx=null; });
   document.body.appendChild(p);
 }
 
@@ -1658,10 +1662,12 @@ var RECHARGE_ACTIVITIES = [
   {k:"movie", icon:"🎬", label:"Watch a movie", link:"https://www.youtube.com/feed/trending"},
   {k:"music", icon:"🎧", label:"Music", link:"https://music.youtube.com/"},
   {k:"youtube", icon:"📺", label:"YouTube", link:"https://www.youtube.com/"},
+  {k:"african", icon:"🌍", label:"African stories", link:"https://africanstorybook.org/"},
+  {k:"naija", icon:"🇳🇬", label:"Nigerian shelf", link:"https://www.gutenberg.org/ebooks/search/?query=nigeria"},
   {k:"walk", icon:"🚶", label:"Take a walk", link:""},
   {k:"nap", icon:"😴", label:"Power nap", link:""}
 ];
-var BOOK_GENRES = ["Business","Fiction","Non-fiction","Making money","Relationships","Stories","History","Behavior"];
+var BOOK_GENRES = ["Business","Fiction","Non-fiction","Making money","Relationships","Stories","History","Behavior","Nigerian folktale"];
 var MICRO_READS = [
  {g:"Business", t:"\"The best time to plant a tree was 20 years ago. The second best time is now.\" - Chinese proverb"},
  {g:"Business", t:"\"Quality is not an act, it is a habit.\" - Aristotle"},
@@ -1672,7 +1678,10 @@ var MICRO_READS = [
  {g:"Relationships", t:"\"A friend is one who knows you and loves you just the same.\" - Elbert Hubbard"},
  {g:"Stories", t:"The lion spared a mouse; the mouse later freed the lion from a net. Kindness is never wasted. - Aesop"},
  {g:"History", t:"\"Veni, vidi, vici - I came, I saw, I conquered.\" - Julius Caesar, 47 BC"},
- {g:"Behavior", t:"\"We are what we repeatedly do. Excellence, then, is not an act, but a habit.\" - Will Durant, summarizing Aristotle (1926)"}
+ {g:"Behavior", t:"\"We are what we repeatedly do. Excellence, then, is not an act, but a habit.\" - Will Durant, summarizing Aristotle (1926)"},
+ {g:"Stories", t:"\"However far the stream flows, it never forgets its source.\" - Yoruba proverb"},
+ {g:"Business", t:"\"A single hand cannot lift a heavy load to the head.\" - Igbo proverb (teamwork)"},
+ {g:"Behavior", t:"\"The tongue and the teeth quarrel, but they live together.\" - Hausa proverb"}
 ];
 function newMicroRead(){
   var el = document.getElementById("rc_read");
@@ -1698,6 +1707,40 @@ function startBreathing(){
     if (r >= 5) { clearInterval(breathTimer); breathTimer = null; el.textContent = "🌿 Done. Shoulders down, jaw unclenched. Back to it."; return; }
     el.textContent = seq[i] + " (round " + (r+1) + "/5)";
   }, 4000);
+}
+
+var EXERCISES = [
+ {k:"stress", icon:"🧘", label:"Release stress", moves:["Neck rolls - 10 slow circles","Shoulder shrugs - 15 reps","4-7-8 breathing - 3 rounds","Full-body stretch - 60 sec"]},
+ {k:"muscle", icon:"💪", label:"Gain muscle", moves:["Push-ups - 3 x 10","Squats - 3 x 15","Plank - 3 x 30 sec","Lunges - 2 x 10 each leg"]},
+ {k:"balance", icon:"🤸", label:"Keep balance", moves:["Stand on one leg - 30 sec each side","Heel-to-toe walk - 10 steps","Single-leg hinge (no weight) - 8 each side","Tree pose - 30 sec each"]},
+ {k:"fit", icon:"🏃", label:"Stay fit", moves:["Jumping jacks - 40","High knees - 30 sec","Burpees - 10","Brisk walk - 5 min"]},
+ {k:"desk", icon:"🪑", label:"Undo desk posture", moves:["Chin tucks - 10","Doorway chest stretch - 30 sec","Seated spinal twist - 30 sec each side","Wrist + finger stretch - 60 sec"]}
+];
+function renderExMoves(){
+  var el = document.getElementById("rc_exmoves");
+  var sel = document.getElementById("rc_exgoal");
+  if (!el || !sel) return;
+  var x = EXERCISES[parseInt(sel.value,10)] || EXERCISES[0];
+  el.innerHTML = '<ul style="margin:0;padding-left:16px">' + x.moves.map(function(mv){ return '<li style="margin-bottom:4px">'+mv+'</li>'; }).join('') + '</ul>';
+}
+async function tellStory(){
+  var el = document.getElementById("rc_story");
+  if (!el) return;
+  el.textContent = "Writing your story…";
+  var g = "fiction story";
+  var sel = document.getElementById("rc_genre");
+  if (sel) g = sel.value + " story";
+  try {
+    var r = await apiFetch("/api/break-story", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token") }, body: JSON.stringify({ genre: g }) });
+    el.textContent = (r && r.story) ? r.story : "The story wandered off. Try again.";
+  } catch(e){ el.textContent = "Could not reach the storyteller."; }
+}
+function openAndBreak(){
+  var k = localStorage.getItem("ab_break_activity_pick") || "";
+  var act = null;
+  for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===k) act = RECHARGE_ACTIVITIES[i];
+  if (act && act.link) window.open(act.link, "_blank");
+  startBreak();
 }
 
 function renderRecharge(){
@@ -1726,7 +1769,8 @@ function renderRecharge(){
     '</div>' +
     '<div id="rc_genres" style="display:none;margin-bottom:10px"><label style="font-size:12px;color:#cbd5e1">Book genre</label><select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select></div>' +
     '<div id="rc_link" style="margin-bottom:10px"></div>' +
-    '<button onclick="startBreak()" style="width:100%;padding:12px;background:#22c55e;color:#06281a;border:0;border-radius:10px;font-weight:700;cursor:pointer">⚡ Start my break</button>' +
+    '<button onclick="openAndBreak()" style="width:100%;padding:14px;background:#22c55e;color:#06281a;border:0;border-radius:10px;font-weight:800;cursor:pointer;font-size:14px">▶ Open my activity + start break</button>' +
+    '<button onclick="startBreak()" style="width:100%;padding:10px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;margin-top:8px;cursor:pointer;font-size:12px">🧘 Start break only (no app)</button>' +
     '<p style="font-size:11px;color:#64748b;margin-top:10px">During your break, celebration nudges pause. When it ends, we welcome you back with what waited.</p></div>');
 }
 function pickAct(btn, k){
