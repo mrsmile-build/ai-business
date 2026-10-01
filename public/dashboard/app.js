@@ -731,6 +731,7 @@ function showMomentBanner(){
 function renderDashboard(){
   setTimeout(showMomentBanner, 900);
   setTimeout(checkWelcomeBack, 1400);
+  setTimeout(checkOverdueNudge, 2000);
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
   var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
@@ -1705,6 +1706,26 @@ function endBreak(){
   checkWelcomeBack();
   loadPage('recharge');
 }
+function checkOverdueNudge(){
+  try {
+    var dk = "ab_overdue_" + new Date().toISOString().slice(0,10);
+    if (localStorage.getItem(dk)) return;
+    apiFetch("/api/followup-assistant", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } })
+      .then(function(r){
+        localStorage.setItem(dk, "1");
+        var n = (r && r.followups) ? r.followups.length : 0;
+        if (!n) return;
+        var box = document.createElement("div");
+        box.style.cssText = "position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;background:#1e293b;border:1px solid #f59e0b;border-radius:12px;padding:12px 16px;max-width:92vw;font-size:13px;color:#e2e8f0;box-shadow:0 8px 24px rgba(0,0,0,.5)";
+        box.innerHTML = '⏰ <b>' + n + ' follow-up' + (n>1?'s':'') + '</b> waited while you were away. <button id="od_go" style="margin-left:8px;background:#f59e0b;color:#20130a;border:0;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:11px;font-weight:700">See them</button> <button id="od_x" style="margin-left:6px;background:transparent;border:0;color:#94a3b8;cursor:pointer">✕</button>';
+        document.body.appendChild(box);
+        document.getElementById("od_go").onclick = function(){ box.remove(); loadPage('followup'); };
+        document.getElementById("od_x").onclick = function(){ box.remove(); };
+        setTimeout(function(){ if(box.parentNode) box.remove(); }, 12000);
+      }).catch(function(){});
+  } catch(e){}
+}
+
 function checkWelcomeBack(){
   try {
     var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10);
@@ -5836,6 +5857,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // --- AI FOLLOWUP ASSISTANT UI ---
+function calUrlOn(title, details, dstr){
+  var d = new Date(dstr + "T10:00:00");
+  if (isNaN(d.getTime())) { d = new Date(); d.setDate(d.getDate()+1); d.setHours(10,0,0,0); }
+  var e = new Date(d.getTime()+30*60000);
+  function f(x){ return x.toISOString().replace(/[-:]/g,"").replace(/\.\d+/,""); }
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent(title)+"&dates="+f(d)+"/"+f(e)+"&details="+encodeURIComponent(details);
+}
 function calUrl(title, details){
   var d = new Date(); d.setDate(d.getDate()+1); d.setHours(10,0,0,0);
   var e = new Date(d.getTime()+30*60000);
@@ -5855,7 +5883,7 @@ async function injectWaitingList(containerId){
     var res = await apiFetch("/api/followup-assistant", { headers: { Authorization: "Bearer " + localStorage.getItem("token") } });
     var items = (res && res.followups) || [];
     var box = document.getElementById("waiting_items");
-    if(!items.length){ box.innerHTML = '<p style="color:#10b981;font-size:12px">🎉 Nobody is waiting on you right now. Great follow-up discipline!</p>'; return; }
+    if(!items.length){ box.innerHTML = '<p style="color:#10b981;font-size:12px">🎉 Nobody is waiting on you right now. Great follow-up discipline!</p>'; }
     box.innerHTML = items.map(function(f){
       var msg = f.message || f.msg || f.text || "";
       var days = (f.days != null) ? f.days : "";
@@ -5869,6 +5897,16 @@ async function injectWaitingList(containerId){
           '<a href="'+ calUrl('Follow up: '+(f.name||'lead'), msg) +'" target="_blank" style="padding:6px 10px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-size:11px">📅 Remind me</a>' +
         '</div></div>';
     }).join('');
+    var up = res.upcoming || [];
+    if (up.length) {
+      var uc = document.createElement("div");
+      uc.style.cssText = "background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:16px";
+      uc.innerHTML = '<h3 style="margin:0 0 4px;color:#3b82f6">📅 Coming up</h3><p style="color:#64748b;font-size:12px;margin:0 0 10px">Scheduled follow-ups. 📴 Going offline? Add them to your phone calendar - it rings even when AI Business is closed. Otherwise we remind you the moment you return.</p>' + up.map(function(u){
+        var dstr = String(u.follow_up_date||"").slice(0,10);
+        return '<div style="background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center"><div><b style="font-size:13px">'+(u.name||'Lead')+'</b><div style="font-size:11px;color:#64748b">'+(u.business||'')+' · due '+dstr+'</div></div><a href="'+calUrlOn('Follow up: '+(u.name||'lead'), 'Scheduled follow-up with '+(u.name||'lead'), dstr)+'" target="_blank" style="padding:6px 10px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-size:11px;white-space:nowrap">📅 Add to Calendar</a></div>';
+      }).join('');
+      host.parentNode.insertBefore(uc, host.nextSibling);
+    }
   } catch(e){ var b2=document.getElementById("waiting_items"); if(b2) b2.innerHTML='<p style="color:#64748b;font-size:12px">Could not load waiting list.</p>'; }
 }
 

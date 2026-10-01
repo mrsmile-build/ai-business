@@ -3430,7 +3430,10 @@ app.get("/api/followup-assistant", authMiddleware, async (req, res) => {
       return hasOverdueDate || isLongSilent;
     }).slice(0, 8);
 
-    if (needsFollowup.length === 0) return res.json({ success: true, followups: [] });
+    const upcoming = leads.filter(l => l.follow_up_date && new Date(String(l.follow_up_date).slice(0,10) + "T23:59:59") >= new Date())
+      .sort((x, y) => (x.follow_up_date < y.follow_up_date ? -1 : 1)).slice(0, 8)
+      .map(l => ({ id: l.id, name: l.name, phone: l.phone, business: l.business, follow_up_date: l.follow_up_date }));
+    if (needsFollowup.length === 0) return res.json({ success: true, followups: [], upcoming });
 
     const { data: profile } = await supabase.from("profiles").select("display_name,business_type").eq("user_id", uid).maybeSingle();
     const bizName = profile?.display_name || "our business";
@@ -3480,7 +3483,7 @@ Return ONLY the JSON array, no markdown.`;
       message: messages[i] || `Hi ${l.name}, just checking if you are still interested. We have availability this week!`
     }));
 
-    res.json({ success: true, followups });
+    res.json({ success: true, followups, upcoming });
   } catch(err) {
     console.error("Automatic Follow-Up Assistant error:", err);
     res.status(500).json({ error: err.message });
