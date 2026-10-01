@@ -1735,8 +1735,21 @@ async function tellStory(){
     el.textContent = (r && r.story) ? r.story : "The story wandered off. Try again.";
   } catch(e){ el.textContent = "Could not reach the storyteller."; }
 }
+function bookUrl(){
+  var c = document.getElementById("rc_cont"), ct = document.getElementById("rc_country"), g = document.getElementById("rc_genre");
+  var cont = c ? c.value : "Global";
+  var country = ct ? ct.value.trim() : "";
+  var genre = g ? g.value : "";
+  var q = [];
+  if (genre) q.push(genre);
+  if (country) q.push(country);
+  else if (cont !== "Global") q.push(cont);
+  return "https://www.gutenberg.org/ebooks/search/?query=" + encodeURIComponent(q.join(" ") || "fiction");
+}
+
 function openAndBreak(){
   var k = localStorage.getItem("ab_break_activity_pick") || "";
+  if (k === "book") { window.open(bookUrl(), "_blank"); startBreak(); return; }
   var act = null;
   for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===k) act = RECHARGE_ACTIVITIES[i];
   if (act && act.link) window.open(act.link, "_blank");
@@ -1767,7 +1780,14 @@ function renderRecharge(){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0" id="rc_acts">' +
     RECHARGE_ACTIVITIES.map(function(x){ return '<button onclick="pickAct(this,\'' + x.k + '\')" style="padding:10px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;color:#e2e8f0;cursor:pointer;font-size:12px">' + x.icon + ' ' + x.label + '</button>'; }).join('') +
     '</div>' +
-    '<div id="rc_genres" style="display:none;margin-bottom:10px"><label style="font-size:12px;color:#cbd5e1">Book genre</label><select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select></div>' +
+    '<div id="rc_genres" style="display:none;margin-bottom:10px">' +
+    '<label style="font-size:12px;color:#cbd5e1">🌍 Where from?</label>' +
+    '<select id="rc_cont" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px">' + ["Global","Africa","Americas","Europe","Asia","Oceania"].map(function(c){ return '<option>' + c + '</option>'; }).join('') + '</select>' +
+    '<label style="font-size:12px;color:#cbd5e1">Country (optional)</label>' +
+    '<input id="rc_country" placeholder="e.g. Nigeria" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px;box-sizing:border-box">' +
+    '<label style="font-size:12px;color:#cbd5e1">Book type</label>' +
+    '<select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select>' +
+    '</div>' +
     '<div id="rc_link" style="margin-bottom:10px"></div>' +
     '<button onclick="openAndBreak()" style="width:100%;padding:14px;background:#22c55e;color:#06281a;border:0;border-radius:10px;font-weight:800;cursor:pointer;font-size:14px">▶ Open my activity + start break</button>' +
     '<button onclick="startBreak()" style="width:100%;padding:10px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;margin-top:8px;cursor:pointer;font-size:12px">🧘 Start break only (no app)</button>' +
@@ -1783,7 +1803,15 @@ function pickAct(btn, k){
   var act = null;
   for (var j=0;j<RECHARGE_ACTIVITIES.length;j++) if (RECHARGE_ACTIVITIES[j].k===k) act = RECHARGE_ACTIVITIES[j];
   var lk = document.getElementById("rc_link");
-  if (lk) { lk.style.display = (act && act.link) ? "block" : "none"; lk.innerHTML = (act && act.link) ? '<a href="' + act.link + '" target="_blank" style="color:#3b82f6;font-size:12px">Open ' + act.label + ' (optional) →</a>' : ''; }
+  if (lk) {
+    if (k === "book") {
+      lk.style.display = "block";
+      lk.innerHTML = '<a href="#" onclick="event.preventDefault();window.open(bookUrl(),\'_blank\')" style="color:#3b82f6;font-size:12px">Browse the shelf you built (optional) →</a>';
+    } else {
+      lk.style.display = (act && act.link) ? "block" : "none";
+      lk.innerHTML = (act && act.link) ? '<a href="' + act.link + '" target="_blank" style="color:#3b82f6;font-size:12px">Open ' + act.label + ' (optional) →</a>' : '';
+    }
+  }
 }
 function startBreak(){
   var mins = parseInt(document.getElementById("rc_mins").value, 10) || 30;
