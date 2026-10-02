@@ -1721,7 +1721,7 @@ function renderExMoves(){
   var x = EXERCISES[parseInt(sel.value,10)] || EXERCISES[0];
   el.innerHTML = '<ul style="margin:0;padding-left:16px">' + x.moves.map(function(mv){ return '<li style="margin-bottom:4px">'+mv+'</li>'; }).join('') + '</ul>';
 }
-async function tellStory(){
+async async function tellStory(){
   var el = document.getElementById("rc_story");
   if (!el) return;
   el.textContent = "Writing your story…";
@@ -1730,7 +1730,12 @@ async function tellStory(){
   if (sel) g = sel.value + " story";
   try {
     var r = await apiFetch("/api/break-story", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token") }, body: JSON.stringify({ genre: g }) });
-    el.textContent = (r && r.story) ? r.story : "The story wandered off. Try again.";
+    var story = (r && r.story) ? r.story : "The story wandered off. Try again.";
+    el.textContent = story;
+    var list = libGet();
+    list.unshift({ t: story, d: new Date().toISOString().slice(0,10) });
+    libSave(list);
+    renderLibrary();
   } catch(e){ el.textContent = "Could not reach the storyteller."; }
 }
 var SHELVES = {
@@ -1763,11 +1768,55 @@ function bookUrl(){
 
 function openAndBreak(){
   var k = localStorage.getItem("ab_break_activity_pick") || "";
-  if (k === "book") { window.open(bookUrl(), "_blank"); startBreak(); return; }
+  if (k === "book") { tellStory(); startBreak(); return; }
+  if (k === "game") { startBreak(); setTimeout(function(){ newScramble(); var g = document.getElementById("rc_game"); if (g) g.scrollIntoView({behavior:"smooth", block:"center"}); }, 200); return; }
   var act = null;
   for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===k) act = RECHARGE_ACTIVITIES[i];
   if (act && act.link) window.open(act.link, "_blank");
   startBreak();
+}
+
+function libGet(){ try { return JSON.parse(localStorage.getItem("ab_library")||"[]"); } catch(e){ return []; } }
+function libSave(l){ try { localStorage.setItem("ab_library", JSON.stringify(l.slice(0,30))); } catch(e){} }
+function showLibStory(i){
+  var l = libGet(); var s = l[i];
+  var el = document.getElementById("rc_story");
+  if (el && s) { el.textContent = s.t; el.scrollIntoView({behavior:"smooth", block:"center"}); }
+}
+function renderLibrary(){
+  var el = document.getElementById("rc_library");
+  if (!el) return;
+  var l = libGet();
+  if (!l.length) { el.innerHTML = '<p style="font-size:11px;color:#64748b;margin:6px 0 0">No saved stories yet - tap "Tell me a story" and it stays here forever.</p>'; return; }
+  el.innerHTML = l.slice(0,5).map(function(s,i){ return '<button onclick="showLibStory('+i+')" style="display:block;width:100%;text-align:left;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-top:6px;color:#cbd5e1;font-size:11px;cursor:pointer">' + (s.t.split("\n")[0]||"Story").slice(0,60) + ' · ' + s.d + '</button>'; }).join('');
+}
+var SCRAMBLE = ["follow","customer","proposal","whatsapp","recharge","moment","invoice","booking","balance","market"];
+function scrState(){ try { return JSON.parse(localStorage.getItem("ab_scramble")||"null") || {round:0, score:0, best:0}; } catch(e){ return {round:0,score:0,best:0}; } }
+function scrSave(s){ try { localStorage.setItem("ab_scramble", JSON.stringify(s)); } catch(e){} }
+function shuffle(w){ var a=w.split(""); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t;} var s=a.join(""); return s===w? shuffle(w): s; }
+function renderScrambleState(){ newScramble(); }
+function newScramble(){
+  var st = scrState();
+  var el = document.getElementById("rc_scr_word");
+  var inp = document.getElementById("rc_scr_input");
+  var meta = document.getElementById("rc_scr_meta");
+  if (!el) return;
+  el.textContent = shuffle(SCRAMBLE[st.round % SCRAMBLE.length]).toUpperCase();
+  if (inp) inp.value = "";
+  if (meta) meta.textContent = "Round " + (st.round+1) + "/10 · Score " + st.score + " · Best " + st.best;
+}
+function checkScramble(){
+  var st = scrState();
+  var word = SCRAMBLE[st.round % SCRAMBLE.length];
+  var inp = document.getElementById("rc_scr_input");
+  var msg = document.getElementById("rc_scr_msg");
+  if (!inp) return;
+  if (inp.value.trim().toLowerCase() === word) {
+    st.score += 1; st.best = Math.max(st.best, st.score); st.round += 1;
+    if (st.round >= 10) { st.round = 0; st.score = 0; if (msg) msg.textContent = "🏆 Finished! Best streak saved. New game started."; }
+    else if (msg) msg.textContent = "✅ Correct!";
+    scrSave(st); newScramble();
+  } else { if (msg) msg.textContent = "❌ Not quite - look again."; }
 }
 
 function renderRecharge(){
