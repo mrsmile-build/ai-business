@@ -1648,6 +1648,30 @@ function updateRechargeFab(){
   document.body.appendChild(p);
 }
 
+function showNetBanner(msg, sticky){
+  hideNetBanner();
+  var b = document.createElement("div");
+  b.id = "net_banner";
+  b.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:10000;background:#7f1d1d;color:#fecaca;text-align:center;padding:9px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.4)";
+  b.innerHTML = (msg || '📡 No internet connection - AI Business needs the internet to work. Check your data or WiFi.') + (sticky ? '' : ' <button onclick="hideNetBanner()" style="background:transparent;border:0;color:#fecaca;cursor:pointer;font-size:12px">✕</button>');
+  document.body.appendChild(b);
+  if (!sticky) setTimeout(hideNetBanner, 6000);
+}
+function hideNetBanner(){ var b = document.getElementById("net_banner"); if (b) b.remove(); }
+window.addEventListener("offline", function(){ showNetBanner(null, true); });
+window.addEventListener("online", function(){ hideNetBanner(); });
+(function(){
+  var of = window.fetch;
+  if (!of) return;
+  window.fetch = function(){
+    return of.apply(this, arguments).catch(function(err){
+      if (!navigator.onLine) showNetBanner(null, true);
+      else if (err && err.name === "TypeError") showNetBanner('📡 Connection problem - check your internet and try again.');
+      throw err;
+    });
+  };
+})();
+
 function breakActive(){
   try { var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10); return until > Date.now(); } catch(e){ return false; }
 }
