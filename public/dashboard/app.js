@@ -2612,7 +2612,12 @@ function lfLoad(idx){
   searchLeads();
 }
 searchLeads = (function(orig){ return async function(){ var r = await orig.apply(this, arguments); setTimeout(recordHistory, 120); return r; }; })(searchLeads);
-renderLeadFinder = (function(orig){ return function(){ var r = orig.apply(this, arguments); setTimeout(renderHistoryChips, 80); return r; }; })(renderLeadFinder);
+function lfChipsWhenReady(tries){
+  var host = document.getElementById("lf_results");
+  if (host) { renderHistoryChips(); return; }
+  if ((tries || 0) < 20) setTimeout(function(){ lfChipsWhenReady((tries || 0) + 1); }, 150);
+}
+renderLeadFinder = (function(orig){ return function(){ var r = orig.apply(this, arguments); lfChipsWhenReady(0); return r; }; })(renderLeadFinder);
 
 function checkCustomIndustry(){
   const sel = document.getElementById("lf_industry")?.value;
