@@ -2608,19 +2608,22 @@ function renderHistoryChips(){
   var h = lfGetHistory();
   if(!h.length){ box.innerHTML = ""; return; }
   box.innerHTML = '<p style="font-size:11px;color:#64748b;margin:0 0 6px">🕘 Recent searches (tap to view contacts):</p>' + h.map(function(x,idx){
-    return '<button onclick="lfOpen('+idx+')" style="display:inline-block;margin:0 6px 6px 0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:999px;color:#93c5fd;font-size:11px;cursor:pointer">🔍 ' + (x.label||"Search") + ' · ' + x.n + ' leads · ' + x.d + '</button>';
+    return '<button onclick="lfOpen('+idx+')" style="display:inline-block;margin:0 6px 6px 0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:999px;color:#93c5fd;font-size:11px;cursor:pointer">🔍 ' + (x.label || [x.l,x.i].filter(Boolean).join(" · ") || "Search") + ' · ' + x.n + ' leads · ' + x.d + '</button>';
   }).join('');
 }
 function lfOpen(idx){
   var x = lfGetHistory()[idx];
   if(!x) return;
-  lfSetFields(x.f);
-  var res = document.getElementById("lf_results");
-  if(res && x.html){
-    res.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#94a3b8">🕘 Restored from history (' + x.d + ') · <button onclick="lfRerun()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer">🔄 Re-run live</button></div>' + x.html;
+  if (x.html) {
+    lfSetFields(x.f);
+    var res = document.getElementById("lf_results");
+    if(res){ res.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#94a3b8">🕘 Restored from history (' + x.d + ') · <button onclick="lfRerun()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer">🔄 Re-run live</button></div>' + x.html; }
+    var top = document.getElementById("lf_history");
+    if(top) top.scrollIntoView({behavior:"smooth", block:"start"});
+  } else {
+    lfSetFields(x.f || { lf_location: x.l||"", lf_industry: x.i||"", lf_custom_industry: x.c||"" });
+    searchLeads();
   }
-  var top = document.getElementById("lf_history");
-  if(top) top.scrollIntoView({behavior:"smooth", block:"start"});
 }
 function lfRerun(){ searchLeads(); }
 
