@@ -2577,18 +2577,27 @@ function renderLeadFinderB2B(){
 }
 
 function lfGetHistory(){ try{ return JSON.parse(localStorage.getItem("ab_lf_history")||"[]"); }catch(e){ return []; } }
+function lfFields(){
+  var out = {};
+  var els = document.querySelectorAll('[id^="lf_"]');
+  for (var i=0;i<els.length;i++){ var el = els[i]; if (el.id==="lf_results"||el.id==="lf_history") continue; if (el.type==="checkbox") out[el.id]=el.checked; else out[el.id]=el.value; }
+  return out;
+}
+function lfSetFields(o){
+  if(!o) return;
+  for (var k in o){ var el=document.getElementById(k); if(!el) continue; if(el.type==="checkbox") el.checked=!!o[k]; else el.value=o[k]; }
+  try{ checkCustomIndustry(); }catch(e){}
+}
 function recordHistory(){
   var res = document.getElementById("lf_results");
   if(!res || res.textContent.indexOf("potential leads") === -1) return;
   var m = res.textContent.match(/Found (\d+) potential leads/);
   var n = m ? parseInt(m[1],10) : 0;
-  var l = (document.getElementById("lf_location")||{}).value || "";
-  var sel = (document.getElementById("lf_industry")||{}).value || "";
-  var cus = (document.getElementById("lf_custom_industry")||{}).value || "";
-  if(!l && !sel) return;
+  var f = lfFields();
+  var label = (f.lf_location||"Anywhere") + " · " + (f.lf_industry||"Any");
   var h = lfGetHistory();
-  h.unshift({l:l, i:sel, c:cus, d:new Date().toISOString().slice(0,10), n:n});
-  try{ localStorage.setItem("ab_lf_history", JSON.stringify(h.slice(0,10))); }catch(e){}
+  h.unshift({f:f, html:res.innerHTML, n:n, d:new Date().toISOString().slice(0,10), label:label});
+  try{ localStorage.setItem("ab_lf_history", JSON.stringify(h.slice(0,6))); }catch(e){}
   renderHistoryChips();
 }
 function renderHistoryChips(){
@@ -2598,19 +2607,23 @@ function renderHistoryChips(){
   if(!box){ box = document.createElement("div"); box.id = "lf_history"; host.parentNode.insertBefore(box, host); }
   var h = lfGetHistory();
   if(!h.length){ box.innerHTML = ""; return; }
-  box.innerHTML = '<p style="font-size:11px;color:#64748b;margin:0 0 6px">🕘 Recent searches (tap to reload):</p>' + h.map(function(x,idx){
-    return '<button onclick="lfLoad('+idx+')" style="display:inline-block;margin:0 6px 6px 0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:999px;color:#93c5fd;font-size:11px;cursor:pointer">🔍 ' + (x.l||"Anywhere") + ' · ' + (x.i||"Any") + ' · ' + x.n + ' leads · ' + x.d + '</button>';
+  box.innerHTML = '<p style="font-size:11px;color:#64748b;margin:0 0 6px">🕘 Recent searches (tap to view contacts):</p>' + h.map(function(x,idx){
+    return '<button onclick="lfOpen('+idx+')" style="display:inline-block;margin:0 6px 6px 0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:999px;color:#93c5fd;font-size:11px;cursor:pointer">🔍 ' + (x.label||"Search") + ' · ' + x.n + ' leads · ' + x.d + '</button>';
   }).join('');
 }
-function lfLoad(idx){
+function lfOpen(idx){
   var x = lfGetHistory()[idx];
   if(!x) return;
-  var l = document.getElementById("lf_location"); if(l) l.value = x.l || "";
-  var s = document.getElementById("lf_industry"); if(s) s.value = x.i || "";
-  var c = document.getElementById("lf_custom_industry"); if(c) c.value = x.c || "";
-  checkCustomIndustry();
-  searchLeads();
+  lfSetFields(x.f);
+  var res = document.getElementById("lf_results");
+  if(res && x.html){
+    res.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#94a3b8">🕘 Restored from history (' + x.d + ') · <button onclick="lfRerun()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer">🔄 Re-run live</button></div>' + x.html;
+  }
+  var top = document.getElementById("lf_history");
+  if(top) top.scrollIntoView({behavior:"smooth", block:"start"});
 }
+function lfRerun(){ searchLeads(); }
+
 searchLeads = (function(orig){ return async function(){ var r = await orig.apply(this, arguments); setTimeout(recordHistory, 120); return r; }; })(searchLeads);
 function lfChipsWhenReady(tries){
   var host = document.getElementById("lf_results");
