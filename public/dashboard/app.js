@@ -2576,6 +2576,44 @@ function renderLeadFinderB2B(){
   `);
 }
 
+function lfGetHistory(){ try{ return JSON.parse(localStorage.getItem("ab_lf_history")||"[]"); }catch(e){ return []; } }
+function recordHistory(){
+  var res = document.getElementById("lf_results");
+  if(!res || res.textContent.indexOf("potential leads") === -1) return;
+  var m = res.textContent.match(/Found (\d+) potential leads/);
+  var n = m ? parseInt(m[1],10) : 0;
+  var l = (document.getElementById("lf_location")||{}).value || "";
+  var sel = (document.getElementById("lf_industry")||{}).value || "";
+  var cus = (document.getElementById("lf_custom_industry")||{}).value || "";
+  if(!l && !sel) return;
+  var h = lfGetHistory();
+  h.unshift({l:l, i:sel, c:cus, d:new Date().toISOString().slice(0,10), n:n});
+  try{ localStorage.setItem("ab_lf_history", JSON.stringify(h.slice(0,10))); }catch(e){}
+  renderHistoryChips();
+}
+function renderHistoryChips(){
+  var host = document.getElementById("lf_results");
+  if(!host) return;
+  var box = document.getElementById("lf_history");
+  if(!box){ box = document.createElement("div"); box.id = "lf_history"; host.parentNode.insertBefore(box, host); }
+  var h = lfGetHistory();
+  if(!h.length){ box.innerHTML = ""; return; }
+  box.innerHTML = '<p style="font-size:11px;color:#64748b;margin:0 0 6px">🕘 Recent searches (tap to reload):</p>' + h.map(function(x,idx){
+    return '<button onclick="lfLoad('+idx+')" style="display:inline-block;margin:0 6px 6px 0;padding:6px 10px;background:#0f172a;border:1px solid #334155;border-radius:999px;color:#93c5fd;font-size:11px;cursor:pointer">🔍 ' + (x.l||"Anywhere") + ' · ' + (x.i||"Any") + ' · ' + x.n + ' leads · ' + x.d + '</button>';
+  }).join('');
+}
+function lfLoad(idx){
+  var x = lfGetHistory()[idx];
+  if(!x) return;
+  var l = document.getElementById("lf_location"); if(l) l.value = x.l || "";
+  var s = document.getElementById("lf_industry"); if(s) s.value = x.i || "";
+  var c = document.getElementById("lf_custom_industry"); if(c) c.value = x.c || "";
+  checkCustomIndustry();
+  searchLeads();
+}
+searchLeads = (function(orig){ return async function(){ var r = await orig.apply(this, arguments); setTimeout(recordHistory, 120); return r; }; })(searchLeads);
+renderLeadFinder = (function(orig){ return function(){ var r = orig.apply(this, arguments); setTimeout(renderHistoryChips, 80); return r; }; })(renderLeadFinder);
+
 function checkCustomIndustry(){
   const sel = document.getElementById("lf_industry")?.value;
   const custom = document.getElementById("lf_custom_industry");
