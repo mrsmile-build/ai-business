@@ -1843,6 +1843,37 @@ function checkScramble(){
   } else { if (msg) msg.textContent = "❌ Not quite - look again."; }
 }
 
+var MEM_EMOJI = ["🎯","💬","📅","","⚡","🎊","🧘","💰"];
+function newMemory(){
+  var deck = MEM_EMOJI.concat(MEM_EMOJI).sort(function(){ return Math.random()-0.5; });
+  try{ localStorage.setItem("ab_mem_deck", JSON.stringify(deck)); localStorage.setItem("ab_mem_open","[]"); localStorage.setItem("ab_mem_done","[]"); localStorage.setItem("ab_mem_moves","0"); }catch(e){}
+  renderMemory();
+}
+function renderMemory(){
+  var host = document.getElementById("rc_mem_grid");
+  if(!host) return;
+  var deck=[],open=[],done=[],moves=0;
+  try{ deck=JSON.parse(localStorage.getItem("ab_mem_deck")||"[]"); open=JSON.parse(localStorage.getItem("ab_mem_open")||"[]"); done=JSON.parse(localStorage.getItem("ab_mem_done")||"[]"); moves=parseInt(localStorage.getItem("ab_mem_moves")||"0",10); }catch(e){}
+  if(!deck.length){ host.innerHTML='<p style="font-size:11px;color:#64748b;margin:0">Tap "New game" to start.</p>'; return; }
+  if(done.length===deck.length){ host.innerHTML='<p style="font-size:12px;color:#22c55e;margin:0">🏆 Cleared in '+moves+' moves! New game for another round.</p>'; return; }
+  host.innerHTML='<p style="font-size:11px;color:#64748b;margin:0 0 6px">Moves: '+moves+' · match all 8 pairs</p><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+deck.map(function(e,i){
+    var up = done.indexOf(i)>-1 || open.indexOf(i)>-1;
+    return '<button onclick="memTap('+i+')" style="padding:10px 0;font-size:18px;background:'+(up?'#14532d':'#1e293b')+';border:1px solid #334155;border-radius:8px;cursor:pointer">'+(up?e:'❔')+'</button>';
+  }).join('')+'</div>';
+}
+function memTap(i){
+  var deck,open,done;
+  try{ deck=JSON.parse(localStorage.getItem("ab_mem_deck")||"[]"); open=JSON.parse(localStorage.getItem("ab_mem_open")||"[]"); done=JSON.parse(localStorage.getItem("ab_mem_done")||"[]"); }catch(e){ return; }
+  if(done.indexOf(i)>-1 || open.indexOf(i)>-1) return;
+  open.push(i);
+  if(open.length===2){
+    var moves=parseInt(localStorage.getItem("ab_mem_moves")||"0",10)+1;
+    try{ localStorage.setItem("ab_mem_moves", String(moves)); }catch(e){}
+    if(deck[open[0]]===deck[open[1]]){ try{ localStorage.setItem("ab_mem_done", JSON.stringify(done.concat(open))); localStorage.setItem("ab_mem_open","[]"); }catch(e){} renderMemory(); }
+    else { try{ localStorage.setItem("ab_mem_open", JSON.stringify(open)); }catch(e){} renderMemory(); setTimeout(function(){ try{ localStorage.setItem("ab_mem_open","[]"); }catch(e){} renderMemory(); }, 750); }
+  } else { try{ localStorage.setItem("ab_mem_open", JSON.stringify(open)); }catch(e){} renderMemory(); }
+}
+
 function renderRecharge(){
   var act = localStorage.getItem("ab_break_activity") || "";
   if (breakActive()) {
