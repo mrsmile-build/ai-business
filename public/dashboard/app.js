@@ -1754,11 +1754,10 @@ async function tellStory(){
   if (sel) g = sel.value + " story";
   try {
     var r = await apiFetch("/api/break-story", { method:"POST", headers:{ "Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token") }, body: JSON.stringify({ genre: g }) });
-    var story = (r && r.story) ? r.story : "The story wandered off. Try again.";
+    var ok = !!(r && r.success && r.story);
+    var story = ok ? r.story : "The AI is resting. Your public library shelf above ALWAYS works.";
     el.textContent = story;
-    var list = libGet();
-    list.unshift({ t: story, d: new Date().toISOString().slice(0,10) });
-    libSave(list);
+    if (ok) { var list = libGet(); list.unshift({ t: story, d: new Date().toISOString().slice(0,10) }); libSave(list); }
     renderLibrary();
   } catch(e){ el.textContent = "Could not reach the storyteller."; }
 }
@@ -1792,7 +1791,7 @@ function bookUrl(){
 
 function openAndBreak(){
   var k = localStorage.getItem("ab_break_activity_pick") || "";
-  if (k === "book") { tellStory(); startBreak(); return; }
+  if (k === "book") { try { var bu = bookUrl(); localStorage.setItem("ab_book_url", bu); window.open(bu, "_blank"); } catch(e){ window.open("https://openlibrary.org/", "_blank"); } startBreak(); return; }
   if (k === "game") { startBreak(); setTimeout(function(){ newScramble(); var g = document.getElementById("rc_game"); if (g) g.scrollIntoView({behavior:"smooth", block:"center"}); }, 200); return; }
   var act = null;
   for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===k) act = RECHARGE_ACTIVITIES[i];
@@ -1803,7 +1802,7 @@ function openAndBreak(){
 function libGet(){ try { return JSON.parse(localStorage.getItem("ab_library")||"[]"); } catch(e){ return []; } }
 function libSave(l){ try { localStorage.setItem("ab_library", JSON.stringify(l.slice(0,30))); } catch(e){} }
 function showLibStory(i){
-  var l = libGet(); var s = l[i];
+  var l = libGet().filter(function(s2){ return s2 && s2.t && s2.t.indexOf("wandered off") === -1 && s2.t.indexOf("AI is resting") === -1; }); var s = l[i];
   var el = document.getElementById("rc_story");
   if (el && s) { el.textContent = s.t; el.scrollIntoView({behavior:"smooth", block:"center"}); }
 }
