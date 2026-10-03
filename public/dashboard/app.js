@@ -1898,6 +1898,7 @@ function renderRecharge(){
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0" id="rc_acts">' +
     RECHARGE_ACTIVITIES.map(function(x){ return '<button onclick="pickAct(this,\'' + x.k + '\')" style="padding:10px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;color:#e2e8f0;cursor:pointer;font-size:12px">' + x.icon + ' ' + x.label + '</button>'; }).join('') +
     '</div>' +
+    '<p id="rc_dest" style="font-size:11px;color:#94a3b8;margin:0 0 8px"></p>' +
     '<div id="rc_genres" style="display:none;margin-bottom:10px">' +
       '<label style="font-size:12px;color:#cbd5e1">🌍 Where from?</label>' +
       '<select id="rc_cont" onchange="renderShelves()" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px">' + ["Global","Africa","Americas","Europe","Asia","Oceania"].map(function(c){ return '<option>' + c + '</option>'; }).join('') + '</select>' +
@@ -1914,6 +1915,7 @@ function renderRecharge(){
     '<p style="font-size:11px;color:#64748b;margin-top:10px">During your break, celebration nudges pause. When it ends, we welcome you back with what waited.</p></div>');
   renderLibrary();
   renderScrambleState();
+  renderExMoves();
   renderMemory();
 }
 function pickAct(btn, k){
@@ -1924,6 +1926,14 @@ function pickAct(btn, k){
   var g = document.getElementById("rc_genres");
   if (g) g.style.display = (k==="book") ? "block" : "none";
   if (k==="book") renderShelves();
+  var dest = document.getElementById("rc_dest");
+  if (dest) {
+    if (k==="book") dest.textContent = "📚 Story corner + your library are just below.";
+    else if (k==="game") dest.textContent = "🧩 AI Business Puzzles are just below - no external app needed.";
+    else if (k==="exercise") dest.textContent = "🏋️ Pick your routine below - starting the break keeps it here.";
+    else { var act=null; for (var q=0;q<RECHARGE_ACTIVITIES.length;q++) if (RECHARGE_ACTIVITIES[q].k===k) act=RECHARGE_ACTIVITIES[q]; dest.textContent = act && act.link ? "▶ Starting your break opens " + act.label + " in a new tab." : "🧘 This one happens offline - we'll just keep time for you."; }
+  }
+  if (k==="exercise") { setTimeout(renderExMoves, 50); }
   if (k==="game") { setTimeout(function(){ var g=document.getElementById("rc_game"); if(g){ g.scrollIntoView({behavior:"smooth", block:"center"}); } renderMemory(); }, 80); }
 }
 function startBreak(){
