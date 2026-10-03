@@ -1874,6 +1874,23 @@ function memTap(i){
   } else { try{ localStorage.setItem("ab_mem_open", JSON.stringify(open)); }catch(e){} renderMemory(); }
 }
 
+function breakPanel(){
+  try {
+    var pick = localStorage.getItem("ab_break_activity_pick") || "";
+    var S = 'style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin:14px 0;text-align:left"';
+    if (pick === "book") return '<div ' + S + '><b style="font-size:13px">📚 Your break story</b><p id="rc_story" style="font-size:12px;color:#cbd5e1;margin:8px 0;white-space:pre-wrap"></p><button onclick="tellStory()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">📖 New story</button><div id="rc_library"></div></div>';
+    if (pick === "game") return '<div ' + S + '><b style="font-size:13px">🧩 AI Business Puzzles</b><p id="rc_scr_meta" style="font-size:11px;color:#64748b;margin:6px 0"></p><div id="rc_scr_word" style="font-size:22px;letter-spacing:6px;color:#f59e0b;font-weight:800;text-align:center;margin:8px 0">----</div><input id="rc_scr_input" placeholder="type the unscrambled word" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;box-sizing:border-box"><p id="rc_scr_msg" style="font-size:11px;margin:6px 0 0;color:#94a3b8"></p><div style="display:flex;gap:6px;margin-top:8px"><button onclick="checkScramble()" style="flex:1;background:#22c55e;border:0;color:#06281a;border-radius:8px;padding:8px;font-weight:700;cursor:pointer">Check</button><button onclick="newScramble()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:8px;padding:8px 10px;cursor:pointer">Skip</button></div><div id="rc_mem_grid" style="margin-top:10px"></div><button onclick="newMemory()" style="margin-top:6px;background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer">🧠 Memory Pairs</button></div>';
+    if (pick === "exercise") {
+      var EXS = (typeof EXERCISES !== "undefined") ? EXERCISES : [];
+      return '<div ' + S + '><b style="font-size:13px">🏋️ Your break routine</b><select id="rc_exgoal" onchange="renderExMoves()" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:8px 0">' + EXS.map(function(x,i){ return '<option value="'+i+'">'+x.icon+' '+x.label+'</option>'; }).join('') + '</select><div id="rc_exmoves" style="font-size:12px;color:#cbd5e1"></div></div>';
+    }
+    var act = null;
+    for (var i=0;i<RECHARGE_ACTIVITIES.length;i++) if (RECHARGE_ACTIVITIES[i].k===pick) act = RECHARGE_ACTIVITIES[i];
+    if (act && act.link) return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin:14px 0;text-align:center"><a href="' + act.link + '" target="_blank" style="display:inline-block;padding:10px 16px;background:#22c55e;color:#06281a;border-radius:8px;font-weight:700;text-decoration:none;font-size:13px">▶ Open ' + act.label + '</a></div>';
+    return '<div ' + S + '><p style="font-size:12px;color:#94a3b8;margin:0">🧘 Phones down. Shoulders down. We will call you back.</p></div>';
+  } catch(e){ return ""; }
+}
+
 function renderRecharge(){
   var act = localStorage.getItem("ab_break_activity") || "";
   if (breakActive()) {
@@ -1882,7 +1899,15 @@ function renderRecharge(){
       '<h2 style="margin:8px 0;color:#22c55e">On a break</h2>' +
       '<p style="color:#94a3b8;font-size:13px">' + act + ' · <b id="break_count">' + breakLeft() + ' min left</b></p>' +
       '<p style="color:#64748b;font-size:12px">Nudges are paused. We will welcome you back when it is over.</p>' +
-      '<button onclick="endBreak()" style="margin-top:12px;padding:10px 18px;background:#334155;color:#fff;border:0;border-radius:8px;cursor:pointer">End break early</button></div></div>');
+      '<button onclick="endBreak()" style="margin-top:12px;padding:10px 18px;background:#334155;color:#fff;border:0;border-radius:8px;cursor:pointer">End break early</button>' + breakPanel() + '</div></div>');
+    (function(){
+      try {
+        var pick = localStorage.getItem("ab_break_activity_pick") || "";
+        if (pick === "book") { var l = (typeof libGet==="function") ? libGet() : []; var el = document.getElementById("rc_story"); if (el) el.textContent = l.length ? l[0].t : "Tap 📖 New story for your first break story."; if (typeof renderLibrary==="function") renderLibrary(); }
+        if (pick === "game") { if (typeof newScramble==="function") newScramble(); if (typeof renderMemory==="function") renderMemory(); }
+        if (pick === "exercise" && typeof renderExMoves==="function") renderExMoves();
+      } catch(e){}
+    })();
     var t = setInterval(function(){
       var el = document.getElementById("break_count");
       if (!el || !breakActive()) { clearInterval(t); if (!breakActive()) loadPage('recharge'); return; }
