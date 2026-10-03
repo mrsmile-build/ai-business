@@ -1907,13 +1907,14 @@ function renderRecharge(){
       '<select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select>' +
       '<div id="rc_shelves" style="font-size:11px;color:#64748b;margin-top:8px"></div>' +
     '</div>' +
-    '<div id="rc_game" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-top:10px"><b style="font-size:13px">🎮 Word Scramble (built-in)</b><p id="rc_scr_meta" style="font-size:11px;color:#64748b;margin:6px 0"></p><div style="font-size:22px;letter-spacing:6px;color:#f59e0b;font-weight:800;text-align:center;margin:8px 0" id="rc_scr_word">----</div><input id="rc_scr_input" placeholder="type the unscrambled word" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;box-sizing:border-box"><p id="rc_scr_msg" style="font-size:11px;margin:6px 0 0;color:#94a3b8"></p><div style="display:flex;gap:6px;margin-top:8px"><button onclick="checkScramble()" style="flex:1;background:#22c55e;border:0;color:#06281a;border-radius:8px;padding:8px;font-weight:700;cursor:pointer">Check</button><button onclick="newScramble()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:8px;padding:8px 10px;cursor:pointer">Skip</button></div><p style="font-size:10px;color:#475569;margin-top:6px">Progress saves automatically - come back anytime.</p></div>' +
+    '<div id="rc_game" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-top:10px"><b style="font-size:13px">🧩 AI Business Puzzles · Word Scramble</b><p id="rc_scr_meta" style="font-size:11px;color:#64748b;margin:6px 0"></p><div style="font-size:22px;letter-spacing:6px;color:#f59e0b;font-weight:800;text-align:center;margin:8px 0" id="rc_scr_word">----</div><input id="rc_scr_input" placeholder="type the unscrambled word" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;box-sizing:border-box"><p id="rc_scr_msg" style="font-size:11px;margin:6px 0 0;color:#94a3b8"></p><div style="display:flex;gap:6px;margin-top:8px"><button onclick="checkScramble()" style="flex:1;background:#22c55e;border:0;color:#06281a;border-radius:8px;padding:8px;font-weight:700;cursor:pointer">Check</button><button onclick="newScramble()" style="background:#1e293b;border:1px solid #334155;color:#93c5fd;border-radius:8px;padding:8px 10px;cursor:pointer">Skip</button></div><p style="font-size:10px;color:#475569;margin-top:6px">Progress saves automatically - come back anytime.</p></div>' +
     '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-top:10px"><b style="font-size:13px">📚 Your library (auto-saved stories)</b><div id="rc_library"></div><p style="font-size:10px;color:#475569;margin-top:6px">Prefer real shelves? <a href="https://africanstorybook.org/" target="_blank" style="color:#3b82f6">African Storybook</a> · <a href="https://openlibrary.org/" target="_blank" style="color:#3b82f6">Open Library</a></p></div>' +
     '<button onclick="openAndBreak()" style="width:100%;padding:14px;background:#22c55e;color:#06281a;border:0;border-radius:10px;font-weight:800;cursor:pointer;font-size:14px">▶ Open my activity + start break</button>' +
     '<button onclick="startBreak()" style="width:100%;padding:10px;background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:10px;margin-top:8px;cursor:pointer;font-size:12px">🧘 Start break only (no app)</button>' +
     '<p style="font-size:11px;color:#64748b;margin-top:10px">During your break, celebration nudges pause. When it ends, we welcome you back with what waited.</p></div>');
   renderLibrary();
   renderScrambleState();
+  renderMemory();
 }
 function pickAct(btn, k){
   var all = document.querySelectorAll("#rc_acts button");
@@ -1923,6 +1924,7 @@ function pickAct(btn, k){
   var g = document.getElementById("rc_genres");
   if (g) g.style.display = (k==="book") ? "block" : "none";
   if (k==="book") renderShelves();
+  if (k==="game") { setTimeout(function(){ var g=document.getElementById("rc_game"); if(g){ g.scrollIntoView({behavior:"smooth", block:"center"}); } renderMemory(); }, 80); }
 }
 function startBreak(){
   var mins = parseInt(document.getElementById("rc_mins").value, 10) || 30;
