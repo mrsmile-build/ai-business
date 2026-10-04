@@ -2536,6 +2536,15 @@ function runOffHoursAgent(){
 /* =========================
    LEAD FINDER
 ========================= */
+function fitScore(l){
+  var score = 50;
+  if(l.rating >= 4.5) score += 15; else if(l.rating >= 4.0) score += 8;
+  if(l.reviews >= 50) score += 10; else if(l.reviews >= 10) score += 5;
+  if(!l.website) score += 12;
+  if(l.type && /salon|spa|restaurant|real estate|fashion/i.test(l.type)) score += 8;
+  return Math.min(score, 99);
+}
+
 const INDUSTRIES = [
   "Salon / Hair Studio", "Spa / Wellness Center", "Restaurant / Food Business",
   "Real Estate Agency", "Fashion / Clothing Store", "Photography Studio",
@@ -2570,6 +2579,13 @@ function renderLeadFinder(){
   `);
 }
 
+function lfPreset(service, industry, pain){
+  var sv = document.getElementById("lf_service"); if(sv) sv.value = service;
+  var ind = document.getElementById("lf_industry"); if(ind) ind.value = industry;
+  var ctx = document.getElementById("lf_context"); if(ctx) ctx.value = pain;
+  checkCustomIndustry();
+}
+
 function renderLeadFinderB2B(){
   const bar = document.getElementById("lf_bulk_bar");
   if(bar) bar.style.display = "none";
@@ -2596,8 +2612,18 @@ function renderLeadFinderB2B(){
         </div>
       ` : `
         <div style="margin-bottom:15px">
+          <p style="margin:0 0 6px;font-size:12px;color:#64748b">Quick start (tap a preset):</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <button onclick="lfPreset('Instagram sellers','Fashion / Clothing Store','DM leads go cold when I cannot reply fast')" style="padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#93c5fd;border-radius:999px;font-size:11px;cursor:pointer">&#128241; Instagram Sellers</button>
+            <button onclick="lfPreset('WhatsApp retailers','Supermarket / Retail Shop','Repeat buyers and order updates scattered everywhere')" style="padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#93c5fd;border-radius:999px;font-size:11px;cursor:pointer">&#128172; WhatsApp Retailers</button>
+            <button onclick="lfPreset('Real estate agents','Real Estate Agency','Interested buyers disappear after first chat')" style="padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#93c5fd;border-radius:999px;font-size:11px;cursor:pointer">&#127968; Realtors</button>
+            <button onclick="lfPreset('Service businesses','Salon / Hair Studio','Enquiries fade before booking')" style="padding:6px 10px;background:#0f172a;border:1px solid #334155;color:#93c5fd;border-radius:999px;font-size:11px;cursor:pointer">&#9986;&#65039; Service Biz</button>
+          </div>
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What is your business / what do you offer?</p>
           <input id="lf_service" placeholder="e.g. Social media management, Web design, Catering..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <p style="margin:0 0 6px;font-size:12px;color:#64748b">Tell us about YOU (optional but powerful):</p>
+          <input id="lf_sender_url" placeholder="Paste your website or Instagram link..." style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <textarea id="lf_sender_desc" placeholder="Or describe yourself: e.g. I run Jaytees Clothing in Abuja - plus-size womens fashion sold via WhatsApp orders." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
 
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What type of businesses do you want to reach?</p>
           <select id="lf_industry" onchange="checkCustomIndustry()" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
@@ -2752,7 +2778,7 @@ async function searchLeads(){
     const res = await apiFetch("/api/lead-finder",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry, filters })
+      body: JSON.stringify({ service, location, context: `${service} targeting ${industry} businesses. ${context}`, industry, filters, sender_profile: (((document.getElementById("lf_sender_url")||{}).value || "") + " " + ((document.getElementById("lf_sender_desc")||{}).value || "").trim()) })
     });
     const data = await res.json();
 
