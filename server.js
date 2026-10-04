@@ -1120,6 +1120,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
 
     // Generate AI messages for all leads at once
     const userOffer = context || service;
+    const senderProfile = req.body.sender_profile || "";
     const prompt = `You help Nigerian entrepreneurs reach potential clients via WhatsApp.
 The entrepreneur offers: ${userOffer} in ${location}.
 
@@ -1145,7 +1146,7 @@ Return ONLY a JSON array of strings in the same order. No markdown, no explanati
     const compactPrompt = `You write personalized WhatsApp outreach messages for Nigerian businesses.
 
 The sender's offer is:
-${userOffer}
+${userOffer}${senderProfile ? '\nAbout the sender: ' + senderProfile + '\nUse this to make the opening line specific - reference what they actually do.' : ''}
 
 Location:
 ${location}
