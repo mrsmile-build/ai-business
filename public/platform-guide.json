@@ -1,17 +1,20 @@
 {
   "pairs": [
     {"q": "What is AI Business in one sentence?", "a": "A customer-keeping machine for WhatsApp-first businesses: it finds leads, drafts your messages, remembers every enquiry, and follows up so no sale goes cold."},
-    {"q": "I'm busy. What should I try first?", "a": "Lead Finder. Type your city plus your customer type. In about 30 seconds you get 15 real businesses with phone numbers and ready-to-send WhatsApp messages."},
-    {"q": "Does it message people without my permission?", "a": "Never. Every message is a draft you edit and send yourself. AI Business reminds and writes; you approve. Always."},
-    {"q": "What do the fire percentages mean?", "a": "Fit score: how strongly that business matches your offer right now, using rating, reviews and whether they have a website. Contact the hot ones first."},
+    {"q": "I'm busy. What should I try first?", "a": "Lead Finder. Type your city plus your customer type; in about 30 seconds you get real businesses with phone numbers and ready-to-send WhatsApp messages. See it: Menu, then Lead Finder."},
+    {"q": "Does it message people without my permission?", "a": "Never. Every message is a draft you edit and send yourself. AI Business reminds and writes; you approve. Always. See it: any lead card has an editable message box."},
+    {"q": "What do the fire percentages mean?", "a": "Fit score: how strongly that business matches your offer right now, using rating, reviews and whether they have a website. Contact the hot ones first. See it: run any search and watch the badges."},
     {"q": "What is the Memory badge on some leads?", "a": "Our collective memory. When any user searches a niche, AI Business remembers those businesses so the next person gets instant results without paid lookups. Your searches help everyone."},
-    {"q": "Is there a free plan?", "a": "Yes, forever: 10 saved leads and 20 AI uses a month, no card needed. Starter, Pro and Business unlock more when you are ready."},
+    {"q": "What reminds me about quiet leads?", "a": "The attention bell. Enquiries that go silent for days get flagged with a drafted nudge, so follow-up stops depending on your memory. See it: the bell icon at the top."},
+    {"q": "How do customers book me without back-and-forth?", "a": "Your free booking page: share one link, customers pick a day and time, it lands in your dashboard. No WhatsApp ping-pong. See it: Menu, then Booking page."},
+    {"q": "Can it write my proposals too?", "a": "Yes. Answer three quick questions and it drafts a clean proposal with your prices in naira, ready to send in about two minutes. See it: Menu, then Proposals."},
+    {"q": "How do I get more Google reviews?", "a": "The Review agent writes a warm please-review-us WhatsApp message for any happy customer, in your tone, in seconds. See it: the agents section in your menu."},
     {"q": "Can it answer my customers for me?", "a": "Partly. The Receptionist agent drafts replies to common questions and the Off-hours agent writes your after-hours auto-reply. You stay the voice; it stops the silence."},
-    {"q": "How do I get more Google reviews?", "a": "The Review agent writes a warm please-review-us WhatsApp message for any happy customer, in your tone, in seconds."},
-    {"q": "I'm stressed and tired. Is that part of the app too?", "a": "Seriously, yes. Recharge starts a timed break with a book shelf, Word Scramble, Memory Pairs or a 2-minute story, and pauses all nudges until you are back."},
+    {"q": "I'm stressed and tired. Is that part of the app too?", "a": "Seriously, yes. Recharge starts a timed break with a book shelf, Word Scramble, Memory Pairs or a 2-minute story, and pauses all nudges until you are back. See it: the lightning button."},
     {"q": "What happens when my internet dies?", "a": "A red banner tells you honestly, and your saved pages, stories and search history still open offline. Nothing pretends to work when it cannot."},
-    {"q": "Can I earn with AI Business without selling my own service?", "a": "Yes. The Partner program: refer businesses you already help, keep 50 percent of their first payment and 20 percent every month they stay. Menu, then Affiliate."},
-    {"q": "Where do my leads go if I close the app?", "a": "Nowhere. Saved leads, search history and stories live in your account and on your device. Tap a history chip and yesterday's contacts reopen instantly."},
+    {"q": "Is there a free plan?", "a": "Yes, forever: 10 saved leads and 20 AI uses a month, no card needed. Starter, Pro and Business unlock more when you are ready. See it: Menu, then Subscription."},
+    {"q": "Can I earn with AI Business without selling my own service?", "a": "Yes. The Partner program: refer businesses you already help, keep 50 percent of their first payment and 20 percent every month they stay. See it: Menu, then Affiliate."},
+    {"q": "Where do my leads go if I close the app?", "a": "Nowhere. Saved leads, search history and stories live in your account and on your device. Tap a history chip and yesterday's contacts reopen instantly. See it: the chips under Find Leads."},
     {"q": "Who built this?", "a": "A Nigerian founder who laid bricks by day and coded by night on a phone. Every feature exists because a real user asked for it, starting with Precious, our first honest tester."}
   ]
 }

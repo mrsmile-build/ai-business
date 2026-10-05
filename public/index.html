@@ -576,5 +576,37 @@ document.querySelectorAll(".fade").forEach(el=>obs.observe(el));
             </div>
         </footer>
         
-<script src="/movebar.js"></script></body>
+<script src="/movebar.js"></script><script>
+(function(){
+  function gClose(){ var ov=document.getElementById("guide_overlay"); if(ov) ov.style.display="none"; }
+  function gOpen(){
+    var ov=document.getElementById("guide_overlay");
+    if(ov){ ov.style.display="flex"; return; }
+    ov=document.createElement("div"); ov.id="guide_overlay";
+    ov.style.cssText="position:fixed;inset:0;background:rgba(2,6,12,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+    ov.innerHTML='<div style="background:#0b1220;border:1px solid #334155;border-radius:14px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #1e293b"><b style="font-size:14px;color:#f8fafc">❓ See what AI Business does</b><button id="guide_close" style="background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer">✕</button></div>'
+      +'<div id="guide_chat" style="overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px"><p style="font-size:12px;color:#64748b;text-align:center">Loading the 60-second tour…</p></div>'
+      +'<div style="padding:10px 14px;border-top:1px solid #1e293b;font-size:10px;color:#475569;text-align:center">Every answer is live in the app right now - take the tour, then taste the demo.</div></div>';
+    document.body.appendChild(ov);
+    ov.querySelector("#guide_close").addEventListener("click", gClose);
+    fetch("/platform-guide.json").then(function(r){ return r.json(); }).then(function(j){
+      var chat=document.getElementById("guide_chat"); if(!chat) return;
+      chat.innerHTML=(j.pairs||[]).map(function(p){
+        return '<div style="align-self:flex-start;max-width:85%;background:#131d2e;border:1px solid #1e2d42;border-radius:12px 12px 12px 4px;padding:9px 11px;font-size:12px;color:#e2e8f0">🙋 '+p.q+'</div>'
+             + '<div style="align-self:flex-end;max-width:85%;background:#0d2418;border:1px solid #14532d;border-radius:12px 12px 4px 12px;padding:9px 11px;font-size:12px;color:#d1fae5">⚡ '+p.a+'</div>';
+      }).join("")
+      +'<div style="display:flex;gap:8px;justify-content:center;margin-top:6px;flex-wrap:wrap"><a href="/demo" style="padding:9px 14px;background:#22c55e;border-radius:8px;color:#06281a;font-weight:700;font-size:12px;text-decoration:none">▶ See it live (demo)</a><button id="guide_later" style="padding:9px 14px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#93c5fd;font-size:12px;cursor:pointer">I will explore myself</button></div>';
+      var l=document.getElementById("guide_later"); if(l) l.addEventListener("click", gClose);
+    }).catch(function(){ var c=document.getElementById("guide_chat"); if(c) c.innerHTML='<p style="font-size:12px;color:#ef4444">Could not load the tour.</p>'; });
+  }
+  function mount(){
+    if(document.getElementById("guide_btn")) return;
+    var b=document.createElement("button"); b.id="guide_btn"; b.textContent="❓ 60-sec tour";
+    b.style.cssText="position:fixed;left:14px;bottom:14px;z-index:9998;padding:10px 14px;border-radius:999px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.4)";
+    b.onclick=gOpen; document.body.appendChild(b);
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",mount); else mount();
+})();
+</script></body>
 </html>
