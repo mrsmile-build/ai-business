@@ -30,3 +30,12 @@ Node.js · Express · Supabase · Vanilla JS · Deployed on Vercel
 Private project — all rights reserved.
 
 🔗 **Demo (no signup):** https://www.ai-business.com.ng/demo
+
+## Full feature set (v1.2)
+- 🧠 Collective lead memory - repeat niche searches served instantly from a shared pool
+- 📊 Six-stage pipeline (New/Contacted/Interested/Negotiating/Won/Lost) with live counts + filters
+- 📈 Analytics: deals won, revenue from won deals, pipeline leak percentages
+- 💌 Win-back proposal template + batch campaigns for re-engaging past clients
+- 🧾 Invoices & proposals with embedded Paystack payment links
+- 🎨 Moments: AI-drafted Instagram captions, WhatsApp statuses, LinkedIn posts
+- ❓ 60-second in-app tour explaining every feature honestly

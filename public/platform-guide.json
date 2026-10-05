@@ -1,20 +1,92 @@
 {
   "pairs": [
-    {"q": "What is AI Business in one sentence?", "a": "A customer-keeping machine for WhatsApp-first businesses: it finds leads, drafts your messages, remembers every enquiry, and follows up so no sale goes cold."},
-    {"q": "I'm busy. What should I try first?", "a": "Lead Finder. Type your city plus your customer type; in about 30 seconds you get real businesses with phone numbers and ready-to-send WhatsApp messages. See it: Menu, then Lead Finder."},
-    {"q": "Does it message people without my permission?", "a": "Never. Every message is a draft you edit and send yourself. AI Business reminds and writes; you approve. Always. See it: any lead card has an editable message box."},
-    {"q": "What do the fire percentages mean?", "a": "Fit score: how strongly that business matches your offer right now, using rating, reviews and whether they have a website. Contact the hot ones first. See it: run any search and watch the badges."},
-    {"q": "What is the Memory badge on some leads?", "a": "Our collective memory. When any user searches a niche, AI Business remembers those businesses so the next person gets instant results without paid lookups. Your searches help everyone."},
-    {"q": "What reminds me about quiet leads?", "a": "The attention bell. Enquiries that go silent for days get flagged with a drafted nudge, so follow-up stops depending on your memory. See it: the bell icon at the top."},
-    {"q": "How do customers book me without back-and-forth?", "a": "Your free booking page: share one link, customers pick a day and time, it lands in your dashboard. No WhatsApp ping-pong. See it: Menu, then Booking page."},
-    {"q": "Can it write my proposals too?", "a": "Yes. Answer three quick questions and it drafts a clean proposal with your prices in naira, ready to send in about two minutes. See it: Menu, then Proposals."},
-    {"q": "How do I get more Google reviews?", "a": "The Review agent writes a warm please-review-us WhatsApp message for any happy customer, in your tone, in seconds. See it: the agents section in your menu."},
-    {"q": "Can it answer my customers for me?", "a": "Partly. The Receptionist agent drafts replies to common questions and the Off-hours agent writes your after-hours auto-reply. You stay the voice; it stops the silence."},
-    {"q": "I'm stressed and tired. Is that part of the app too?", "a": "Seriously, yes. Recharge starts a timed break with a book shelf, Word Scramble, Memory Pairs or a 2-minute story, and pauses all nudges until you are back. See it: the lightning button."},
-    {"q": "What happens when my internet dies?", "a": "A red banner tells you honestly, and your saved pages, stories and search history still open offline. Nothing pretends to work when it cannot."},
-    {"q": "Is there a free plan?", "a": "Yes, forever: 10 saved leads and 20 AI uses a month, no card needed. Starter, Pro and Business unlock more when you are ready. See it: Menu, then Subscription."},
-    {"q": "Can I earn with AI Business without selling my own service?", "a": "Yes. The Partner program: refer businesses you already help, keep 50 percent of their first payment and 20 percent every month they stay. See it: Menu, then Affiliate."},
-    {"q": "Where do my leads go if I close the app?", "a": "Nowhere. Saved leads, search history and stories live in your account and on your device. Tap a history chip and yesterday's contacts reopen instantly. See it: the chips under Find Leads."},
-    {"q": "Who built this?", "a": "A Nigerian founder who laid bricks by day and coded by night on a phone. Every feature exists because a real user asked for it, starting with Precious, our first honest tester."}
+    {
+      "q": "What is AI Business in one sentence?",
+      "a": "A customer-keeping machine for WhatsApp-first businesses: it finds leads, drafts your messages, remembers every enquiry, and follows up so no sale goes cold."
+    },
+    {
+      "q": "I'm busy. What should I try first?",
+      "a": "Lead Finder. Type your city plus your customer type; in about 30 seconds you get real businesses with phone numbers and ready-to-send WhatsApp messages. See it: Menu, then Lead Finder."
+    },
+    {
+      "q": "Does it message people without my permission?",
+      "a": "Never. Every message is a draft you edit and send yourself. AI Business reminds and writes; you approve. Always. See it: any lead card has an editable message box."
+    },
+    {
+      "q": "What do the fire percentages mean?",
+      "a": "Fit score: how strongly that business matches your offer right now, using rating, reviews and whether they have a website. Contact the hot ones first. See it: run any search and watch the badges."
+    },
+    {
+      "q": "What is the Memory badge on some leads?",
+      "a": "Our collective memory. When any user searches a niche, AI Business remembers those businesses so the next person gets instant results without paid lookups. Your searches help everyone."
+    },
+    {
+      "q": "What reminds me about quiet leads?",
+      "a": "The attention bell. Enquiries that go silent for days get flagged with a drafted nudge, so follow-up stops depending on your memory. See it: the bell icon at the top."
+    },
+    {
+      "q": "How do customers book me without back-and-forth?",
+      "a": "Your free booking page: share one link, customers pick a day and time, it lands in your dashboard. No WhatsApp ping-pong. See it: Menu, then Booking page."
+    },
+    {
+      "q": "Can it write my proposals too?",
+      "a": "Yes. Answer three quick questions and it drafts a clean proposal with your prices in naira, ready to send in about two minutes. See it: Menu, then Proposals."
+    },
+    {
+      "q": "How do I get more Google reviews?",
+      "a": "The Review agent writes a warm please-review-us WhatsApp message for any happy customer, in your tone, in seconds. See it: the agents section in your menu."
+    },
+    {
+      "q": "Can it answer my customers for me?",
+      "a": "Partly. The Receptionist agent drafts replies to common questions and the Off-hours agent writes your after-hours auto-reply. You stay the voice; it stops the silence."
+    },
+    {
+      "q": "I'm stressed and tired. Is that part of the app too?",
+      "a": "Seriously, yes. Recharge starts a timed break with a book shelf, Word Scramble, Memory Pairs or a 2-minute story, and pauses all nudges until you are back. See it: the lightning button."
+    },
+    {
+      "q": "What happens when my internet dies?",
+      "a": "A red banner tells you honestly, and your saved pages, stories and search history still open offline. Nothing pretends to work when it cannot."
+    },
+    {
+      "q": "Is there a free plan?",
+      "a": "Yes, forever: 10 saved leads and 20 AI uses a month, no card needed. Starter, Pro and Business unlock more when you are ready. See it: Menu, then Subscription."
+    },
+    {
+      "q": "Can I earn with AI Business without selling my own service?",
+      "a": "Yes. The Partner program: refer businesses you already help, keep 50 percent of their first payment and 20 percent every month they stay. See it: Menu, then Affiliate."
+    },
+    {
+      "q": "Where do my leads go if I close the app?",
+      "a": "Nowhere. Saved leads, search history and stories live in your account and on your device. Tap a history chip and yesterday's contacts reopen instantly. See it: the chips under Find Leads."
+    },
+    {
+      "q": "Who built this?",
+      "a": "A Nigerian founder who laid bricks by day and coded by night on a phone. Every feature exists because a real user asked for it, starting with Precious, our first honest tester."
+    },
+    {
+      "q": "Where do I see who is about to pay?",
+      "a": "The Leads pipeline: six stages - New, Contacted, Interested, Negotiating, Won, Lost - with live counts. Change a stage in one tap and the numbers update. See it: Menu, then Leads."
+    },
+    {
+      "q": "Can I see how much I am actually making?",
+      "a": "Analytics shows total leads, deals won, revenue from won deals, and your pipeline as percentages - so you see exactly which stage leaks money. See it: Menu, then Analytics."
+    },
+    {
+      "q": "How do I bring back old customers?",
+      "a": "The win-back proposal template plus campaigns: pick past clients, AI writes a re-engagement offer with your prices, you approve and send it over WhatsApp. See it: Proposals, template menu."
+    },
+    {
+      "q": "Does it handle invoices and payments?",
+      "a": "Yes. Professional invoices in about 30 seconds, and customers pay through Paystack links embedded in your proposals and invoices. See it: Menu, then Invoices."
+    },
+    {
+      "q": "What writes my social posts?",
+      "a": "Moments: tell it your business and it drafts Instagram captions, WhatsApp status updates and LinkedIn posts in your voice. See it: Menu, then Moments."
+    },
+    {
+      "q": "Can it run a whole campaign, not just one message?",
+      "a": "Campaigns queue outreach to many leads at once - AI drafts each message, you approve and send one by one on WhatsApp. Nothing ever sends without you."
+    }
   ]
 }
