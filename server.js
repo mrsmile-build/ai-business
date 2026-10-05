@@ -818,7 +818,6 @@ function osmCategory(industry){
 async function poolServe(userId, industry, location, country, filters, limit){
   const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   let q = pc.from("lead_pool").select("*").eq("country", country);
-  if (industry) q = q.ilike("type", "%" + industry + "%");
   if (location) q = q.ilike("location", "%" + location + "%");
   if (filters && filters.no_site) q = q.is("website", null);
   if (filters && filters.high_reviews) q = q.gte("reviews", 50);
@@ -829,7 +828,12 @@ async function poolServe(userId, industry, location, country, filters, limit){
   if (error) throw error;
   const { data: served } = await pc.from("lead_pool_served").select("lead_id").eq("user_id", userId);
   const seen = new Set((served || []).map(function(x){ return x.lead_id; }));
-  const fresh = (data || []).filter(function(l){ return !seen.has(l.id); });
+  const fresh0 = (data || []).filter(function(l){ return !seen.has(l.id); });
+  const indKey = (industry || "").toLowerCase();
+  const indWord = indKey.split("/")[0].split("(")[0].trim().split(" ")[0];
+  const fresh = indKey ? fresh0.filter(function(l){
+    return (l.search_tags || []).some(function(t){ return (t || "").toLowerCase() === indKey; }) || (l.type || "").toLowerCase().indexOf(indWord) > -1;
+  }) : fresh0;
   const leads = fresh.slice(0, limit).map(function(l){
     return { name: l.name, phone: l.phone, address: l.address, website: l.website, rating: l.rating, reviews: l.reviews, type: l.type, email: l.email, facebook: l.facebook, instagram: l.instagram, whatsapp: l.whatsapp, source: "pool", pool_id: l.id };
   });

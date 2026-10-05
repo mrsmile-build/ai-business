@@ -6565,3 +6565,45 @@ async function moveLead(id, status){
   }
   setInterval(injectMenu, 1500);
 })();
+
+/* =========================
+   PLATFORM SUMMARY GUIDE
+========================= */
+let GUIDE_CACHE = null;
+function openGuide(){
+  var ov = document.getElementById("guide_overlay");
+  if (ov) { ov.style.display = "flex"; return; }
+  ov = document.createElement("div");
+  ov.id = "guide_overlay";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(2,6,12,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px";
+  ov.innerHTML = '<div style="background:#0b1220;border:1px solid #334155;border-radius:14px;max-width:520px;width:100%;max-height:85vh;display:flex;flex-direction:column">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #1e293b"><b style="font-size:14px">🎙️ See what AI Business does</b><button onclick="closeGuide()" style="background:transparent;border:0;color:#94a3b8;font-size:18px;cursor:pointer">✕</button></div>' +
+    '<div id="guide_chat" style="overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px"><p style="font-size:12px;color:#64748b;text-align:center">Loading the 60-second tour…</p></div>' +
+    '<div style="padding:10px 14px;border-top:1px solid #1e293b;font-size:10px;color:#475569;text-align:center">Two voices: one asks what you would ask, one answers honestly. Audio version coming soon.</div></div>';
+  document.body.appendChild(ov);
+  loadGuide();
+}
+function closeGuide(){ var ov = document.getElementById("guide_overlay"); if (ov) ov.style.display = "none"; }
+async function loadGuide(){
+  var chat = document.getElementById("guide_chat");
+  try {
+    if (!GUIDE_CACHE) { var r = await fetch("/platform-guide.json"); GUIDE_CACHE = await r.json(); }
+    var pairs = GUIDE_CACHE.pairs || [];
+    chat.innerHTML = pairs.map(function(p){
+      return '<div style="align-self:flex-start;max-width:85%;background:#131d2e;border:1px solid #1e2d42;border-radius:12px 12px 12px 4px;padding:9px 11px;font-size:12px;color:#e2e8f0">🙋 ' + p.q + '</div>' +
+             '<div style="align-self:flex-end;max-width:85%;background:#0d2418;border:1px solid #14532d;border-radius:12px 12px 4px 12px;padding:9px 11px;font-size:12px;color:#d1fae5">⚡ ' + p.a + '</div>';
+    }).join("");
+  } catch(e){ chat.innerHTML = '<p style="font-size:12px;color:#ef4444">Could not load the tour. Check your connection.</p>'; }
+}
+(function addGuideButton(){
+  function mount(){
+    if (document.getElementById("guide_btn")) return;
+    var b = document.createElement("button");
+    b.id = "guide_btn"; b.onclick = openGuide;
+    b.title = "See what AI Business does (60-second tour)";
+    b.style.cssText = "position:fixed;left:14px;bottom:14px;z-index:9998;width:48px;height:48px;border-radius:50%;background:#0f172a;border:1px solid #334155;color:white;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.4)";
+    b.textContent = "🎙️";
+    document.body.appendChild(b);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount); else mount();
+})();
