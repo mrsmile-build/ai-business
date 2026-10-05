@@ -1536,6 +1536,8 @@ async function renderSubscription(){
     <div class="card">
       ${header("💳 Subscription","dashboard")}
 
+      <p style="margin:0 0 14px;padding:10px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:8px;font-size:13px;color:#93c5fd;text-align:center;font-style:italic">One forgotten customer costs more than a month of AI Business.</p>
+
       <div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid ${color}">
         <p style="margin:0;font-size:12px;color:#94a3b8">Current Plan</p>
         <h3 style="margin:5px 0;color:${color}">${plan.toUpperCase()}</h3>
