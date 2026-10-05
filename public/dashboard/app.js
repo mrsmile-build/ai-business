@@ -2824,7 +2824,7 @@ async function searchLeads(){
               ${l.rating?`<p style="margin:2px 0;font-size:11px;color:#f59e0b">⭐ ${l.rating} (${l.reviews} reviews)${l.reviews!=null && l.reviews<10?' — <span style="color:#10b981">new listing, few reviews yet</span>':''}</p>`:""}
               </div>
             </div>
-            <span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;${l.source==="local"?"background:rgba(16,185,129,0.15);color:#10b981":"background:rgba(59,130,246,0.15);color:#3b82f6"}">${l.source==="local"?"Local":"Online"}</span>
+            <span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;${l.source==="local"?"background:rgba(16,185,129,0.15);color:#10b981":"background:rgba(59,130,246,0.15);color:#3b82f6"}">${l.source==="local"?"Local":"Online"}</span><span style="font-size:10px;padding:2px 8px;border-radius:6px;flex-shrink:0;margin-left:4px;${fitScore(l)>=85?"background:#22c55e;color:white":fitScore(l)>=70?"background:#3b82f6;color:white":"background:#64748b;color:white"}">${fitScore(l)>=85?"🔥 ":""}${fitScore(l)}% fit</span>
           </div>
 
           <p style="margin:0 0 6px;font-size:12px;color:#64748b">✏️ Edit message before sending:</p>
