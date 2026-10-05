@@ -815,6 +815,49 @@ function osmCategory(industry){
   return (industry || "").split("/")[0].trim().toLowerCase().split(" ")[0] || "restaurant";
 }
 
+async function poolServe(userId, industry, location, country, filters, limit){
+  const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  let q = pc.from("lead_pool").select("*").eq("country", country);
+  if (industry) q = q.ilike("type", "%" + industry + "%");
+  if (location) q = q.ilike("location", "%" + location + "%");
+  if (filters && filters.no_site) q = q.is("website", null);
+  if (filters && filters.high_reviews) q = q.gte("reviews", 50);
+  if (filters && filters.high_rating) q = q.gte("rating", 4.5);
+  if (filters && filters.new) q = q.lt("reviews", 10);
+  q = q.order("times_seen", { ascending: false }).limit(limit * 4);
+  const { data, error } = await q;
+  if (error) throw error;
+  const { data: served } = await pc.from("lead_pool_served").select("lead_id").eq("user_id", userId);
+  const seen = new Set((served || []).map(function(x){ return x.lead_id; }));
+  const fresh = (data || []).filter(function(l){ return !seen.has(l.id); });
+  const leads = fresh.slice(0, limit).map(function(l){
+    return { name: l.name, phone: l.phone, address: l.address, website: l.website, rating: l.rating, reviews: l.reviews, type: l.type, email: l.email, facebook: l.facebook, instagram: l.instagram, whatsapp: l.whatsapp, source: "pool", pool_id: l.id };
+  });
+  return { leads: leads, enough: leads.length >= 5 };
+}
+async function poolRecordServed(userId, leads){
+  try {
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const rows = (leads || []).filter(function(l){ return l.pool_id; }).map(function(l){ return { user_id: userId, lead_id: l.pool_id }; });
+    if (rows.length) await pc.from("lead_pool_served").upsert(rows, { onConflict: "user_id,lead_id" });
+  } catch(e){}
+}
+async function poolUpsert(leads, industry, location, country, source){
+  try {
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    for (const l of (leads || [])) {
+      const norm = ((l.name || "") + "|" + (l.address || l.phone || "")).toLowerCase().replace(/[^a-z0-9|]/g, "").slice(0, 90);
+      if (!norm || norm.length < 5) continue;
+      const { data: ex } = await pc.from("lead_pool").select("id,times_seen").eq("normalized_key", norm).maybeSingle();
+      if (ex) {
+        await pc.from("lead_pool").update({ last_seen_at: new Date().toISOString(), times_seen: (ex.times_seen || 1) + 1 }).eq("id", ex.id);
+      } else {
+        await pc.from("lead_pool").insert({ normalized_key: norm, name: l.name || null, phone: l.phone || null, address: l.address || null, website: l.website || null, rating: l.rating || null, reviews: l.reviews || null, type: l.type || industry || null, location: location || null, country: country || null, email: l.email || null, facebook: l.facebook || null, instagram: l.instagram || null, whatsapp: l.whatsapp || null, source: source || "upstream", search_tags: [industry, location].filter(Boolean) });
+      }
+    }
+  } catch(e){ console.error("poolUpsert:", e.message); }
+}
+
 app.post("/api/lead-finder", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'lead_finder_searched'); checkAndTriggerActivation(req.user.id, 'lead_finder');
   try {
@@ -844,6 +887,21 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     const searchQuery = (req.body.industry && req.body.industry !== req.body.service) ? req.body.industry + " " + location : service + " " + location;
     const countryCode = detectCountryCode(location);
 
+    // === COLLECTIVE MEMORY: serve from pool before spending upstream quota ===
+    let poolLeads = null;
+    const originalJson = res.json.bind(res);
+    res.json = function(body){
+      try {
+        if (poolLeads && body && body.success) body.source = "pool";
+        else if (body && body.success && Array.isArray(body.leads) && body.leads.length) poolUpsert(body.leads, req.body.industry || service, location, countryCode, "upstream");
+      } catch(e){}
+      return originalJson(body);
+    };
+    try {
+      const pool = await poolServe(req.user.id, req.body.industry || service, location, countryCode, filters, 15);
+      if (pool && pool.enough && pool.leads.length) { poolLeads = pool.leads; poolRecordServed(req.user.id, poolLeads); }
+    } catch (poolErr) { console.error("poolServe failed, falling upstream:", poolErr.message); }
+
     const hasDataKeys = [
       process.env.HASDATA_KEY_1,
       process.env.HASDATA_KEY_2,
@@ -856,6 +914,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     let mapsText = "";
     let hasDataSuccess = false;
 
+    if (!poolLeads) {
     for (let i = 0; i < hasDataKeys.length; i++) {
       const key = hasDataKeys[i];
       let testSerpRes, testMapsRes, testSerpText, testMapsText;
@@ -893,8 +952,10 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       }
     }
 
+    }
+
     // Do not silently turn HasData API errors into "No leads found".
-    if (!hasDataSuccess) {
+    if (!poolLeads && !hasDataSuccess) {
       const combinedError = (serpText + " " + mapsText).toLowerCase();
       
       // FALLBACK: Try our own Search API when HasData fails
@@ -1109,7 +1170,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     // Prefer real local businesses. Organic websites are only supplementary.
     // This keeps directories such as Tripadvisor from dominating the results.
     const anyFilter = filters && (filters.new || filters.no_site || filters.high_reviews || filters.high_rating);
-    const allLeads = [...localLeads, ...(anyFilter ? [] : organicLeads)]
+    const allLeads = poolLeads ? poolLeads.slice(0, 15) : [...localLeads, ...(anyFilter ? [] : organicLeads)]
       .filter((lead, index, arr) => {
         const name = (lead.name || "").toLowerCase().trim();
         return name && arr.findIndex(x =>
