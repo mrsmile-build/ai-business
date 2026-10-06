@@ -1929,7 +1929,7 @@ function renderRecharge(){
       '<label style="font-size:12px;color:#cbd5e1">🌍 Where from?</label>' +
       '<select id="rc_cont" onchange="renderShelves()" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px">' + ["Global","Africa","Americas","Europe","Asia","Oceania"].map(function(c){ return '<option>' + c + '</option>'; }).join('') + '</select>' +
       '<label style="font-size:12px;color:#cbd5e1">Country (optional)</label>' +
-      '<input id="rc_country" placeholder="e.g. Nigeria" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px;box-sizing:border-box">' +
+      '<input id="rc_country" placeholder="Your country" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin:6px 0 10px;box-sizing:border-box">' +
       '<label style="font-size:12px;color:#cbd5e1">Book type</label>' +
       '<select id="rc_genre" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#fff;margin-top:6px">' + BOOK_GENRES.map(function(g){ return '<option>' + g + '</option>'; }).join('') + '</select>' +
       '<div id="rc_shelves" style="font-size:11px;color:#64748b;margin-top:8px"></div>' +
@@ -2510,7 +2510,7 @@ function runQuoteAgent(){
   var price = document.getElementById("qa_price")?.value.trim();
   if(!service||!client) return alert("Fill service and client name.");
   var btn = document.querySelector("button[onclick='runQuoteAgent()']");
-  agentAI("Write a short professional WhatsApp quote for: Client: "+client+", Service: "+service+", Price: "+(price||"to discuss")+". Professional, clear, call to action. Under 100 words. Nigeria context.", "quote_result", btn, "Generate Quote");
+  agentAI("Write a short professional WhatsApp quote for: Client: "+client+", Service: "+service+", Price: "+(price||"to discuss")+". Professional, clear, call to action. Under 100 words. Match the business own country and city.", "quote_result", btn, "Generate Quote");
 }
 function runReviewAgent(){
   var customer = document.getElementById("ra_customer")?.value.trim();
@@ -2625,7 +2625,7 @@ function renderLeadFinderB2B(){
           <input id="lf_service" placeholder="e.g. Social media management, Web design, Catering..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <p style="margin:0 0 6px;font-size:12px;color:#64748b">Tell us about YOU (optional but powerful):</p>
           <input id="lf_sender_url" placeholder="Paste your website or Instagram link..." style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-          <textarea id="lf_sender_desc" placeholder="Or describe yourself: e.g. I run Jaytees Clothing in Abuja - plus-size womens fashion sold via WhatsApp orders." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
+          <textarea id="lf_sender_desc" placeholder="Or describe yourself: e.g. I run Jaytees Clothing in my city - plus-size womens fashion sold via WhatsApp orders." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:60px;resize:none;box-sizing:border-box"></textarea>
 
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">What type of businesses do you want to reach?</p>
           <select id="lf_industry" onchange="checkCustomIndustry()" style="width:100%;padding:10px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
@@ -2655,7 +2655,7 @@ function renderLeadFinderB2B(){
           </div>
 
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Which city or area?</p>
-          <input id="lf_location" placeholder="e.g. Lagos, Abuja, Port Harcourt..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="lf_location" placeholder="Your city, town or area..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
 
           <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Extra details (optional)</p>
           <textarea id="lf_context" placeholder="Tell us more about your offer, pricing, or what makes you different..." style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
@@ -3186,7 +3186,7 @@ function renderEditProfile(){
       </div>
       <div style="margin-bottom:14px">
         <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Country</p>
-        <input id="ep_country" value="${country}" placeholder="e.g. Nigeria" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+        <input id="ep_country" value="${country}" placeholder="Your country" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       </div>
       <div style="margin-bottom:20px">
         <p style="margin:0 0 6px;font-size:13px;color:#94a3b8">Business Type(s) — select up to 3</p>
@@ -4004,7 +4004,7 @@ async function renderBizPage(){
         <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
           <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Page Details</p>
           <input id="bp_name" placeholder="Business name *" value="${p.business_name||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
-          <input id="bp_tagline" placeholder="Tagline (e.g. Lagos's best hair salon)" value="${p.tagline||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <input id="bp_tagline" placeholder="Tagline (e.g. your city's best hair salon)" value="${p.tagline||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <input id="bp_slug" placeholder="Page link name (e.g. glamour-salon)" value="${p.slug||slug}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
           <textarea id="bp_desc" placeholder="About your business..." style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box">${p.description||""}</textarea>
           <input id="bp_hours" placeholder="Opening hours" value="${p.hours||""}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
@@ -4123,7 +4123,7 @@ async function renderB2CGrowth(){
       </select>
 
       <input id="b2c_biz" placeholder="Your business (e.g. Glamour Hair Salon)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box" value="${currentProfile?.display_name||""}">
-      <input id="b2c_location" placeholder="Your city (e.g. Lagos, Abuja)" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+      <input id="b2c_location" placeholder="Your city or town" style="width:100%;padding:10px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
       <textarea id="b2c_offer" placeholder="Any specific offer, price, or detail to include?" style="width:100%;padding:10px;margin-bottom:14px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;height:70px;resize:none;box-sizing:border-box"></textarea>
 
       <button onclick="generateB2CContent()" style="width:100%;padding:12px;background:#8b5cf6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">✨ Generate Marketing Content</button>
@@ -4151,7 +4151,7 @@ async function generateB2CContent(){
     var res = await apiFetch("/api/ai-reply",{
       method:"POST",
       headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({message: `Create marketing content for ${biz} in ${location||"Nigeria"} to ${goalText}. ${offer?"Special offer: "+offer:""}
+      body: JSON.stringify({message: `Create marketing content for ${biz} in ${location||"their city"} to ${goalText}. ${offer?"Special offer: "+offer:""}
 
 Generate ALL of these in JSON format:
 {
@@ -5082,7 +5082,7 @@ function renderFirstWin(niche){
         <div style="font-size:40px;margin-bottom:10px">🎯</div>
         <h2 style="margin:0 0 8px;font-size:20px">Let's find your first customers</h2>
         <p style="color:#64748b;font-size:13px;margin-bottom:24px">Type your city below and watch real businesses appear.</p>
-        <input id="fw_location" placeholder="e.g. Lagos, Abuja" style="width:100%;padding:12px;margin-bottom:14px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
+        <input id="fw_location" placeholder="Your city or town" style="width:100%;padding:12px;margin-bottom:14px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box">
         <button onclick="runFirstWinLeadFinder()" id="fw_btn" style="width:100%;padding:14px;background:#3b82f6;color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-weight:600">🔍 Find Customers Now</button>
         <div id="fw_result" style="margin-top:18px;text-align:left"></div>
       </div>
@@ -5158,7 +5158,7 @@ async function runFirstWinB2C(){
     var res = await apiFetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write one short, exciting WhatsApp status promo (under 40 words) for " + bizName + ", a business that sells " + bizService + ", to attract new customers. Nigerian audience. Mention the business name and what they sell specifically. No markdown, just the message."})
+      body: JSON.stringify({message: "Write one short, exciting WhatsApp status promo (under 40 words) for " + bizName + ", a business that sells " + bizService + ", to attract new customers. Local audience in the business own country. Mention the business name and what they sell specifically. No markdown, just the message."})
     });
     var data = await res.json();
     if(data.success && data.reply){
@@ -6061,7 +6061,7 @@ async function generateVideoScript(){
     var res = await apiFetch("/api/ai-reply", {
       method: "POST",
       headers: {"Content-Type":"application/json", Authorization:"Bearer " + localStorage.getItem("token")},
-      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "Nigeria") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + PUBLIC_BASE.replace(/^https?:\/\//,"") + ". Nigerian audience, emotional, powerful."})
+      body: JSON.stringify({message: "Write an 8-slide video script for " + biz + " in " + (location || "their city") + " offering " + service + ". Use formula: Problem (2 slides), Pain (2 slides), Solution (2 slides), Call to action (2 slides). Each slide one short sentence. End with visit " + PUBLIC_BASE.replace(/^https?:\/\//,"") + ". Local audience in the business own country, emotional, powerful."})
     });
     var data = await res.json();
     if(data.success && data.reply){
