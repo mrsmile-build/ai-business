@@ -247,51 +247,94 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:28px
 </head>
 <body>
 
+<style>
+/* Modern Nav Styles */
+.nav-container { display:flex; justify-content:space-between; align-items:center; padding:16px 24px; background:#0b1220; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:100; }
+.logo { font-weight:700; font-size:20px; color:#f8fafc; text-decoration:none; }
+.desktop-nav { display:none; gap:32px; }
+@media(min-width:768px){ .desktop-nav{display:flex;} }
+.nav-item { position:relative; }
+.nav-link { color:#94a3b8; text-decoration:none; font-size:14px; font-weight:500; transition:color .2s; cursor:pointer; padding:8px 0; }
+.nav-link:hover { color:white; }
+.dropdown-menu { position:absolute; top:100%; left:-16px; min-width:200px; background:#1e293b; border:1px solid #334155; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.5); opacity:0; visibility:hidden; transform:translateY(-8px); transition:all .2s ease; z-index:1000; padding:8px 0; }
+.nav-item:hover .dropdown-menu { opacity:1; visibility:visible; transform:translateY(0); }
+.dropdown-link { display:block; padding:10px 16px; color:#cbd5e1; text-decoration:none; font-size:14px; transition:background .2s; }
+.dropdown-link:hover { background:#334155; color:white; }
+.mobile-toggle { display:flex; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:8px; }
+@media(min-width:768px){ .mobile-toggle{display:none;} }
+.bar { width:24px; height:2px; background:#f8fafc; transition:.3s; }
+.mobile-overlay { position:fixed; inset:0; background:#0b1220; z-index:999; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:32px; opacity:0; pointer-events:none; transition:opacity .3s; }
+.mobile-overlay.active { opacity:1; pointer-events:auto; }
+.mobile-close { position:absolute; top:20px; right:20px; background:none; border:none; color:#94a3b8; font-size:32px; cursor:pointer; }
+.mobile-link-big { color:white; text-decoration:none; font-size:24px; font-weight:600; text-align:center; }
+.cta-group { display:flex; gap:12px; align-items:center; }
+.btn-login { color:#94a3b8; text-decoration:none; font-size:14px; }
+.btn-start { background:#3b82f6; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:14px; font-weight:600; }
+</style>
 
-<header style="position:sticky;top:0;background:#0b1220;border-bottom:1px solid #1e293b;z-index:100;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">
-  <!-- Logo -->
-  <div style="font-weight:700;font-size:20px;color:#f8fafc;">📊 AI Business</div>
+
+<header class="nav-container">
+  <a href="/" class="logo">📊 AI Business</a>
   
-  <!-- Desktop Links (Hidden on Mobile) -->
-  <div class="desktop-nav-links">
-    <a href="/audit">Free Audit</a>
-    <a href="/resources">Guides</a>
-    <a href="/blog">Blog</a>
-    <a href="/demo">Demo</a>
-  </div>
-  
-  <!-- Right Side Actions -->
-  <div style="display:flex;gap:12px;align-items:center;">
-    <a href="/login" style="color:#94a3b8;text-decoration:none;font-size:14px;">Login</a>
-    <a href="/auth?signup=true" style="background:#3b82f6;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">Start Free</a>
+  <!-- Desktop Dropdown Nav -->
+  <nav class="desktop-nav">
+    <div class="nav-item">
+      <span class="nav-link">Platform ▾</span>
+      <div class="dropdown-menu">
+        <a href="/features" class="dropdown-link">Features Overview</a>
+        <a href="/pricing" class="dropdown-link">Pricing Plans</a>
+        <a href="/demo" class="dropdown-link">Live Demo</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <span class="nav-link">Resources ▾</span>
+      <div class="dropdown-menu">
+        <a href="/audit" class="dropdown-link">🔍 Free Lead Leak Audit</a>
+        <a href="/resources" class="dropdown-link">📚 Business Guides Library</a>
+        <a href="/blog" class="dropdown-link">✍️ Latest Updates</a>
+        <a href="/faq" class="dropdown-link">❓ FAQ & Support</a>
+      </div>
+    </div>
+    <a href="/about" class="nav-link">About</a>
+  </nav>
+
+  <!-- Right Actions -->
+  <div class="cta-group">
+    <a href="/login" class="btn-login">Login</a>
+    <a href="/auth?signup=true" class="btn-start">Start Free</a>
     
-    <!-- Hamburger Button (Mobile Only) -->
-    <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Open Menu">
-      <span class="hamburger-icon"></span>
-      <span class="hamburger-icon"></span>
-      <span class="hamburger-icon"></span>
+    <!-- Mobile Hamburger -->
+    <button class="mobile-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span>
     </button>
   </div>
 </header>
 
-<!-- Mobile Slide-Out Menu -->
-<div id="menuBackdrop" class="menu-backdrop" onclick="closeMenu()"></div>
-<nav id="mobileMenu" class="mobile-menu-overlay">
-  <button class="close-menu-btn" onclick="closeMenu()">×</button>
-  <a href="/audit" class="mobile-link">🔍 Free Lead Leak Audit</a>
-  <a href="/resources" class="mobile-link">📚 Business Guides Library</a>
-  <a href="/blog" class="mobile-link">✍️ Latest Updates</a>
-  <a href="/demo" class="mobile-link">▶️ Watch 30-Sec Demo</a>
-  <hr style="border-color:#1e293b;margin:12px 0;">
-  <a href="/terms" class="mobile-link" style="font-size:13px;color:#64748b;">Terms of Service</a>
-  <a href="/privacy" class="mobile-link" style="font-size:13px;color:#64748b;">Privacy Policy</a>
-  <a href="/faq" class="mobile-link" style="font-size:13px;color:#64748b;">FAQ</a>
-</nav>
+<!-- Mobile Full-Screen Overlay -->
+<div id="mobileOverlay" class="mobile-overlay">
+  <button class="mobile-close" onclick="toggleMobileMenu()">×</button>
+  <a href="/audit" class="mobile-link-big" onclick="toggleMobileMenu()">🔍 Free Audit</a>
+  <a href="/resources" class="mobile-link-big" onclick="toggleMobileMenu()">📚 Guides</a>
+  <a href="/blog" class="mobile-link-big" onclick="toggleMobileMenu()">✍️ Blog</a>
+  <a href="/demo" class="mobile-link-big" onclick="toggleMobileMenu()">▶️ Demo</a>
+  <hr style="width:60%;border-color:#334155;margin:20px 0;">
+  <a href="/terms" class="mobile-link-big" style="font-size:16px;color:#64748b;" onclick="toggleMobileMenu()">Terms</a>
+  <a href="/privacy" class="mobile-link-big" style="font-size:16px;color:#64748b;" onclick="toggleMobileMenu()">Privacy</a>
+</div>
 
 <script>
-function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');document.getElementById('menuBackdrop').classList.toggle('show');}
-function closeMenu(){document.getElementById('mobileMenu').classList.remove('open');document.getElementById('menuBackdrop').classList.remove('show');}
+function toggleMobileMenu(){document.getElementById('mobileOverlay').classList.toggle('active');}
 </script>
+
+
+
+
+
+<!-- Mobile Slide-Out Menu -->
+<div id="menuBackdrop" class="menu-backdrop" onclick="closeMenu()"></div>
+
+
+
 
 
 <section class="hero">
