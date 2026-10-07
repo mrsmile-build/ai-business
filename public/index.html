@@ -226,19 +226,73 @@ footer{background:var(--surface);border-top:1px solid var(--border);padding:28px
   <meta property="twitter:description" content="Track every customer, follow up automatically, book appointments, and send invoices. The all-in-one AI platform built for African entrepreneurs.">
   <meta property="twitter:image" content="https://www.ai-business.com.ng/og-image.jpg">
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What is AI Business in one sentence?", "acceptedAnswer": {"@type": "Answer", "text": "A customer-keeping machine for WhatsApp-first businesses: it finds leads, drafts your messages, remembers every enquiry, and follows up so no sale goes cold."}}, {"@type": "Question", "name": "I'm busy. What should I try first?", "acceptedAnswer": {"@type": "Answer", "text": "Lead Finder. Type your city plus your customer type; in about 30 seconds you get real businesses with phone numbers and ready-to-send WhatsApp messages. See it: Menu, then Lead Finder."}}, {"@type": "Question", "name": "Does it message people without my permission?", "acceptedAnswer": {"@type": "Answer", "text": "Never. Every message is a draft you edit and send yourself. AI Business reminds and writes; you approve. Always. See it: any lead card has an editable message box."}}, {"@type": "Question", "name": "What do the fire percentages mean?", "acceptedAnswer": {"@type": "Answer", "text": "Fit score: how strongly that business matches your offer right now, using rating, reviews and whether they have a website. Contact the hot ones first. See it: run any search and watch the badges."}}, {"@type": "Question", "name": "What is the Memory badge on some leads?", "acceptedAnswer": {"@type": "Answer", "text": "Our collective memory. When any user searches a niche, AI Business remembers those businesses so the next person gets instant results without paid lookups. Your searches help everyone."}}, {"@type": "Question", "name": "What reminds me about quiet leads?", "acceptedAnswer": {"@type": "Answer", "text": "The attention bell. Enquiries that go silent for days get flagged with a drafted nudge, so follow-up stops depending on your memory. See it: the bell icon at the top."}}, {"@type": "Question", "name": "How do customers book me without back-and-forth?", "acceptedAnswer": {"@type": "Answer", "text": "Your free booking page: share one link, customers pick a day and time, it lands in your dashboard. No WhatsApp ping-pong. See it: Menu, then Booking page."}}, {"@type": "Question", "name": "Can it write my proposals too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Answer three quick questions and it drafts a clean proposal with your prices in naira, ready to send in about two minutes. See it: Menu, then Proposals."}}, {"@type": "Question", "name": "How do I get more Google reviews?", "acceptedAnswer": {"@type": "Answer", "text": "The Review agent writes a warm please-review-us WhatsApp message for any happy customer, in your tone, in seconds. See it: the agents section in your menu."}}, {"@type": "Question", "name": "Can it answer my customers for me?", "acceptedAnswer": {"@type": "Answer", "text": "Partly. The Receptionist agent drafts replies to common questions and the Off-hours agent writes your after-hours auto-reply. You stay the voice; it stops the silence."}}, {"@type": "Question", "name": "I'm stressed and tired. Is that part of the app too?", "acceptedAnswer": {"@type": "Answer", "text": "Seriously, yes. Recharge starts a timed break with a book shelf, Word Scramble, Memory Pairs or a 2-minute story, and pauses all nudges until you are back. See it: the lightning button."}}, {"@type": "Question", "name": "What happens when my internet dies?", "acceptedAnswer": {"@type": "Answer", "text": "A red banner tells you honestly, and your saved pages, stories and search history still open offline. Nothing pretends to work when it cannot."}}, {"@type": "Question", "name": "Is there a free plan?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, forever: 10 saved leads and 20 AI uses a month, no card needed. Starter, Pro and Business unlock more when you are ready. See it: Menu, then Subscription."}}, {"@type": "Question", "name": "Can I earn with AI Business without selling my own service?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. The Partner program: refer businesses you already help, keep 50 percent of their first payment and 20 percent every month they stay. See it: Menu, then Affiliate."}}, {"@type": "Question", "name": "Where do my leads go if I close the app?", "acceptedAnswer": {"@type": "Answer", "text": "Nowhere. Saved leads, search history and stories live in your account and on your device. Tap a history chip and yesterday's contacts reopen instantly. See it: the chips under Find Leads."}}, {"@type": "Question", "name": "Who built this?", "acceptedAnswer": {"@type": "Answer", "text": "A Nigerian founder who laid bricks by day and coded by night on a phone. Every feature exists because a real user asked for it, starting with Precious, our first honest tester."}}, {"@type": "Question", "name": "Where do I see who is about to pay?", "acceptedAnswer": {"@type": "Answer", "text": "The Leads pipeline: six stages - New, Contacted, Interested, Negotiating, Won, Lost - with live counts. Change a stage in one tap and the numbers update. See it: Menu, then Leads."}}, {"@type": "Question", "name": "Can I see how much I am actually making?", "acceptedAnswer": {"@type": "Answer", "text": "Analytics shows total leads, deals won, revenue from won deals, and your pipeline as percentages - so you see exactly which stage leaks money. See it: Menu, then Analytics."}}, {"@type": "Question", "name": "How do I bring back old customers?", "acceptedAnswer": {"@type": "Answer", "text": "The win-back proposal template plus campaigns: pick past clients, AI writes a re-engagement offer with your prices, you approve and send it over WhatsApp. See it: Proposals, template menu."}}, {"@type": "Question", "name": "Does it handle invoices and payments?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Professional invoices in about 30 seconds, and customers pay through Paystack links embedded in your proposals and invoices. See it: Menu, then Invoices."}}, {"@type": "Question", "name": "What writes my social posts?", "acceptedAnswer": {"@type": "Answer", "text": "Moments: tell it your business and it drafts Instagram captions, WhatsApp status updates and LinkedIn posts in your voice. See it: Menu, then Moments."}}, {"@type": "Question", "name": "Can it run a whole campaign, not just one message?", "acceptedAnswer": {"@type": "Answer", "text": "Campaigns queue outreach to many leads at once - AI drafts each message, you approve and send one by one on WhatsApp. Nothing ever sends without you."}}]}</script>
+
+<style>
+/* Hamburger Styles */
+.hamburger-btn { background:none; border:none; cursor:pointer; padding:8px; z-index:1000; position:relative; }
+.hamburger-icon { width:24px; height:2px; background:#f8fafc; display:block; margin:5px 0; transition:.3s; }
+.mobile-menu-overlay { position:fixed; top:0; left:-100%; width:80%; max-width:320px; height:100vh; background:#0f172a; box-shadow:4px 0 20px rgba(0,0,0,.5); transition:left .3s ease-in-out; z-index:999; overflow-y:auto; padding-top:60px; }
+.mobile-menu-overlay.open { left:0; }
+.menu-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:opacity .3s; z-index:998; }
+.menu-backdrop.show { opacity:1; pointer-events:auto; }
+.mobile-link { display:block; color:#cbd5e1; text-decoration:none; padding:16px 24px; font-size:16px; border-bottom:1px solid #1e293b; }
+.mobile-link:hover { background:#1e293b; color:white; }
+.close-menu-btn { position:absolute; top:16px; right:16px; background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer; }
+@media(min-width:768px){ .hamburger-btn{display:none;} .desktop-nav-links{display:flex!important;} }
+.desktop-nav-links{display:none; gap:24px; align-items:center;}
+.desktop-nav-links a{color:#94a3b8; text-decoration:none; font-size:14px;}
+.desktop-nav-links a:hover{color:white;}
+</style>
+
 </head>
 <body>
 
-<nav>
-  <a href="/" class="logo">📊 AI Business</a>
-  <div class="nav-btns">
-    <a href="/blog" class="btn-ghost">Blog</a>
-    <a href="/demo" class="btn-ghost">▶ Demo</a>
-    <a href="/auth" class="btn-ghost">Login</a>
-    <a href="/auth?signup=true" class="btn-blue">Get Started</a>
-    <a href="https://wa.me/2347015745712?text=Hi%2C%20I%20want%20to%20try%20AI%20Business" target="_blank" style="margin-left:10px;padding:10px 20px;background:#25d366;color:white;border-radius:8px;text-decoration:none;font-weight:600;display:inline-block">💬 WhatsApp</a>
+
+<header style="position:sticky;top:0;background:#0b1220;border-bottom:1px solid #1e293b;z-index:100;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">
+  <!-- Logo -->
+  <div style="font-weight:700;font-size:20px;color:#f8fafc;">📊 AI Business</div>
+  
+  <!-- Desktop Links (Hidden on Mobile) -->
+  <div class="desktop-nav-links">
+    <a href="/audit">Free Audit</a>
+    <a href="/resources">Guides</a>
+    <a href="/blog">Blog</a>
+    <a href="/demo">Demo</a>
   </div>
+  
+  <!-- Right Side Actions -->
+  <div style="display:flex;gap:12px;align-items:center;">
+    <a href="/login" style="color:#94a3b8;text-decoration:none;font-size:14px;">Login</a>
+    <a href="/auth?signup=true" style="background:#3b82f6;color:white;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600;">Start Free</a>
+    
+    <!-- Hamburger Button (Mobile Only) -->
+    <button class="hamburger-btn" onclick="toggleMenu()" aria-label="Open Menu">
+      <span class="hamburger-icon"></span>
+      <span class="hamburger-icon"></span>
+      <span class="hamburger-icon"></span>
+    </button>
+  </div>
+</header>
+
+<!-- Mobile Slide-Out Menu -->
+<div id="menuBackdrop" class="menu-backdrop" onclick="closeMenu()"></div>
+<nav id="mobileMenu" class="mobile-menu-overlay">
+  <button class="close-menu-btn" onclick="closeMenu()">×</button>
+  <a href="/audit" class="mobile-link">🔍 Free Lead Leak Audit</a>
+  <a href="/resources" class="mobile-link">📚 Business Guides Library</a>
+  <a href="/blog" class="mobile-link">✍️ Latest Updates</a>
+  <a href="/demo" class="mobile-link">▶️ Watch 30-Sec Demo</a>
+  <hr style="border-color:#1e293b;margin:12px 0;">
+  <a href="/terms" class="mobile-link" style="font-size:13px;color:#64748b;">Terms of Service</a>
+  <a href="/privacy" class="mobile-link" style="font-size:13px;color:#64748b;">Privacy Policy</a>
+  <a href="/faq" class="mobile-link" style="font-size:13px;color:#64748b;">FAQ</a>
 </nav>
+
+<script>
+function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');document.getElementById('menuBackdrop').classList.toggle('show');}
+function closeMenu(){document.getElementById('mobileMenu').classList.remove('open');document.getElementById('menuBackdrop').classList.remove('show');}
+</script>
+
 
 <section class="hero">
   <div class="badge">🚀 Built for African Entrepreneurs</div>
