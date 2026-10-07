@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Free Lead Leak Audit | AI Business</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px;max-width:600px;margin:auto;line-height:1.7}
+h1{font-size:24px;color:#f8fafc;margin-bottom:8px}
+p.sub{color:#94a3b8;font-size:14px;margin-bottom:32px}
+label{display:block;font-size:14px;color:#cbd5e1;margin-bottom:6px;margin-top:20px}
+input,select{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f8fafc;font-size:16px;box-sizing:border-box}
+button{margin-top:28px;width:100%;padding:14px;border:none;border-radius:8px;background:#3b82f6;color:white;font-size:16px;font-weight:600;cursor:pointer}
+button:hover{background:#2563eb}
+#result{margin-top:32px;padding:20px;border-radius:12px;background:#0f172a;border:1px solid #1e293b;display:none}
+#result h2{margin:0 0 8px;font-size:20px;color:#f8fafc}
+#result .loss{font-size:28px;font-weight:700;color:#ef4444;margin:8px 0}
+#result .cta{margin-top:16px;display:inline-block;padding:12px 24px;background:#22c55e;color:#0b1220;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+<h1>🔍 Free Lead Leak Audit</h1>
+<p class="sub">Find out how much revenue you're losing to slow replies. Takes 30 seconds.</p>
+
+<label>How many enquiries do you get per month?</label>
+<input type="number" id="enquiries" placeholder="e.g. 100" min="1">
+
+<label>What % get a reply within 5 minutes?</label>
+<select id="replyRate">
+  <option value="10">Less than 10%</option>
+  <option value="20">About 20%</option>
+  <option value="30" selected>About 30%</option>
+  <option value="50">About 50%</option>
+  <option value="70">About 70%</option>
+  <option value="90">90% or more</option>
+</select>
+
+<label>Average value of one closed deal (₦)</label>
+<input type="number" id="dealValue" placeholder="e.g. 50000" min="100">
+
+<button onclick="calculate()">Calculate My Loss</button>
+
+<div id="result">
+  <h2>Your Monthly Revenue Leak</h2>
+  <div class="loss" id="monthlyLoss"></div>
+  <p style="color:#94a3b8;font-size:13px;margin:4px 0 0">Annual loss: <span id="annualLoss"></span></p>
+  <p style="margin-top:16px;font-size:14px;color:#cbd5e1">AI Business auto-replies to every enquiry in under 60 seconds, qualifies leads, and books appointments — so you stop leaking money.</p>
+  <a href="/auth?signup=true" class="cta">Plug the Leak — Start Free</a>
+</div>
+
+<script>
+function calculate(){
+  var e=parseFloat(document.getElementById('enquiries').value)||0;
+  var r=parseFloat(document.getElementById('replyRate').value)||30;
+  var d=parseFloat(document.getElementById('dealValue').value)||0;
+  if(!e||!d){alert('Please fill in all fields');return;}
+  var ignored=e*(1-r/100);
+  var converted=ignored*0.10;
+  var monthly=Math.round(converted*d);
+  var annual=monthly*12;
+  document.getElementById('monthlyLoss').textContent='₦'+monthly.toLocaleString()+'/month';
+  document.getElementById('annualLoss').textContent='₦'+annual.toLocaleString()+'/year';
+  document.getElementById('result').style.display='block';
+}
+</script>
+</body>
+</html>
