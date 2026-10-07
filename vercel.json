@@ -1,20 +1,6 @@
 {
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "ai-business-two-psi.vercel.app"
-        }
-      ],
-      "destination": "https://www.ai-business.com.ng/:path*",
-      "permanent": true
-    },
-    {
-      "source": "/help",
-      "destination": "/help.html",
-      "permanent": false
-    }
+  "rewrites": [
+    { "source": "/audit", "destination": "/audit.html" },
+    { "source": "/resources/:slug*", "destination": "/resources/:slug*.html" }
   ]
 }
