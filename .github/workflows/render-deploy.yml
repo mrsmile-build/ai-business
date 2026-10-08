@@ -6,7 +6,17 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy hook
+      - name: Trigger Render service 1
         env:
-          RENDER_HOOK: ${{ secrets.RENDER_HOOK }}
-        run: curl -fsS -X POST "$RENDER_HOOK"
+          HOOK: ${{ secrets.RENDER_HOOK }}
+        run: curl -fsS -X POST "$HOOK"
+
+      - name: Trigger Render service 2
+        env:
+          HOOK: ${{ secrets.RENDER_HOOK_2 }}
+        run: curl -fsS -X POST "$HOOK"
+
+      - name: Trigger Render service 3
+        env:
+          HOOK: ${{ secrets.RENDER_HOOK_3 }}
+        run: curl -fsS -X POST "$HOOK"
