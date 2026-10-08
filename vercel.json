@@ -1,6 +1,16 @@
 {
   "rewrites": [
-    { "source": "/audit", "destination": "/audit/index.html" },
-    { "source": "/resources/:slug*", "destination": "/resources/:slug*.html" }
+    {
+      "source": "/audit",
+      "destination": "/audit/index.html"
+    },
+    {
+      "source": "/resources/:slug*",
+      "destination": "/resources/:slug*.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/auth"
+    }
   ]
 }
