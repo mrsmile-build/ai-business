@@ -158,8 +158,7 @@ input:focus, textarea:focus, select:focus {
   <div onclick="loadPage('appointments')">📅 Appointments</div>
   <div onclick="loadPage('invoice')">🧾 Invoice</div>
   <div onclick="loadPage('bizpage')">🌐 My Business Page</div>
-  <div onclick="loadPage('affiliate')">&#128184; Affiliate Program</div>
-  <div onclick="loadPage('referral')"">🎁 Refer and Earn</div>
+  <div onclick="location.href='/earn'">💰 Earn with Us</div>
   <div onclick="loadPage('subscription')">Subscription</div>
   <div onclick="loadPage('settings')">Settings</div>
   <div onclick="loadPage('support')">Help / Support</div>
@@ -186,5 +185,11 @@ s.onload=function(){var sb=supabase.createClient(window.SB_URL,window.SB_KEY);
    sb.from('partner_public').select('id').eq('code',code).maybeSingle().then(function(res){
     if(res.data){sb.from('profiles').update({managed_by_partner:res.data.id}).eq('user_id',u.id).then(function(){});}});});});};
 document.head.appendChild(s);}catch(e){}})();</script>
+
+<script>
+(function(){var p=new URLSearchParams(location.search).get('page');if(!p)return;window.__abDeepLink=p;
+var iv=setInterval(function(){try{if(typeof loadPage==='function'&&localStorage.getItem('token')){clearInterval(iv);loadPage(window.__abDeepLink);}}catch(e){}},600);
+setTimeout(function(){clearInterval(iv);},12000);})();
+</script>
 </body>
 </html>
