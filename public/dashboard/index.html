@@ -175,16 +175,13 @@ if('serviceWorker' in navigator){
 }
 </script>
 <script src="/movebar.js"></script><script src="/sb-keys.js"></script>
-<script>(function(){try{var c=new URLSearchParams(location.search).get('partner');if(c)localStorage.setItem('ab_partner',c);
-var code=localStorage.getItem('ab_partner');if(!code)return;
-var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-s.onload=function(){var sb=supabase.createClient(window.SB_URL,window.SB_KEY);
- sb.auth.getSession().then(function(r){var u=r.data.session&&r.data.session.user;if(!u)return;
-  sb.from('profiles').select('managed_by_partner').eq('user_id',u.id).maybeSingle().then(function(pr){
-   if(pr.data&&pr.data.managed_by_partner)return;
-   sb.from('partner_public').select('id').eq('code',code).maybeSingle().then(function(res){
-    if(res.data){sb.from('profiles').update({managed_by_partner:res.data.id}).eq('user_id',u.id).then(function(){});}});});});};
-document.head.appendChild(s);}catch(e){}})();</script>
+<script>
+(function(){try{var c=new URLSearchParams(location.search).get('partner');if(c)localStorage.setItem('ab_partner',c);
+var code=localStorage.getItem('ab_partner');var tok=localStorage.getItem('token');if(!code||!tok)return;
+fetch("https://ai-business-1-ok3x.onrender.com/api/partner/attach",{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({code:code})})
+.then(function(r){return r.json();}).then(function(d){if(d.success)localStorage.removeItem('ab_partner');}).catch(function(){});
+}catch(e){}})();
+</script>
 
 <script>
 (function(){var p=new URLSearchParams(location.search).get('page');if(!p)return;window.__abDeepLink=p;

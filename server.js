@@ -4149,6 +4149,89 @@ app.get("/book/", (req, res) => res.redirect(302, "https://www.ai-business.com.n
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });
+
+/* ---------------- PARTNER PROGRAM API ---------------- */
+app.post("/api/partner/join", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { company_name, whatsapp, bank_name, account_number } = req.body || {};
+    if (!company_name || !whatsapp) return res.status(400).json({ error: "Company name and WhatsApp are required" });
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: existing } = await pc.from("partners").select("*").eq("id", uid).single();
+    if (existing) return res.json({ success: true, partner: existing });
+    const code = "PRT-" + uid.substring(0,6).toUpperCase() + Math.random().toString(36).substring(2,5).toUpperCase();
+    const { data, error } = await pc.from("partners").insert({ id: uid, company_name, whatsapp, bank_name: bank_name||"", account_number: account_number||"", code }).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, partner: data });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/partner/me", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: partner } = await pc.from("partners").select("*").eq("id", uid).single();
+    if (!partner) return res.json({ success: false, partner: null });
+    const { data: clients } = await pc.from("profiles").select("user_id,created_at").eq("managed_by_partner", uid);
+    const { data: pending } = await pc.from("partner_withdrawals").select("*").eq("partner_id", uid).eq("status","pending");
+    const { data: paid } = await pc.from("partner_withdrawals").select("*").eq("partner_id", uid).eq("status","paid");
+    res.json({ success: true, partner, clients: clients||[], pending: pending||[], paid: paid||[] });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/partner/withdraw", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: partner } = await pc.from("partners").select("*").eq("id", uid).single();
+    if (!partner) return res.status(400).json({ error: "Not a partner yet" });
+    const bal = partner.wallet_balance || 0;
+    if (bal < 1000) return res.status(400).json({ error: "Minimum withdrawal is 1000" });
+    const { data: dup } = await pc.from("partner_withdrawals").select("id").eq("partner_id", uid).eq("status","pending").limit(1);
+    if (dup && dup.length) return res.status(400).json({ error: "You already have a pending withdrawal" });
+    const { data, error } = await pc.from("partner_withdrawals").insert({ partner_id: uid, amount: bal }).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, withdrawal: data });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/partner/attach", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const { code } = req.body || {};
+    if (!code) return res.json({ success: false });
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: prof } = await pc.from("profiles").select("managed_by_partner").eq("user_id", uid).single();
+    if (prof && prof.managed_by_partner) return res.json({ success: true, already: true });
+    const { data: partner } = await pc.from("partners").select("id").eq("code", code).single();
+    if (!partner) return res.json({ success: false, error: "Unknown partner code" });
+    if (partner.id === uid) return res.json({ success: false, error: "Cannot lock yourself" });
+    const { error } = await pc.from("profiles").update({ managed_by_partner: partner.id }).eq("user_id", uid);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
+app.get("/api/admin/withdrawals", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.email !== (process.env.ADMIN_EMAIL || "mrsmile4569@gmail.com")) return res.status(403).json({ error: "Admin only" });
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await pc.from("partner_withdrawals").select("*, partners(company_name, whatsapp, bank_name, account_number)").eq("status","pending").order("created_at", { ascending: true });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, withdrawals: data||[] });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
+app.post("/api/admin/withdrawals/:id/paid", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.email !== (process.env.ADMIN_EMAIL || "mrsmile4569@gmail.com")) return res.status(403).json({ error: "Admin only" });
+    const pc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await pc.from("partner_withdrawals").update({ status: "paid" }).eq("id", req.params.id).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, withdrawal: data });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+
 app.listen(process.env.PORT || 3000, () => {
   console.log("Server running...");
 });
