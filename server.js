@@ -4228,6 +4228,42 @@ app.post("/api/admin/withdrawals/:id/paid", authMiddleware, async (req, res) => 
   } catch(err){ res.status(500).json({ error: err.message }); }
 });
 
+
+/* ---------------- TRIAL ASSET REPORT API ---------------- */
+app.get("/api/trial/assets", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const safe = async (p, fb) => { try { return await p; } catch(e){ return { data: fb }; } };
+    const [leads, bookings, reviews, warmth, profiles, businesses] = await Promise.all([
+      safe(sc.from("leads").select("id,created_at").eq("user_id", uid), []),
+      safe(sc.from("bookings").select("id,created_at,status").eq("user_id", uid), []),
+      safe(sc.from("testimonials").select("id,created_at,rating").eq("user_id", uid), []),
+      safe(sc.from("warmth_events").select("id,event_type,created_at").eq("user_id", uid), []),
+      safe(sc.from("profiles").select("full_name,created_at").eq("user_id", uid).single(), {}),
+      safe(sc.from("businesses").select("id,name,slug").eq("user_id", uid).maybeSingle(), null),
+    ]);
+    const leadsAll = leads.data || [], bookingsAll = bookings.data || [], reviewsAll = reviews.data || [], warmthAll = warmth.data || [];
+    const prof = profiles.data || {}, biz = businesses.data || null;
+    const now = new Date();
+    const joined = prof.created_at ? new Date(prof.created_at) : now;
+    const daysSince = Math.max(1, Math.floor((now - joined)/(1000*60*60*24)));
+    const avgRating = reviewsAll.length ? (reviewsAll.reduce((t,r)=>t+(r.rating||5),0)/reviewsAll.length).toFixed(1) : 0;
+    const recovered = warmthAll.filter(e => /recovered|won|paid/i.test(e.event_type||"")).length;
+    res.json({ success: true, report: {
+      owner: prof.full_name || "Business Owner",
+      business: biz ? { name: biz.name, slug: biz.slug, url: (process.env.APP_URL||"https://www.ai-business.com.ng")+"/biz/"+biz.slug } : null,
+      joined_days: daysSince,
+      leads_total: leadsAll.length,
+      bookings_total: bookingsAll.length,
+      reviews_total: reviewsAll.length,
+      reviews_avg_rating: avgRating,
+      followups_sent: warmthAll.length,
+      leads_recovered: recovered,
+      generated_at: now.toISOString()
+    }});
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });

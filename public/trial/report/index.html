@@ -1,0 +1,67 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your AI Business Assets — Trial Report</title>
+<link rel="canonical" href="https://www.ai-business.com.ng/trial/report">
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px;max-width:680px;margin:auto;line-height:1.6}
+h1{font-size:26px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px;margin:0 0 24px}
+.hero{background:linear-gradient(135deg,#1e3a8a,#0f172a);border:1px solid #334155;border-radius:16px;padding:24px;margin-bottom:20px;text-align:center}
+.hero .big{font-size:44px;font-weight:800;color:#60a5fa;margin:8px 0}.hero .label{font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.stat{background:#111c2e;border:1px solid #1e293b;border-radius:12px;padding:16px;text-align:center}
+.stat b{display:block;font-size:28px;color:#f8fafc;font-weight:700}.stat span{font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+.card{background:#111c2e;border:1px solid #1e293b;border-radius:14px;padding:20px;margin-bottom:16px}
+.card h3{margin:0 0 10px;color:#f8fafc;font-size:16px}.card p{margin:0 0 12px;color:#cbd5e1;font-size:14px}
+.btn{display:inline-block;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:600;font-size:14px;margin:4px 4px 4px 0;cursor:pointer;border:none}
+.btn-green{background:#22c55e;color:#0b1220}.btn-ghost{background:#1e293b;color:#e2e8f0;border:1px solid #334155}
+.lock{background:linear-gradient(135deg,#052e16,#0b1220);border:1px solid #166534;border-radius:14px;padding:20px;margin-top:20px}
+.lock h3{color:#4ade80;margin:0 0 8px}.lock p{margin:0;color:#86efac;font-size:14px}
+.biz-link{font-family:monospace;background:#1e293b;padding:10px 14px;border-radius:8px;color:#60a5fa;word-break:break-all;font-size:13px;margin:8px 0}
+#loader{text-align:center;padding:60px 20px;color:#94a3b8}
+</style></head><body>
+<h1>📊 What You Built in Your Trial</h1>
+<p class="sub" id="greeting">Loading your assets...</p>
+<div id="loader">⏳ Pulling your data...</div>
+<div id="content" style="display:none">
+<div class="hero"><div class="label">Your first <span id="days">30</span> days</div>
+<div class="big" id="totalAssets">—</div><div class="label">assets working for you</div></div>
+<div class="grid">
+<div class="stat"><b id="leads">0</b><span>Customer profiles</span></div>
+<div class="stat"><b id="bookings">0</b><span>Bookings received</span></div>
+<div class="stat"><b id="reviews">0</b><span>Reviews collected</span></div>
+<div class="stat"><b id="followups">0</b><span>Follow-ups sent</span></div>
+</div>
+<div class="card" id="bizcard" style="display:none"><h3>🌐 Your public business page</h3>
+<p>Live and indexed by Google. It lives here:</p><div class="biz-link" id="bizurl"></div>
+<button class="btn btn-ghost" onclick="copyUrl()">Copy link</button></div>
+<div class="card"><h3>🧠 What the AI remembers</h3>
+<p>Your AI receptionist has learned <b id="leads2">0</b> customer profiles — preferences, payment habits, last conversations. This memory is yours forever, even if you pause.</p></div>
+<div class="card"><h3>⭐ Your review wall</h3>
+<p><b id="reviews2">0</b> reviews, averaging <b id="avg">0</b> stars. Social proof no competitor can import.</p></div>
+<div class="lock"><h3>🔒 Everything here is yours</h3>
+<p>Upgrade to keep the AI working. Or pause — we freeze everything for 90 days. Nothing deleted, nothing lost.</p>
+<div style="margin-top:14px"><a href="/dashboard?page=subscription" class="btn btn-green">Upgrade to keep going</a>
+<a href="/dashboard" class="btn btn-ghost">Back to dashboard</a></div></div>
+</div>
+<script>
+var API="https://ai-business-1-ok3x.onrender.com";var tok=localStorage.getItem("token");
+if(!tok){location.href="/auth";}
+fetch(API+"/api/trial/assets",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
+  if(!d.success){document.getElementById("loader").textContent="Could not load: "+(d.error||"unknown");return;}
+  var r=d.report;
+  document.getElementById("loader").style.display="none";
+  document.getElementById("content").style.display="block";
+  document.getElementById("greeting").textContent="Hi "+r.owner+", here is what you built in your first "+r.joined_days+" days.";
+  document.getElementById("days").textContent=r.joined_days;
+  document.getElementById("totalAssets").textContent=r.leads_total+r.bookings_total+r.reviews_total+r.followups_sent;
+  document.getElementById("leads").textContent=r.leads_total;
+  document.getElementById("bookings").textContent=r.bookings_total;
+  document.getElementById("reviews").textContent=r.reviews_total;
+  document.getElementById("followups").textContent=r.followups_sent;
+  document.getElementById("leads2").textContent=r.leads_total;
+  document.getElementById("reviews2").textContent=r.reviews_total;
+  document.getElementById("avg").textContent=r.reviews_avg_rating||"0";
+  if(r.business){document.getElementById("bizcard").style.display="block";document.getElementById("bizurl").textContent=r.business.url;}
+});
+function copyUrl(){var t=document.getElementById("bizurl").textContent;navigator.clipboard.writeText(t).then(function(){alert("Copied!");});}
+</script></body></html>
