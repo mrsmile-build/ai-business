@@ -23,5 +23,5 @@ function join(){var c=document.getElementById("company").value.trim(),w=document
  body:JSON.stringify({company_name:c,whatsapp:w,bank_name:document.getElementById("bank").value.trim(),account_number:document.getElementById("acct").value.trim()})})
  .then(function(r){if(!r.ok)throw new Error("server replied "+r.status);return r.json();})
  .then(function(d){if(d.error){alert(d.error);btn.disabled=false;btn.textContent="Activate My Partner Account";return;}location.href="/partner/dashboard";})
- .catch(function(e){alert("Could not reach the server ("+e.message+"). It may still be deploying or waking up — try again in a minute.");btn.disabled=false;btn.textContent="Activate My Partner Account";});}
+ .catch(function(e){alert("Almost there! We are finishing a quick update on our side. Please try again in about a minute — thank you for your patience. 🙏");btn.disabled=false;btn.textContent="Activate My Partner Account";});}
 </script></body></html>
