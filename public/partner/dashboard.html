@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Partner Dashboard | AI Business</title>
+<style>body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px;max-width:640px;margin:auto;line-height:1.6}
+h1{font-size:22px;color:#f8fafc}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.stat{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;text-align:center}
+.stat b{display:block;font-size:24px;color:#22c55e}.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin:16px 0}
+input{width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#94a3b8;font-size:13px;box-sizing:border-box}
+button{padding:12px 20px;border:none;border-radius:8px;background:#22c55e;color:#0b1220;font-weight:700;cursor:pointer}li{margin:6px 0}</style></head><body>
+<h1>🤝 Partner Dashboard</h1>
+<div class="grid"><div class="stat"><b id="clients">0</b>Active Clients</div><div class="stat"><b id="wallet">₦0</b>Wallet Balance</div></div>
+<div class="card"><strong>Your Partner Link</strong> — clients set up ONLY through this link:<br><br>
+<input id="link" readonly onclick="this.select()"><br><br><button onclick="copyLink()">Copy Link</button></div>
+<div class="card"><strong>Your Clients</strong><ul id="list"><li>Loading...</li></ul></div>
+<div class="card"><strong>Withdraw Earnings</strong><br><button id="wd">Request Withdrawal</button>
+<p id="wdstatus" style="color:#94a3b8;font-size:13px;margin-top:8px"></p>
+<p style="color:#64748b;font-size:12px;margin-top:8px">Payouts are verified and processed automatically within 48h of request.</p></div>
+<script src="/sb-keys.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+var sb=supabase.createClient(window.SB_URL,window.SB_KEY);
+sb.auth.getSession().then(function(r){var s=r.data.session;if(!s){location.href='/auth';return;}var uid=s.user.id;
+ sb.from('partners').select('*').eq('id',uid).maybeSingle().then(function(res){
+  if(!res.data){location.href='/partner';return;} var p=res.data;
+  document.getElementById('link').value='https://www.ai-business.com.ng/?partner='+p.code;
+  document.getElementById('wallet').textContent='₦'+(p.wallet_balance||0).toLocaleString();
+  document.getElementById('clients').textContent=p.total_clients||0;
+  document.getElementById('wd').onclick=function(){
+   if(!p.wallet_balance||p.wallet_balance<1000){alert('Minimum withdrawal is ₦1,000');return;}
+   sb.from('partner_withdrawals').insert({partner_id:uid,amount:p.wallet_balance}).then(function(r2){
+    if(r2.error){alert(r2.error.message);return;}
+    document.getElementById('wdstatus').textContent='✅ Request received. Auto-verification & payout within 48h.';
+    document.getElementById('wd').disabled=true;});};
+  sb.from('partner_withdrawals').select('amount').eq('partner_id',uid).eq('status','pending').maybeSingle().then(function(pw){
+   if(pw.data){document.getElementById('wdstatus').textContent='⏳ '+pw.data.amount.toLocaleString()+' payout in progress.';document.getElementById('wd').disabled=true;}});
+  sb.from('profiles').select('user_id,created_at').eq('managed_by_partner',uid).then(function(rc){
+   var el=document.getElementById('list');
+   if(!rc.data||!rc.data.length){el.innerHTML='<li>No clients yet. Share your link!</li>';return;}
+   el.innerHTML=rc.data.map(function(c,i){return '<li>Client #'+(i+1)+' — joined '+new Date(c.created_at).toLocaleDateString()+'</li>';}).join('');});
+ });});
+function copyLink(){var i=document.getElementById('link');i.select();document.execCommand('copy');alert('Link copied!');}
+</script></body></html>

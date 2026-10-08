@@ -7,8 +7,9 @@ button{padding:8px 16px;border:none;border-radius:6px;background:#22c55e;color:#
 a{color:#60a5fa}</style></head><body>
 <h1>💸 Pending Partner Withdrawals</h1>
 <div id="list">Loading...</div>
+<script src="/sb-keys.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
-var sb=supabase.createClient("https://qewmhaualndadheoaxkm.supabase.co","eyJ_REPLACE_ME");
+var sb=supabase.createClient(window.SB_URL,window.SB_KEY);
 sb.auth.getSession().then(function(r){
   if(!r.data.session){location.href='/auth';return;}
   sb.from('partner_withdrawals').select('*,partners(company_name,whatsapp,bank_name,account_number)').eq('status','pending').order('created_at').then(function(res){

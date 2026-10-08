@@ -1,0 +1,31 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Become an AI Business Partner — Earn Recurring Income</title>
+<link rel="canonical" href="https://www.ai-business.com.ng/partner">
+<style>body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px;max-width:640px;margin:auto;line-height:1.6}
+h1{font-size:28px;color:#f8fafc}.green{color:#22c55e}.card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin:16px 0}
+input{width:100%;padding:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:16px;margin:6px 0;box-sizing:border-box}
+button{width:100%;padding:14px;border:none;border-radius:8px;background:#22c55e;color:#0b1220;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
+a.btn{display:block;text-align:center;padding:14px;border-radius:8px;background:#3b82f6;color:white;text-decoration:none;font-weight:700}</style>
+</head><body>
+<h1>🤝 Earn <span class="green">₦3,000 every month</span> per client. Forever.</h1>
+<p>Set up AI Business for local shops, salons, pharmacies. They subscribe directly — you earn 30% recurring commission automatically. Your clients are locked to you: we never contact them behind your back.</p>
+<div class="card"><strong>How it works</strong><br>1️⃣ Join free & get your partner link<br>2️⃣ Set up a business owner using your link<br>3️⃣ They subscribe → commission lands in your wallet every month they stay</div>
+<div id="authbox"></div>
+<div id="formbox" style="display:none" class="card"><strong>Partner Registration</strong>
+<input id="company" placeholder="Your business name (e.g. Chinedu Tech Solutions)">
+<input id="wa" placeholder="Your WhatsApp number (e.g. 08012345678)">
+<input id="bank" placeholder="Bank name (e.g. GTBank)">
+<input id="acct" placeholder="Account number">
+<button onclick="join()">Activate My Partner Account</button></div>
+<script src="/sb-keys.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+var sb=supabase.createClient(window.SB_URL,window.SB_KEY);
+sb.auth.getSession().then(function(r){var s=r.data.session;
+ if(!s){document.getElementById('authbox').innerHTML='<a class="btn" href="/auth?signup=true">Create Free Account to Join</a>';}
+ else{window.UID=s.user.id;document.getElementById('formbox').style.display='block';}});
+function join(){var c=document.getElementById('company').value.trim(),w=document.getElementById('wa').value.trim();
+ if(!c||!w){alert('Fill business name and WhatsApp');return;}
+ sb.from('partners').upsert({id:UID,company_name:c,whatsapp:w,bank_name:document.getElementById('bank').value.trim(),account_number:document.getElementById('acct').value.trim()}).then(function(res){
+  if(res.error){alert(res.error.message);return;} location.href='/partner/dashboard';});}
+</script></body></html>
