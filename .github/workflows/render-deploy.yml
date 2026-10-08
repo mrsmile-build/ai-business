@@ -1,0 +1,12 @@
+name: Render Auto-Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        env:
+          RENDER_HOOK: ${{ secrets.RENDER_HOOK }}
+        run: curl -fsS -X POST "$RENDER_HOOK"
