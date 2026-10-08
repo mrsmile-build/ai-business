@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Business Page | AI Business</title>
+<style>*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;line-height:1.6}
+.wrap{max-width:680px;margin:auto;padding:24px 16px 64px}
+.hero{text-align:center;padding:32px 16px;background:linear-gradient(180deg,#111c2e,#0b1220);border-bottom:1px solid #1e293b}
+.hero h1{margin:0 0 6px;font-size:28px;color:#f8fafc}.hero p{margin:0;color:#94a3b8;font-size:14px}
+.parked{background:#422006;border:1px solid #b45309;color:#fcd34d;border-radius:12px;padding:14px 16px;font-size:14px;margin:16px 0}
+.card{background:#111c2e;border:1px solid #1e293b;border-radius:14px;padding:18px;margin:14px 0}.card h3{margin:0 0 10px;font-size:16px;color:#f8fafc}
+.svc{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b;font-size:14px}.svc:last-child{border-bottom:none}.svc b{color:#60a5fa}
+.rev{background:#0f172a;border-radius:10px;padding:12px;margin:8px 0;font-size:14px;color:#cbd5e1}.stars{color:#facc15;font-size:13px}
+.wa{display:block;text-align:center;background:#22c55e;color:#0b1220;font-weight:700;padding:14px;border-radius:10px;text-decoration:none;margin:18px 0;font-size:15px}
+.foot{text-align:center;color:#475569;font-size:12px;margin-top:32px}.foot a{color:#64748b}
+#loader{text-align:center;padding:60px 20px;color:#94a3b8}</style></head><body>
+<div id="loader">Loading business...</div>
+<div id="app" style="display:none">
+<div class="hero"><h1 id="bname"></h1><p id="btag"></p></div>
+<div class="wrap">
+<div id="parkedbox"></div>
+<div class="card" id="svccard" style="display:none"><h3>💼 Services</h3><div id="svcs"></div></div>
+<div class="card" id="revcard" style="display:none"><h3>⭐ What customers say</h3><div id="revs"></div></div>
+<a id="wabtn" class="wa" style="display:none" target="_blank">💬 Message this business on WhatsApp</a>
+<div class="foot">Powered by <a href="https://www.ai-business.com.ng">AI Business</a> — never lose a customer again.</div>
+</div></div>
+<script>
+var API="https://ai-business-1-ok3x.onrender.com";
+var slug=decodeURIComponent((location.pathname.split("/biz/")[1]||"").split("?")[0]);
+fetch(API+"/api/public/business?slug="+encodeURIComponent(slug)).then(function(r){return r.json();}).then(function(d){
+  document.getElementById("loader").style.display="none";
+  if(!d.success){document.getElementById("loader").style.display="block";document.getElementById("loader").textContent="Business not found.";return;}
+  document.getElementById("app").style.display="block";
+  var b=d.business;
+  document.title=(b.name||"Business")+" | AI Business";
+  document.getElementById("bname").textContent=b.name||"Our Business";
+  document.getElementById("btag").textContent=b.tagline||b.description||b.about||"";
+  var parked=(d.subscription_status==="paused"||d.subscription_status==="expired"||d.subscription_status==="cancelled");
+  if(parked){document.getElementById("parkedbox").innerHTML='<div class="parked">⏸ This business has paused its AI Business account. Their story and reviews stay live — bookings reactivate soon. <a href="https://www.ai-business.com.ng/auth" style="color:#fcd34d">Business owner: reactivate here</a></div>';}
+  var sv=(d.services||[]).map(function(s){return '<div class="svc"><span>'+(s.name||s.title||s.service_name||"Service")+'</span><b>'+((s.price||s.amount)?("₦"+Number(s.price||s.amount).toLocaleString()):"")+'</b></div>';}).join("");
+  if(sv){document.getElementById("svccard").style.display="block";document.getElementById("svcs").innerHTML=sv;}
+  var rv=(d.reviews||[]).map(function(r){return '<div class="rev"><div class="stars">'+"★".repeat(Math.min(5,r.rating||5))+'</div>'+(r.content||r.text||r.message||r.review||"")+'<div style="color:#64748b;font-size:12px;margin-top:6px">'+(r.author||r.customer_name||"Customer")+'</div></div>';}).join("");
+  if(rv){document.getElementById("revcard").style.display="block";document.getElementById("revs").innerHTML=rv;}
+  var wa=b.whatsapp||b.phone||b.contact_phone||"";
+  if(wa&&!parked){var num=String(wa).replace(/[^0-9]/g,"");if(num.length<11&&num.startsWith("0"))num="234"+num.slice(1);
+    var a=document.getElementById("wabtn");a.style.display="block";a.href="https://wa.me/"+num+"?text="+encodeURIComponent("Hello "+(b.name||"")+", I found you on AI Business.");}
+});
+</script></body></html>

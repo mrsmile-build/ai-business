@@ -4264,6 +4264,63 @@ app.get("/api/trial/assets", authMiddleware, async (req, res) => {
     }});
   } catch(err){ res.status(500).json({ error: err.message }); }
 });
+
+/* ---------------- RETENTION SUITE ---------------- */
+app.get("/api/cron/trial-reminder", async (req, res) => {
+  try {
+    if (!process.env.CRON_SECRET || req.query.key !== process.env.CRON_SECRET) return res.status(403).json({ error: "bad key" });
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const now = Date.now();
+    const d28 = new Date(now - 28*864e5).toISOString();
+    const d26 = new Date(now - 26*864e5).toISOString();
+    const { data: profs } = await sc.from("profiles").select("user_id,full_name,email,created_at").gte("created_at", d26).lte("created_at", d28);
+    let sent = 0;
+    for (const p of (profs || [])) {
+      const { data: sub } = await sc.from("subscriptions").select("status").eq("user_id", p.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (sub && sub.status === "active") continue;
+      const [leads, bookings, reviews] = await Promise.all([
+        sc.from("leads").select("id", { count: "exact", head: true }).eq("user_id", p.user_id),
+        sc.from("bookings").select("id", { count: "exact", head: true }).eq("user_id", p.user_id),
+        sc.from("testimonials").select("id", { count: "exact", head: true }).eq("user_id", p.user_id),
+      ]);
+      const L = leads.count||0, B = bookings.count||0, R = reviews.count||0;
+      const html = "<div style='font-family:Arial,sans-serif;max-width:520px;padding:24px;background:#0f172a;color:#f1f5f9;border-radius:12px'><h2 style='color:#60a5fa'>What you built in your first 28 days</h2><p>Hi " + (p.full_name||"there") + ", your trial ends in about 48 hours. Here is what is waiting for you:</p><ul style='line-height:1.9'><li>🧠 <b>" + L + "</b> customer profiles the AI has learned</li><li>📅 <b>" + B + "</b> bookings received</li><li>⭐ <b>" + R + "</b> reviews collected</li></ul><p>All of it stays saved. Upgrade to keep the AI working, or pause — we freeze everything for 90 days. Nothing deleted, nothing lost.</p><p><a href='" + (process.env.APP_URL||"https://www.ai-business.com.ng") + "/trial/report' style='background:#22c55e;color:#0b1220;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700'>See my full asset report</a></p></div>";
+      if (p.email) { sendEmail(p.email, "Your first 28 days with AI Business", html).catch(()=>{}); sent++; }
+    }
+    res.json({ success: true, sent });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/subscription/pause", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: sub } = await sc.from("subscriptions").select("*").eq("user_id", uid).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!sub) return res.status(400).json({ error: "No subscription found" });
+    if (sub.status === "paused") return res.json({ success: true, already: true });
+    const { error } = await sc.from("subscriptions").update({ status: "paused" }).eq("id", sub.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/public/business", async (req, res) => {
+  try {
+    const slug = req.query.slug; if (!slug) return res.status(400).json({ error: "slug required" });
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    let biz = null;
+    let r1 = await sc.from("businesses").select("*").eq("slug", slug).maybeSingle();
+    biz = r1.data;
+    if (!biz) { let r2 = await sc.from("businesses").select("*").eq("id", slug).maybeSingle(); biz = r2.data; }
+    if (!biz) return res.status(404).json({ error: "Business not found" });
+    const { data: sub } = await sc.from("subscriptions").select("status").eq("user_id", biz.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const status = sub ? sub.status : "trial";
+    let services = [], reviews = [];
+    try { services = (await sc.from("services").select("*").eq("user_id", biz.user_id).limit(20)).data || []; } catch(e){}
+    try { reviews = (await sc.from("testimonials").select("*").eq("user_id", biz.user_id).limit(12)).data || []; } catch(e){}
+    res.json({ success: true, business: biz, subscription_status: status, services, reviews });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });

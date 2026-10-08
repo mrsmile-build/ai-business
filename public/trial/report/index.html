@@ -41,7 +41,7 @@ h1{font-size:26px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px
 <div class="lock"><h3>🔒 Everything here is yours</h3>
 <p>Upgrade to keep the AI working. Or pause — we freeze everything for 90 days. Nothing deleted, nothing lost.</p>
 <div style="margin-top:14px"><a href="/dashboard?page=subscription" class="btn btn-green">Upgrade to keep going</a>
-<a href="/dashboard" class="btn btn-ghost">Back to dashboard</a></div></div>
+<button class="btn btn-ghost" onclick="pauseAcct()">⏸ Pause instead (free, 90-day freeze)</button> <a href="/dashboard" class="btn btn-ghost">Back to dashboard</a></div></div>
 </div>
 <script>
 var API="https://ai-business-1-ok3x.onrender.com";var tok=localStorage.getItem("token");
@@ -64,4 +64,5 @@ fetch(API+"/api/trial/assets",{headers:{Authorization:"Bearer "+tok}}).then(func
   if(r.business){document.getElementById("bizcard").style.display="block";document.getElementById("bizurl").textContent=r.business.url;}
 });
 function copyUrl(){var t=document.getElementById("bizurl").textContent;navigator.clipboard.writeText(t).then(function(){alert("Copied!");});}
-</script></body></html>
+</script><script>function pauseAcct(){var tok=localStorage.getItem("token");fetch("https://ai-business-1-ok3x.onrender.com/api/subscription/pause",{method:"POST",headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){alert(d.error||"Paused. Everything frozen safely for 90 days. Come back anytime.");});}</script>
+</body></html>
