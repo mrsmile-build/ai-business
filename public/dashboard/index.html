@@ -185,8 +185,8 @@ fetch("https://ai-business-1-ok3x.onrender.com/api/partner/attach",{method:'POST
 
 <script>
 (function(){var p=new URLSearchParams(location.search).get('page');if(!p)return;window.__abDeepLink=p;
-var iv=setInterval(function(){try{if(typeof loadPage==='function'&&localStorage.getItem('token')){clearInterval(iv);loadPage(window.__abDeepLink);}}catch(e){}},600);
-setTimeout(function(){clearInterval(iv);},12000);})();
+function fire(){try{if(typeof loadPage==='function'&&localStorage.getItem('token')){loadPage(window.__abDeepLink);return true;}}catch(e){}return false;}
+setTimeout(function(){fire();setTimeout(fire,1800);},2500);})();
 </script>
 </body>
 </html>

@@ -12,10 +12,10 @@
 <script>
 var API="https://ai-business-1-ok3x.onrender.com";var tok=localStorage.getItem("token");
 if(!tok){document.getElementById("authbox").innerHTML='<a class="btn" href="/auth?signup=true">Create Free Account to Join</a>';}
-else{fetch(API+"/api/partner/me",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
+else{document.getElementById("formbox").style.display="block";
+fetch(API+"/api/partner/me",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
   if(d.success&&d.partner){location.href="/partner/dashboard";return;}
-  document.getElementById("formbox").style.display="block";
-}).catch(function(){document.getElementById("authbox").innerHTML='<a class="btn" href="/auth">Login to Continue</a>';});}
+}).catch(function(){});}
 function join(){var c=document.getElementById("company").value.trim(),w=document.getElementById("wa").value.trim();
  if(!c||!w){alert("Fill business name and WhatsApp");return;}
  fetch(API+"/api/partner/join",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok},
