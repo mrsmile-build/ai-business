@@ -1,0 +1,28 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partner Withdrawals | Admin</title>
+<style>body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px;max-width:700px;margin:auto;line-height:1.6}
+h1{font-size:22px}.row{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px;margin:12px 0}
+button{padding:8px 16px;border:none;border-radius:6px;background:#22c55e;color:#0b1220;font-weight:700;cursor:pointer}
+a{color:#60a5fa}</style></head><body>
+<h1>💸 Pending Partner Withdrawals</h1>
+<div id="list">Loading...</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
+var sb=supabase.createClient("https://qewmhaualndadheoaxkm.supabase.co","eyJ_REPLACE_ME");
+sb.auth.getSession().then(function(r){
+  if(!r.data.session){location.href='/auth';return;}
+  sb.from('partner_withdrawals').select('*,partners(company_name,whatsapp,bank_name,account_number)').eq('status','pending').order('created_at').then(function(res){
+    var el=document.getElementById('list');
+    if(!res.data||!res.data.length){el.innerHTML='<p>No pending withdrawals. 🎉</p>';return;}
+    el.innerHTML=res.data.map(function(w){
+      var p=w.partners||{};
+      return '<div class="row"><strong>'+p.company_name+'</strong> wants <strong>₦'+w.amount.toLocaleString()+'</strong><br>'+
+      '📱 '+ (p.whatsapp||'—') +' · 🏦 '+(p.bank_name||'—')+' '+(p.account_number||'—')+'<br><br>'+
+      '<button onclick="markPaid(\''+w.id+'\')">I Have Paid — Mark as Paid</button></div>';
+    }).join('');
+  });
+});
+function markPaid(id){
+  sb.from('partner_withdrawals').update({status:'paid'}).eq('id',id).then(function(){location.reload();});
+}
+</script></body></html>
