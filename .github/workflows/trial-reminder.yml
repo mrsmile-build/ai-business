@@ -1,0 +1,13 @@
+name: Trial Reminder (Day-28)
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger trial reminder
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: curl -fsS --max-time 180 "https://ai-business-1-ok3x.onrender.com/api/cron/trial-reminder?key=$CRON_SECRET"
