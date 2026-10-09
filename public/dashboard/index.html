@@ -194,5 +194,18 @@ fetch("https://ai-business-1-ok3x.onrender.com/api/partner/attach",{method:'POST
 function fire(){try{if(typeof loadPage==='function'&&localStorage.getItem('token')){loadPage(window.__abDeepLink);return true;}}catch(e){}return false;}
 setTimeout(function(){fire();setTimeout(fire,1800);},2500);})();
 </script>
+<script>
+if(typeof window.shareBizPage!=="function"){
+window.shareBizPage=function(){
+  var tok=localStorage.getItem("token");
+  fetch("https://ai-business-1-ok3x.onrender.com/api/trial/assets",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
+    var u=d&&d.report&&d.report.business&&d.report.business.url;
+    if(!u){alert("Save your Business Page first: Menu → My Business Page.");return;}
+    if(navigator.share){navigator.share({title:"My business on AI Business",url:u});}
+    else if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){alert("Link copied!\n\n"+u);});}
+    else{prompt("Copy your link:",u);}
+  }).catch(function(){alert("Could not load your link.");});
+};}
+</script>
 </body>
 </html>
