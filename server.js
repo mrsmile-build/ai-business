@@ -4241,7 +4241,7 @@ app.get("/api/trial/assets", authMiddleware, async (req, res) => {
       safe(sc.from("testimonials").select("id,created_at,rating").eq("user_id", uid), []),
       safe(sc.from("warmth_events").select("id,event_type,created_at").eq("user_id", uid), []),
       safe(sc.from("profiles").select("full_name,created_at").eq("user_id", uid).single(), {}),
-      safe(sc.from("businesses").select("id,name,slug").eq("user_id", uid).maybeSingle(), null),
+      safe(sc.from("biz_pages").select("*").eq("user_id", uid).maybeSingle(), null),
     ]);
     const leadsAll = leads.data || [], bookingsAll = bookings.data || [], reviewsAll = reviews.data || [], warmthAll = warmth.data || [];
     const prof = profiles.data || {}, biz = businesses.data || null;
@@ -4252,7 +4252,7 @@ app.get("/api/trial/assets", authMiddleware, async (req, res) => {
     const recovered = warmthAll.filter(e => /recovered|won|paid/i.test(e.event_type||"")).length;
     res.json({ success: true, report: {
       owner: prof.full_name || "Business Owner",
-      business: biz ? { name: biz.name, slug: biz.slug, url: (process.env.APP_URL||"https://www.ai-business.com.ng")+"/biz/"+biz.slug } : null,
+      business: biz ? { name: biz.name||biz.title||"My Business", slug: biz.slug||biz.id||uid, url: (process.env.APP_URL||"https://www.ai-business.com.ng")+"/biz/"+(biz.slug||biz.id||uid) } : null,
       joined_days: daysSince,
       leads_total: leadsAll.length,
       bookings_total: bookingsAll.length,
@@ -4273,7 +4273,10 @@ app.get("/api/cron/trial-reminder", async (req, res) => {
     const now = Date.now();
     const d28 = new Date(now - 28*864e5).toISOString();
     const d26 = new Date(now - 26*864e5).toISOString();
-    const { data: profs } = await sc.from("profiles").select("user_id,full_name,email,created_at").gte("created_at", d26).lte("created_at", d28);
+    const { data: profs } = await sc.from("profiles").select("user_id,display_name,username,created_at").gte("created_at", d26).lte("created_at", d28);
+    const ids = (profs || []).map(p => p.user_id);
+    const emails = {};
+    if (ids.length) { try { const { data: us } = await sc.schema("auth").from("users").select("id,email").in("id", ids); (us || []).forEach(u => { emails[u.id] = u.email; }); } catch(e){} }
     let sent = 0;
     for (const p of (profs || [])) {
       const { data: sub } = await sc.from("subscriptions").select("status").eq("user_id", p.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
@@ -4284,8 +4287,8 @@ app.get("/api/cron/trial-reminder", async (req, res) => {
         sc.from("testimonials").select("id", { count: "exact", head: true }).eq("user_id", p.user_id),
       ]);
       const L = leads.count||0, B = bookings.count||0, R = reviews.count||0;
-      const html = "<div style='font-family:Arial,sans-serif;max-width:520px;padding:24px;background:#0f172a;color:#f1f5f9;border-radius:12px'><h2 style='color:#60a5fa'>What you built in your first 28 days</h2><p>Hi " + (p.full_name||"there") + ", your trial ends in about 48 hours. Here is what is waiting for you:</p><ul style='line-height:1.9'><li>🧠 <b>" + L + "</b> customer profiles the AI has learned</li><li>📅 <b>" + B + "</b> bookings received</li><li>⭐ <b>" + R + "</b> reviews collected</li></ul><p>All of it stays saved. Upgrade to keep the AI working, or pause — we freeze everything for 90 days. Nothing deleted, nothing lost.</p><p><a href='" + (process.env.APP_URL||"https://www.ai-business.com.ng") + "/trial/report' style='background:#22c55e;color:#0b1220;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700'>See my full asset report</a></p></div>";
-      if (p.email) { sendEmail(p.email, "Your first 28 days with AI Business", html).catch(()=>{}); sent++; }
+      const html = "<div style='font-family:Arial,sans-serif;max-width:520px;padding:24px;background:#0f172a;color:#f1f5f9;border-radius:12px'><h2 style='color:#60a5fa'>What you built in your first 28 days</h2><p>Hi " + (p.display_name||p.username||"there") + ", your trial ends in about 48 hours. Here is what is waiting for you:</p><ul style='line-height:1.9'><li>🧠 <b>" + L + "</b> customer profiles the AI has learned</li><li>📅 <b>" + B + "</b> bookings received</li><li>⭐ <b>" + R + "</b> reviews collected</li></ul><p>All of it stays saved. Upgrade to keep the AI working, or pause — we freeze everything for 90 days. Nothing deleted, nothing lost.</p><p><a href='" + (process.env.APP_URL||"https://www.ai-business.com.ng") + "/trial/report' style='background:#22c55e;color:#0b1220;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700'>See my full asset report</a></p></div>";
+      if (emails[p.user_id]) { sendEmail(emails[p.user_id], "Your first 28 days with AI Business", html).catch(()=>{}); sent++; }
     }
     res.json({ success: true, sent });
   } catch(e){ res.status(500).json({ error: e.message }); }
@@ -4309,15 +4312,20 @@ app.get("/api/public/business", async (req, res) => {
     const slug = req.query.slug; if (!slug) return res.status(400).json({ error: "slug required" });
     const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     let biz = null;
-    let r1 = await sc.from("businesses").select("*").eq("slug", slug).maybeSingle();
+    let r1 = await sc.from("biz_pages").select("*").eq("slug", slug).maybeSingle();
     biz = r1.data;
-    if (!biz) { let r2 = await sc.from("businesses").select("*").eq("id", slug).maybeSingle(); biz = r2.data; }
+    if (!biz) { let r2 = await sc.from("biz_pages").select("*").eq("id", slug).maybeSingle(); biz = r2.data; }
+    if (!biz) { let r3 = await sc.from("biz_pages").select("*").eq("user_id", slug).maybeSingle(); biz = r3.data; }
     if (!biz) return res.status(404).json({ error: "Business not found" });
-    const { data: sub } = await sc.from("subscriptions").select("status").eq("user_id", biz.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const owner = biz.user_id || biz.owner_id || biz.uid || null;
+    let sub = null;
+    if (owner) { const sr = await sc.from("subscriptions").select("status").eq("user_id", owner).order("created_at", { ascending: false }).limit(1).maybeSingle(); sub = sr.data; }
     const status = sub ? sub.status : "trial";
     let services = [], reviews = [];
-    try { services = (await sc.from("services").select("*").eq("user_id", biz.user_id).limit(20)).data || []; } catch(e){}
-    try { reviews = (await sc.from("testimonials").select("*").eq("user_id", biz.user_id).limit(12)).data || []; } catch(e){}
+    if (owner) {
+      try { services = (await sc.from("services").select("*").eq("user_id", owner).limit(20)).data || []; } catch(e){}
+      try { reviews = (await sc.from("testimonials").select("*").eq("user_id", owner).limit(12)).data || []; } catch(e){}
+    }
     res.json({ success: true, business: biz, subscription_status: status, services, reviews });
   } catch(e){ res.status(500).json({ error: e.message }); }
 });
