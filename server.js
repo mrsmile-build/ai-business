@@ -4348,13 +4348,15 @@ app.post("/api/tts-voicerss", async (req, res) => {
   try {
     const hosts=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
     const body=JSON.stringify(req.body||{});
+    let lastStatus=0;
     for(const h of hosts){
       try{
         const r=await fetch(h+"/tts-voicerss",{method:"POST",headers:{"Content-Type":"application/json"},body});
         if(r.ok){ const buf=Buffer.from(await r.arrayBuffer()); res.set("Content-Type", r.headers.get("content-type")||"audio/mpeg"); return res.send(buf); }
+        lastStatus=r.status;
       }catch(e){}
     }
-    res.status(502).json({error:"tts upstream failed"});
+    res.status(502).json({error:"tts upstream failed", upstream:lastStatus});
   }catch(e){ res.status(500).json({error:e.message}); }
 });
 app.use((req, res) => {
