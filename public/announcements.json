@@ -1,15 +1,38 @@
 {
-  "latest": {
-    "title": "🎬 Make a promo video in 2 minutes",
-    "body": "Name + two prices + one photo → a voiced promo film. Walk in, press play, close.",
-    "cta_url": "/promo",
-    "cta_label": "Try it now"
-  },
+  "latest": {},
   "feed": [
-    { "title": "🎬 Promo Video Engine", "body": "Name + two prices + one photo → a voiced promo film, 22+ AI voices.", "date": "2026-10-10", "cta_url": "/promo", "cta_label": "Try it now" },
-    { "title": "🔒 Retention suite", "body": "Day-28 asset-report emails, pause plan and parked pages — nothing is ever deleted.", "date": "2026-10-09" },
-    { "title": "🤝 Partner engine", "body": "Earn monthly per active client you bring, tracked automatically.", "date": "2026-10-08", "cta_url": "/earn", "cta_label": "Earn with us" },
-    { "title": "🏪 Public storefronts", "body": "Every business gets a live page with services, reviews and WhatsApp booking.", "date": "2026-10-07", "cta_url": "/biz/ai-business", "cta_label": "View example" },
-    { "title": "📊 Your Assets report", "body": "See everything you built during your trial — leads, bookings, reviews, follow-ups.", "date": "2026-10-06", "cta_url": "/trial/report", "cta_label": "Open" }
+    {
+      "title": "🎬 Promo Video Engine",
+      "body": "Name + two prices + one photo → a voiced promo film, 22+ AI voices.",
+      "date": "2026-10-10",
+      "cta_url": "/promo",
+      "cta_label": "Try it now"
+    },
+    {
+      "title": "🔒 Retention suite",
+      "body": "Day-28 asset-report emails, pause plan and parked pages — nothing is ever deleted.",
+      "date": "2026-10-09"
+    },
+    {
+      "title": "🤝 Partner engine",
+      "body": "Earn monthly per active client you bring, tracked automatically.",
+      "date": "2026-10-08",
+      "cta_url": "/earn",
+      "cta_label": "Earn with us"
+    },
+    {
+      "title": "🏪 Public storefronts",
+      "body": "Every business gets a live page with services, reviews and WhatsApp booking.",
+      "date": "2026-10-07",
+      "cta_url": "/biz/ai-business",
+      "cta_label": "View example"
+    },
+    {
+      "title": "📊 Your Assets report",
+      "body": "See everything you built during your trial — leads, bookings, reviews, follow-ups.",
+      "date": "2026-10-06",
+      "cta_url": "/trial/report",
+      "cta_label": "Open"
+    }
   ]
 }
