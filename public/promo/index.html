@@ -45,10 +45,7 @@ button.act:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="vrow">
   <span style="font-size:12px;color:#94a3b8">Voice:</span>
-  <button class="act ghost" id="vF" onclick="setVoice('nova')">♀ Female</button>
-  <button class="act ghost" id="vM" onclick="setVoice('onyx')">♂ Male</button>
-  <button class="act ghost" id="vOff" onclick="setVoice(null)">Off</button>
-  <span id="vLab" style="font-size:12px;color:#22c55e">Female</span>
+  <select id="voiceSel" onchange="setVoice(this.value)" style="flex:1;max-width:240px;padding:9px 12px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:inherit;font-size:13px"></select>
 </div>
 
 <div class="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
@@ -70,12 +67,14 @@ var API="https://ai-business-1-ok3x.onrender.com";
 var TTS=[API];
 var tok=localStorage.getItem("token"); if(!tok){location.href="/auth";}
 var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
-var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null,MODE="mine",WA="",VOICE="nova",IMGELS=[];
+var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null,MODE="mine",WA="",VOICE="en-us-f",IMGELS=[];
 
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
 function money(v){var n=Number(String(v).replace(/[^0-9.]/g,""));if(!isFinite(n)||n<=0)return "";return "₦"+n.toLocaleString();}
 function normWa(w){w=String(w||"").replace(/[^0-9]/g,"");if(w.length<11&&w.charAt(0)==="0")w="234"+w.slice(1);return w;}
-function setVoice(v){VOICE=v;document.getElementById("vF").className=v==="nova"?"on":"";document.getElementById("vM").className=v==="onyx"?"on":"";document.getElementById("vOff").className=v===null?"on":"";document.getElementById("vLab").textContent=v===null?"off":(v==="onyx"?"Male":"Female");document.getElementById("vLab").style.color=v===null?"#94a3b8":"#22c55e";}
+var VOICE_CONFIG={"en-us-m":"US · Male","en-us-f":"US · Female","en-gb-m":"UK · Male","en-gb-f":"UK · Female","en-au-m":"AU · Male","en-au-f":"AU · Female","en-news-m":"News · Male","en-story-f":"Story · Female","fr-m":"French · Male","de-m":"German · Male","es-m":"Spanish · Male","pt-m":"Portuguese · Male"};
+function setVoice(v){VOICE=v;}
+(function(){var sel=document.getElementById("voiceSel");if(!sel)return;var h='<option value="">Off (silent video)</option>';Object.keys(VOICE_CONFIG).forEach(function(k){h+='<option value="'+k+'">'+VOICE_CONFIG[k]+'</option>';});sel.innerHTML=h;sel.value=VOICE;})();
 function setMode(m){MODE=m;document.getElementById("tMine").className=m==="mine"?"on":"";document.getElementById("tPros").className=m==="pros"?"on":"";document.getElementById("pform").style.display=m==="pros"?"block":"none";if(m==="mine"&&SCENES.length){playPreview();setStatus("Your shop. Tweak or Record.");}}
 function setStatus(t){document.getElementById("status").textContent=t;}
 
