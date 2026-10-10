@@ -45,7 +45,7 @@ button.act:disabled{opacity:.5;cursor:not-allowed}
 
 <div class="vrow">
   <span style="font-size:12px;color:#94a3b8">Voice:</span>
-  <select id="voiceSel" onchange="setVoice(this.value)" style="flex:1;max-width:240px;padding:9px 12px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:inherit;font-size:13px"></select>
+  <select id="voiceSel" onchange="setVoice(this.value)" style="flex:1;max-width:200px;padding:9px 12px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:inherit;font-size:13px"></select><button class="act ghost" id="prevBtn" onclick="previewVoice()" style="padding:9px 14px;font-size:12px">▶ Preview</button>
 </div>
 
 <div class="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
