@@ -11,12 +11,12 @@ h1{font-size:24px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px
 <h1>🆕 What's New</h1><p class="sub">Every upgrade we ship, in one feed.</p>
 <div id="loader">Loading…</div><div id="list"></div>
 <script>
-fetch("https://ai-business-1-ok3x.onrender.com/api/announcements/all").then(function(r){return r.json();}).then(function(d){
+fetch("/announcements.json?_="+Date.now()).then(function(r){return r.json();}).then(function(d){
   document.getElementById("loader").style.display="none";
-  var items=(d.announcements||[]).map(function(a,i){
-    var dt=new Date(a.created_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
-    return '<div class="item"><h3>'+a.title+(a.active?'<span class="new">NEW</span>':'')+'</h3><p>'+(a.body||"")+'</p><div class="date">'+dt+'</div>'+(a.cta_url?'<a href="'+a.cta_url+'">'+(a.cta_label||"Open")+' →</a>':'')+'</div>';
+  var feed=(d.feed||[]).map(function(a,i){
+    var dt=a.date?new Date(a.date).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"}):"";
+    return '<div class="item"><h3>'+a.title+(i===0?'<span class="new">NEW</span>':'')+'</h3><p>'+(a.body||"")+'</p><div class="date">'+dt+'</div>'+(a.cta_url?'<a href="'+a.cta_url+'">'+(a.cta_label||"Open")+' →</a>':'')+'</div>';
   }).join("");
-  document.getElementById("list").innerHTML=items||"<p style='color:#64748b'>Nothing yet.</p>";
+  document.getElementById("list").innerHTML=feed||"<p style='color:#64748b'>Nothing yet.</p>";
 }).catch(function(){document.getElementById("loader").textContent="Could not load.";});
 </script></body></html>
