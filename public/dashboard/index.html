@@ -127,7 +127,7 @@ input:focus, textarea:focus, select:focus {
   });
 </script>
 <style>#announcement-banner{background:linear-gradient(135deg,#ff5c00,#ff8c00);color:white;padding:12px 16px;margin:0 20px 16px;border-radius:10px;display:none;align-items:center;gap:12px;flex-wrap:wrap}#announcement-banner .txt{flex:1;min-width:200px;font-size:14px}#announcement-banner b{font-size:15px;display:block;margin-bottom:2px}#announcement-banner a{background:white;color:#ff5c00;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap}#announcement-banner .x{background:transparent;color:white;border:none;font-size:20px;cursor:pointer;padding:4px 8px;opacity:.7}</style>
-</head>
+<style>.newbadge{background:#22c55e;color:#0b1220;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-left:8px;vertical-align:middle;letter-spacing:.5px}</style></head>
 
 <body>
 <div id="announcement-banner"><div class="txt"><b id="ann-title"></b><span id="ann-body"></span></div><a id="ann-cta" href="#" style="display:none"></a><button class="x" onclick="this.parentElement.style.display='none';localStorage.setItem('ann_dismiss',Date.now())">×</button></div>
@@ -211,5 +211,9 @@ window.shareBizPage=function(){
 };}
 </script>
 <script>(function(){fetch("https://ai-business-1-ok3x.onrender.com/api/announcements/active").then(function(r){return r.json();}).then(function(d){var a=d.announcement;if(!a)return;var dis=localStorage.getItem("ann_dismiss");if(dis&&Date.now()-Number(dis)<259200000)return;var el=document.getElementById("announcement-banner");el.style.display="flex";document.getElementById("ann-title").textContent=a.title;document.getElementById("ann-body").textContent=" — "+(a.body||"");if(a.cta_url){var c=document.getElementById("ann-cta");c.style.display="inline-block";c.href=a.cta_url;c.textContent=a.cta_label||"Open";}}).catch(function(){});})();</script>
-</body>
+<script>(function(){
+var MAP=[["Promo Video","feat_promo"],["Your Assets","feat_assets"],["Earn with Us","feat_earn"],["Share My Business Page","feat_share"]];
+function run(){MAP.forEach(function(m){document.querySelectorAll("div[onclick]").forEach(function(d){if(d.textContent.indexOf(m[0])!==-1&&!d.querySelector(".newbadge")){if(localStorage.getItem(m[1]))return;var s=document.createElement("span");s.className="newbadge";s.textContent="NEW";d.appendChild(s);d.setAttribute("onclick","localStorage.setItem('"+m[1]+"','1');"+d.getAttribute("onclick"));}});});}
+if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",run);}else{run();}
+})();</script></body>
 </html>
