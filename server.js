@@ -4342,6 +4342,21 @@ app.get("/api/biz/promo-data", authMiddleware, async (req, res) => {
     res.json({ success: true, biz: biz || {}, services, owner: prof || {} });
   } catch(e){ res.status(500).json({ error: e.message }); }
 });
+
+/* ---------------- TTS PASSTHROUGH (server-side, defeats browser CORS) ---------------- */
+app.post("/api/tts-voicerss", async (req, res) => {
+  try {
+    const hosts=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+    const body=JSON.stringify(req.body||{});
+    for(const h of hosts){
+      try{
+        const r=await fetch(h+"/tts-voicerss",{method:"POST",headers:{"Content-Type":"application/json"},body});
+        if(r.ok){ const buf=Buffer.from(await r.arrayBuffer()); res.set("Content-Type", r.headers.get("content-type")||"audio/mpeg"); return res.send(buf); }
+      }catch(e){}
+    }
+    res.status(502).json({error:"tts upstream failed"});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });

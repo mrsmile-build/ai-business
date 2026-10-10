@@ -67,7 +67,7 @@ button.act:disabled{opacity:.5;cursor:not-allowed}
 <script src="/kinetic.js"></script>
 <script>
 var API="https://ai-business-1-ok3x.onrender.com";
-var TTS=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+var TTS=[API];
 var tok=localStorage.getItem("token"); if(!tok){location.href="/auth";}
 var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
 var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null,MODE="mine",WA="",VOICE="nova",IMGELS=[];
@@ -87,6 +87,7 @@ function scenesFrom(name,tag,svcList,url,wa,color){
   sc.push({isUrlCard:true,narration:url||("wa.me/"+wa)});
   OPTS={totalLen:TOTAL,ctaText:(wa?("WhatsApp "+wa):"Book now"),ctaUrl:url,linkMode:"corner",safeArea:true};
   if(color){BRAND.stripe=color;BRAND.underline=color;}
+  sc.forEach(function(s,idx){ if(!s.isUrlCard && !s.isHookFrame && !s.imgEl && IMGELS && IMGELS.length){ s.imgEl = IMGELS[idx % IMGELS.length]; } });
   try{localStorage.setItem("vk_handle","@"+String(name).toLowerCase().replace(/[^a-z0-9]+/g,"").slice(0,18));}catch(e){}
   return sc;
 }
