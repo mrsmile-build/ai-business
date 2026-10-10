@@ -126,9 +126,11 @@ input:focus, textarea:focus, select:focus {
     send_page_view: true
   });
 </script>
+<style>#announcement-banner{background:linear-gradient(135deg,#ff5c00,#ff8c00);color:white;padding:12px 16px;margin:0 20px 16px;border-radius:10px;display:none;align-items:center;gap:12px;flex-wrap:wrap}#announcement-banner .txt{flex:1;min-width:200px;font-size:14px}#announcement-banner b{font-size:15px;display:block;margin-bottom:2px}#announcement-banner a{background:white;color:#ff5c00;padding:8px 14px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;white-space:nowrap}#announcement-banner .x{background:transparent;color:white;border:none;font-size:20px;cursor:pointer;padding:4px 8px;opacity:.7}</style>
 </head>
 
 <body>
+<div id="announcement-banner"><div class="txt"><b id="ann-title"></b><span id="ann-body"></span></div><a id="ann-cta" href="#" style="display:none"></a><button class="x" onclick="this.parentElement.style.display='none';localStorage.setItem('ann_dismiss',Date.now())">×</button></div>
 
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:8px"><span id="topbar_avatar" onclick="loadPage('profile')" style="cursor:pointer"></span><span>📊 AI Business</span></div>
@@ -164,6 +166,7 @@ input:focus, textarea:focus, select:focus {
   <div onclick="loadPage('invoice')">🧾 Invoice</div>
   <div onclick="location.href='/earn'">💰 Earn with Us</div>
   <div onclick="location.href='/trial/report'">📊 Your Assets</div>
+  <div onclick="location.href='/whats-new'">🆕 What's New</div>
   <div onclick="loadPage('subscription')">💳 Subscription</div>
   <div style="padding:16px 20px 6px;font-size:11px;letter-spacing:1.2px;color:#64748b;font-weight:700;text-transform:uppercase">⚙️ ACCOUNT</div>
   <div onclick="loadPage('settings')">⚙️ Settings</div>
@@ -207,5 +210,6 @@ window.shareBizPage=function(){
   }).catch(function(){alert("Could not load your link.");});
 };}
 </script>
+<script>(function(){fetch("https://ai-business-1-ok3x.onrender.com/api/announcements/active").then(function(r){return r.json();}).then(function(d){var a=d.announcement;if(!a)return;var dis=localStorage.getItem("ann_dismiss");if(dis&&Date.now()-Number(dis)<259200000)return;var el=document.getElementById("announcement-banner");el.style.display="flex";document.getElementById("ann-title").textContent=a.title;document.getElementById("ann-body").textContent=" — "+(a.body||"");if(a.cta_url){var c=document.getElementById("ann-cta");c.style.display="inline-block";c.href=a.cta_url;c.textContent=a.cta_label||"Open";}}).catch(function(){});})();</script>
 </body>
 </html>

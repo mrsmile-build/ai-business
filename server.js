@@ -4373,6 +4373,42 @@ app.get("/api/voices", async (req, res) => {
     res.status(502).json({error:"voices upstream failed"});
   }catch(e){ res.status(500).json({error:e.message}); }
 });
+
+/* ---------------- ANNOUNCEMENTS ---------------- */
+app.get("/api/announcements/active", async (req, res) => {
+  try {
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await sc.from("announcements").select("*").eq("active", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, announcement: data || null });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/announcements/all", async (req, res) => {
+  try {
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await sc.from("announcements").select("*").order("created_at", { ascending: false }).limit(50);
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, announcements: data || [] });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/admin/broadcast", async (req, res) => {
+  try {
+    const key = req.query.key || req.headers["x-admin-key"];
+    if (!process.env.ADMIN_SECRET || key !== process.env.ADMIN_SECRET) return res.status(403).json({ error: "bad admin key" });
+    const { subject, html } = req.body || {};
+    if (!subject || !html) return res.status(400).json({ error: "subject + html required" });
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data: users } = await sc.schema("auth").from("users").select("id,email");
+    let sent = 0, failed = 0;
+    for (const u of (users || [])) {
+      if (!u.email) continue;
+      try { await sendEmail(u.email, subject, html); sent++; } catch(e){ failed++; }
+    }
+    res.json({ success: true, sent, failed, total: (users||[]).length });
+  } catch(e){ res.status(500).json({ error: e.message }); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });

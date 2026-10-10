@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>What's New | AI Business</title>
+<style>*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px 64px;max-width:640px;margin:auto;line-height:1.6}
+h1{font-size:24px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px;margin:0 0 24px}
+.item{background:#111c2e;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:0 0 12px}
+.item h3{margin:0 0 6px;font-size:16px;color:#f8fafc}.item p{margin:0 0 8px;color:#cbd5e1;font-size:14px}
+.item .date{color:#64748b;font-size:12px}.item a{color:#60a5fa;font-size:13px;text-decoration:none;font-weight:600}
+.new{display:inline-block;background:#22c55e;color:#0b1220;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle}
+#loader{color:#94a3b8;text-align:center;padding:40px}</style></head><body>
+<h1>🆕 What's New</h1><p class="sub">Every upgrade we ship, in one feed.</p>
+<div id="loader">Loading…</div><div id="list"></div>
+<script>
+fetch("https://ai-business-1-ok3x.onrender.com/api/announcements/all").then(function(r){return r.json();}).then(function(d){
+  document.getElementById("loader").style.display="none";
+  var items=(d.announcements||[]).map(function(a,i){
+    var dt=new Date(a.created_at).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    return '<div class="item"><h3>'+a.title+(a.active?'<span class="new">NEW</span>':'')+'</h3><p>'+(a.body||"")+'</p><div class="date">'+dt+'</div>'+(a.cta_url?'<a href="'+a.cta_url+'">'+(a.cta_label||"Open")+' →</a>':'')+'</div>';
+  }).join("");
+  document.getElementById("list").innerHTML=items||"<p style='color:#64748b'>Nothing yet.</p>";
+}).catch(function(){document.getElementById("loader").textContent="Could not load.";});
+</script></body></html>
