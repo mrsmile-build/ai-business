@@ -4359,6 +4359,20 @@ app.post("/api/tts-voicerss", async (req, res) => {
     res.status(502).json({error:"tts upstream failed", upstream:lastStatus});
   }catch(e){ res.status(500).json({error:e.message}); }
 });
+
+/* ---------------- DYNAMIC VOICES FROM ELEVENLABS ---------------- */
+app.get("/api/voices", async (req, res) => {
+  try {
+    const hosts=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+    for(const h of hosts){
+      try{
+        const r=await fetch(h+"/voices");
+        if(r.ok){ const d=await r.json(); return res.json(d); }
+      }catch(e){}
+    }
+    res.status(502).json({error:"voices upstream failed"});
+  }catch(e){ res.status(500).json({error:e.message}); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });
