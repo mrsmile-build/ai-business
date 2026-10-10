@@ -8,7 +8,7 @@ function vkHandle() {
     const u = JSON.parse(localStorage.getItem('vk_user') || 'null');
     if (u && u.name) return '@' + String(u.name).toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 18);
   } catch(e) {}
-  return '@yourbrand';
+  return '@ai-business';
 }
 
 // Greedy wrap by measured width; shrink font until lines fit maxLines
@@ -72,13 +72,14 @@ function _kinDraw(ctx, W, H, scene, idx, lastIdx, B, opts, tIn, full) {
     ctx.textAlign = 'left';
   } else {
     // centered fitted lines, yellow punchline, green underline
-    const words = (scene.narration || '').trim().split(/\s+/).filter(Boolean);
+    if (scene.imgEl && scene.imgEl.complete && scene.imgEl.naturalWidth){const iw=scene.imgEl.width,ih=scene.imgEl.height,scale=Math.max(W/iw,H/ih),dw=iw*scale,dh=ih*scale;ctx.drawImage(scene.imgEl,(W-dw)/2,(H-dh)/2,dw,dh);ctx.fillStyle='rgba(0,0,0,0.58)';ctx.fillRect(0,0,W,H);}
+  const words = (scene.narration || '').trim().split(/\s+/).filter(Boolean);
     const fit = _kinWrapFit(ctx, words, W - 120, 74, 40, 4);
     const hl = (scene.highlight || '').toLowerCase();
     const lineH = fit.size + 40;
     ctx.font = '800 ' + fit.size + 'px Syne, sans-serif';
     const spaceW = ctx.measureText(' ').width;
-    let y = H / 2 - ((fit.lines.length - 1) * lineH) / 2;
+    let y = H / 2 - ((fit.lines.length - 1) * lineH) / 2 + (opts.safeArea ? Math.round(H * 0.16) : 0);
     const totalWords = words.length || 1;
     let wSeen = 0;
     for (const ln of fit.lines) {
@@ -135,7 +136,7 @@ function _kinDraw(ctx, W, H, scene, idx, lastIdx, B, opts, tIn, full) {
   ctx.font = '700 22px Syne, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.textAlign = 'right';
-  ctx.fillText('VideoKit', W - 24, H - 60);
+  ctx.fillText('AI Business', W - 24, H - 60);
   ctx.textAlign = 'left';
 }
 

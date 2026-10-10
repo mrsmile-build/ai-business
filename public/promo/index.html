@@ -6,8 +6,7 @@
 <style>
 *{box-sizing:border-box}body{font-family:"DM Sans",sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px 64px;max-width:680px;margin:auto;line-height:1.6}
 h1{font-family:"Syne",sans-serif;font-size:24px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px;margin:0 0 16px}
-.toggle{display:flex;gap:8px;margin:0 0 16px}
-.toggle button{flex:1;font-family:"Syne",sans-serif;font-weight:700;border:1px solid #334155;background:#111c2e;color:#94a3b8;border-radius:10px;padding:11px;cursor:pointer;font-size:13px}
+.toggle{display:flex;gap:8px;margin:0 0 14px}.toggle button{flex:1;font-family:"Syne",sans-serif;font-weight:700;border:1px solid #334155;background:#111c2e;color:#94a3b8;border-radius:10px;padding:11px;cursor:pointer;font-size:13px}
 .toggle button.on{background:#ff5c00;border-color:#ff5c00;color:#fff}
 .stage{display:flex;justify-content:center;margin:8px 0 14px}
 canvas{border-radius:14px;border:1px solid #1e293b;max-width:100%;height:auto;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
@@ -21,27 +20,35 @@ button.act:disabled{opacity:.5;cursor:not-allowed}
 #pform label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:10px 0 4px}
 #pform input,#pform textarea{width:100%;padding:11px 13px;border-radius:9px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:inherit;font-size:14px}
 #pform textarea{min-height:74px;resize:vertical}
-.colorrow{display:flex;align-items:center;gap:10px}
-.colorrow input[type=color]{width:46px;height:38px;padding:0;border:1px solid #334155;border-radius:8px;background:#0f172a}
+.colorrow{display:flex;align-items:center;gap:10px}.colorrow input[type=color]{width:46px;height:38px;padding:0;border:1px solid #334155;border-radius:8px;background:#0f172a}
+.vrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.vrow button{font-size:12px;padding:8px 12px}
+.imgbox{border:1px dashed #334155;border-radius:10px;padding:10px;margin:8px 0;font-size:12px;color:#94a3b8}
+.imgbox img{max-width:90px;border-radius:6px;margin-top:6px;vertical-align:middle}
+.capbox{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;margin:12px 0;font-size:13px;color:#cbd5e1;white-space:pre-wrap}
 .card{background:#111c2e;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:14px 0;font-size:13px;color:#cbd5e1}
 </style></head><body>
 <h1>🎬 Promo Video</h1>
-<p class="sub">A 20-second branded film. Make one for <b>your own shop</b> to test it, or for <b>a prospect</b> to close them on the spot.</p>
-
-<div class="toggle">
-  <button id="tMine" class="on" onclick="setMode('mine')">My business</button>
-  <button id="tPros" onclick="setMode('pros')">A prospect's business</button>
-</div>
+<p class="sub">A 20-second branded film with voice + safe captions. Make one for <b>your shop</b> to test, or for <b>a prospect</b> to close them on the spot.</p>
+<div class="toggle"><button id="tMine" class="on" onclick="setMode('mine')">My business</button><button id="tPros" onclick="setMode('pros')">A prospect's business</button></div>
 
 <div id="pform">
   <label>Business name</label><input id="pName" placeholder="e.g. Belleza Salon & Spa">
-  <label>Tagline / what they're known for</label><input id="pTag" placeholder="e.g. Hair, nails & skincare — book today">
+  <label>Tagline</label><input id="pTag" placeholder="e.g. Hair, nails & skincare — book today">
   <label>WhatsApp number</label><input id="pWa" placeholder="e.g. 08012345678">
-  <label>Brand colour (makes it feel like THEIR shop)</label>
-  <div class="colorrow"><input type="color" id="pColor" value="#ff5c00"><span id="pColorTxt" style="font-size:12px;color:#94a3b8">#ff5c00</span></div>
-  <label>Services — one per line as: Name | Price</label>
-  <textarea id="pSvc" placeholder="Braids | 15000&#10;Manicure | 8000&#10;Facial | 12000"></textarea>
+  <label>Brand colour</label><div class="colorrow"><input type="color" id="pColor" value="#ff5c00"><span id="pColorTxt" style="font-size:12px;color:#94a3b8">#ff5c00</span></div>
+  <label>Services — one per line as: Name | Price</label><textarea id="pSvc" placeholder="Braids | 15000&#10;Manicure | 8000&#10;Facial | 12000"></textarea>
+  <label>Photos (optional) — their product / work</label>
+  <div class="imgbox" id="pImgBox">No photos yet.<input type="file" id="pImg" accept="image/*" multiple style="display:block;margin-top:6px"></div>
   <div class="row"><button class="act ghost" onclick="buildProspect()">✦ Build their video</button></div>
+</div>
+
+<div class="vrow">
+  <span style="font-size:12px;color:#94a3b8">Voice:</span>
+  <button class="act ghost" id="vF" onclick="setVoice('nova')">♀ Female</button>
+  <button class="act ghost" id="vM" onclick="setVoice('onyx')">♂ Male</button>
+  <button class="act ghost" id="vOff" onclick="setVoice(null)">Off</button>
+  <span id="vLab" style="font-size:12px;color:#22c55e">Female</span>
 </div>
 
 <div class="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
@@ -52,127 +59,73 @@ button.act:disabled{opacity:.5;cursor:not-allowed}
   <button class="act ghost" id="poster" disabled>🖼 Poster cards (iPhone-safe)</button>
 </div>
 <div class="row"><button class="act green" id="wa" disabled>💬 Open WhatsApp to send</button></div>
-<p class="note" id="fmt">Video downloads as .webm — plays on Android, desktop &amp; WhatsApp. On iPhone use the poster cards, or just show the live preview on your screen. Voice: <span id="vstate">checking…</span></p>
-<div class="card"><b>The partner move:</b> tap <i>A prospect's business</i>, type their name + two services + their WhatsApp, hit Build, then Record in front of them. They watch their own shop move on your phone. That 10 seconds sells the subscription — then show them the rest of AI Business books the customers this video brings.</div>
+<p class="note">Video = .webm (Android/desktop/WhatsApp). iPhone = poster cards or show the live preview. Captions sit in a safe zone so Reels/TikTok UI won't cover them.</p>
+<div class="capbox" id="capbox" style="display:none"></div>
+<div class="row" id="caprow" style="display:none"><button class="act ghost" onclick="copyCap()">📋 Copy post-caption</button></div>
+<div class="card"><b>The partner move:</b> tap <i>A prospect's business</i>, type their name + two services + their WhatsApp, drop a photo of their work, hit Build, then Record in front of them. They watch their own shop move on your phone. That 10 seconds sells the subscription.</div>
 
 <script src="/kinetic.js"></script>
 <script>
 var API="https://ai-business-1-ok3x.onrender.com";
-var VOICE_PATH=""; /* replaced below; empty = silent-safe */
-var tok=localStorage.getItem("token");
-if(!tok){location.href="/auth";}
+var TTS=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+var tok=localStorage.getItem("token"); if(!tok){location.href="/auth";}
 var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
-var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null,MODE="mine",WA="";
+var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null,MODE="mine",WA="",VOICE="nova",IMGELS=[];
 
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
 function money(v){var n=Number(String(v).replace(/[^0-9.]/g,""));if(!isFinite(n)||n<=0)return "";return "₦"+n.toLocaleString();}
 function normWa(w){w=String(w||"").replace(/[^0-9]/g,"");if(w.length<11&&w.charAt(0)==="0")w="234"+w.slice(1);return w;}
+function setVoice(v){VOICE=v;document.getElementById("vF").className=v==="nova"?"on":"";document.getElementById("vM").className=v==="onyx"?"on":"";document.getElementById("vOff").className=v===null?"on":"";document.getElementById("vLab").textContent=v===null?"off":(v==="onyx"?"Male":"Female");document.getElementById("vLab").style.color=v===null?"#94a3b8":"#22c55e";}
+function setMode(m){MODE=m;document.getElementById("tMine").className=m==="mine"?"on":"";document.getElementById("tPros").className=m==="pros"?"on":"";document.getElementById("pform").style.display=m==="pros"?"block":"none";if(m==="mine"&&SCENES.length){playPreview();setStatus("Your shop. Tweak or Record.");}}
+function setStatus(t){document.getElementById("status").textContent=t;}
 
 function scenesFrom(name,tag,svcList,url,wa,color){
   var sc=[];
   sc.push({isHookFrame:true,hookText:String(name).toUpperCase(),narration:tag||"Now taking bookings"});
-  (svcList||[]).slice(0,6).forEach(function(s){
-    var pr=money(s.price);
-    sc.push({narration:s.name+(pr?(" — just "+pr):"."),highlight:pr||s.name});
-  });
-  if(!(svcList&&svcList.length)){
-    sc.push({narration:"Quality service. Fair price. No wahala.",highlight:"Fair price"});
-    sc.push({narration:"Book online or WhatsApp us directly.",highlight:"WhatsApp us"});
-  }
+  (svcList||[]).slice(0,6).forEach(function(s,i){var pr=money(s.price);sc.push({narration:s.name+(pr?(" — just "+pr):"."),highlight:pr||s.name,imgEl:IMGELS[i]||null});});
+  if(!(svcList&&svcList.length)){sc.push({narration:"Quality service. Fair price. No wahala.",highlight:"Fair price"});sc.push({narration:"Book online or WhatsApp us directly.",highlight:"WhatsApp us"});}
   sc.push({isUrlCard:true,narration:url||("wa.me/"+wa)});
-  OPTS={totalLen:TOTAL,ctaText:(wa?("WhatsApp "+wa):"Book now"),ctaUrl:url,linkMode:"corner"};
+  OPTS={totalLen:TOTAL,ctaText:(wa?("WhatsApp "+wa):"Book now"),ctaUrl:url,linkMode:"corner",safeArea:true};
   if(color){BRAND.stripe=color;BRAND.underline=color;}
   try{localStorage.setItem("vk_handle","@"+String(name).toLowerCase().replace(/[^a-z0-9]+/g,"").slice(0,18));}catch(e){}
   return sc;
 }
-function computeDurs(scenes){
-  var cc=scenes.map(function(s){return s.isUrlCard?0:Math.max((s.narration||"").length,10);});
-  var tc=cc.reduce(function(a,b){return a+b;},0)||1,run=0;
-  return cc.map(function(cnt,i){
-    if(scenes[i].isUrlCard){run+=2.5;return 2.5;}
-    if(i===cc.length-1)return Math.max(2,Math.round((TOTAL-run)*10)/10);
-    var d=Math.max(2,Math.round((cnt/tc)*TOTAL));run+=d;return d;
-  });
-}
+function computeDurs(scenes){var cc=scenes.map(function(s){return s.isUrlCard?0:Math.max((s.narration||"").length,10);});var tc=cc.reduce(function(a,b){return a+b;},0)||1,run=0;return cc.map(function(cnt,i){if(scenes[i].isUrlCard){run+=2.5;return 2.5;}if(i===cc.length-1)return Math.max(2,Math.round((TOTAL-run)*10)/10);var d=Math.max(2,Math.round((cnt/tc)*TOTAL));run+=d;return d;});}
 function stopPlay(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
-function playPreview(){
-  stopPlay();DURS=computeDurs(SCENES);LAST=SCENES.length-1;
-  var t0=performance.now(),tot=DURS.reduce(function(a,b){return a+b;},0);
-  (function frame(){
-    var el=(performance.now()-t0)/1000,acc=0,idx=LAST,tIn=0;
-    for(var i=0;i<DURS.length;i++){if(el<acc+DURS[i]){idx=i;tIn=el-acc;break;}acc+=DURS[i];}
-    _kinDraw(ctx,720,1280,SCENES[idx],idx,LAST,BRAND,OPTS,tIn,false);
-    if(el>=tot){rafId=null;return;}
-    rafId=requestAnimationFrame(frame);
-  })();
-}
-function setMode(m){
-  MODE=m;
-  document.getElementById("tMine").className=m==="mine"?"on":"";
-  document.getElementById("tPros").className=m==="pros"?"on":"";
-  document.getElementById("pform").style.display=m==="pros"?"block":"none";
-  if(m==="mine"&&SCENES.length){playPreview();document.getElementById("status").textContent="Your shop. Tweak it or hit Record.";}
-}
-function buildProspect(){
-  var name=document.getElementById("pName").value.trim()||"Their Business";
-  var tag=document.getElementById("pTag").value.trim();
-  var wa=normWa(document.getElementById("pWa").value);
-  var color=document.getElementById("pColor").value;
-  var svc=document.getElementById("pSvc").value.split("\n").map(function(l){
-    var p=l.split("|");return {name:(p[0]||"").trim(),price:(p[1]||"").trim()};
-  }).filter(function(s){return s.name;});
-  WA=wa;
-  SCENES=scenesFrom(name,tag,svc,"",wa,color);
-  document.getElementById("status").textContent=name+" ready. Hit Record in front of them.";
-  document.getElementById("rec").disabled=false;document.getElementById("poster").disabled=false;document.getElementById("wa").disabled=false;
-  playPreview();
-}
+function playPreview(){stopPlay();DURS=computeDurs(SCENES);LAST=SCENES.length-1;var t0=performance.now(),tot=DURS.reduce(function(a,b){return a+b;},0);(function frame(){var el=(performance.now()-t0)/1000,acc=0,idx=LAST,tIn=0;for(var i=0;i<DURS.length;i++){if(el<acc+DURS[i]){idx=i;tIn=el-acc;break;}acc+=DURS[i];}_kinDraw(ctx,720,1280,SCENES[idx],idx,LAST,BRAND,OPTS,tIn,false);if(el>=tot){rafId=null;return;}rafId=requestAnimationFrame(frame);})();}
+
+function makeCaption(name,tag,svc,wa){var s=svc.slice(0,3).map(function(x){return x.name;}).join(", ");return "📍 "+name+(tag?(" — "+tag):"")+(s?("\n"+s+" & more."):"")+"\nBook on WhatsApp 👉 "+(wa||"message us")+"\n#Nigeria #SmallBusiness #AI #MadeWithAI"; }
+function showCaption(){var c=makeCaption(document.getElementById("bn")?document.getElementById("bn").textContent:(SCENES[0]&&SCENES[0].hookText)||"Our Business",(SCENES[0]&&SCENES[0].narration)||"",SCENES.filter(function(s){return !s.isHookFrame&&!s.isUrlCard;}).map(function(s){return {name:(s.narration||"").split(" — ")[0]};}),WA);window._cap=c;document.getElementById("capbox").textContent=c;document.getElementById("capbox").style.display="block";document.getElementById("caprow").style.display="flex";}
+function copyCap(){navigator.clipboard.writeText(window._cap||"").then(function(){alert("Caption copied — paste it under your Reel/TikTok.");});}
+
+function loadImgs(files,cb){IMGELS=[];var arr=Array.prototype.slice.call(files||[]).slice(0,6);if(!arr.length){cb();return;}var done=0;arr.forEach(function(f,i){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){IMGELS[i]=im;if(++done===arr.length)cb();};im.onerror=function(){if(++done===arr.length)cb();};im.src=r.result;};r.readAsDataURL(f);});}
+
 document.getElementById("pColor").addEventListener("input",function(){document.getElementById("pColorTxt").textContent=this.value;});
+document.getElementById("pImg").addEventListener("change",function(){var box=document.getElementById("pImgBox");box.innerHTML="Loading photos…";var self=this;loadImgs(self.files,function(){var h="Photos ready ("+IMGELS.length+"): ";IMGELS.forEach(function(im){if(im)h+='<img src="'+im.src+'">';});box.innerHTML=h;});});
 
-// load own shop by default
+function buildProspect(){var name=document.getElementById("pName").value.trim()||"Their Business";var tag=document.getElementById("pTag").value.trim();var wa=normWa(document.getElementById("pWa").value);var color=document.getElementById("pColor").value;var svc=document.getElementById("pSvc").value.split("\n").map(function(l){var p=l.split("|");return {name:(p[0]||"").trim(),price:(p[1]||"").trim()};}).filter(function(s){return s.name;});WA=wa;SCENES=scenesFrom(name,tag,svc,"",wa,color);setStatus(name+" ready. Hit Record in front of them.");enableAll();playPreview();showCaption();}
+function enableAll(){document.getElementById("rec").disabled=false;document.getElementById("poster").disabled=false;document.getElementById("wa").disabled=false;}
+
 fetch(API+"/api/biz/promo-data",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
-  if(!d.success){document.getElementById("status").textContent="Could not load your shop: "+(d.error||"?")+" — switch to 'A prospect' to make one manually.";}
-  else{
-    var b=d.biz||{},own=(b.slug?("https://www.ai-business.com.ng/biz/"+b.slug):"");
-    WA=normWa(b.whatsapp||"");
-    SCENES=scenesFrom(b.name||b.title||d.owner.display_name||"Your Business",b.tagline||b.description||b.about,(d.services||[]).map(function(s){return {name:s.name||s.title||s.service_name,price:s.price!=null?s.price:s.amount};}),own,WA,b.theme_color);
-    document.getElementById("status").textContent="Loaded your shop. Watch it move, then Record.";
-    document.getElementById("rec").disabled=false;document.getElementById("poster").disabled=false;document.getElementById("wa").disabled=false;
-    playPreview();
-  }
-}).catch(function(){document.getElementById("status").textContent="Server asleep? Try 'A prospect's business' to make one offline-style, or refresh in a minute.";});
+  if(!d.success){setStatus("Could not load your shop ("+(d.error||"?")+") — use 'A prospect' to build manually.");return;}
+  var b=d.biz||{},own=(b.slug?("https://www.ai-business.com.ng/biz/"+b.slug):"");WA=normWa(b.whatsapp||"");
+  var svc=(d.services||[]).map(function(s){return {name:s.name||s.title||s.service_name,price:s.price!=null?s.price:s.amount};});
+  SCENES=scenesFrom(b.name||b.title||(d.owner&&d.owner.display_name)||"Your Business",b.tagline||b.description||b.about,svc,own,WA,b.theme_color);
+  setStatus("Loaded your shop. Watch it move, then Record.");enableAll();playPreview();showCaption();
+}).catch(function(){setStatus("Server asleep? Try 'A prospect's business', or refresh in a minute.");});
 
-// voice status
-document.getElementById("vstate").textContent=VOICE_PATH?"ready":"off (silent video still works)";
-
-function getVoiceBlob(text){
-  if(!VOICE_PATH)return Promise.resolve(null);
-  return fetch(API+VOICE_PATH,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,voice:"alloy"})})
-    .then(function(r){if(!r.ok)throw new Error("tts "+r.status);return r.blob();})
-    .catch(function(){return null;});
-}
 document.getElementById("play").onclick=playPreview;
 document.getElementById("rec").onclick=function(){
-  var b=this;b.disabled=true;b.textContent="🎙 Making voice…";
-  var narration=SCENES.filter(function(s){return !s.isUrlCard;}).map(function(s){return s.narration;}).join(" ");
-  getVoiceBlob(narration).then(function(audio){
-    b.textContent="⏺ Recording… (~"+TOTAL+"s)";
-    return renderKineticVideo(SCENES,audio,BRAND,OPTS);
-  }).then(function(blob){
-    var u=URL.createObjectURL(blob),a=document.createElement("a");
-    a.href=u;a.download="ai-business-promo.webm";document.body.appendChild(a);a.click();a.remove();
-    b.disabled=false;b.textContent="⏺ Record & Download";
-    document.getElementById("status").textContent="✅ Saved. Now send it on WhatsApp.";
-  }).catch(function(e){b.disabled=false;b.textContent="⏺ Record & Download";document.getElementById("status").textContent="Record failed: "+e.message;});
+  var b=this;b.disabled=true;
+  function go(audio){b.textContent="⏺ Recording… (~"+TOTAL+"s)";return renderKineticVideo(SCENES,audio,BRAND,OPTS);}
+  function finish(blob){var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="ai-business-promo.webm";document.body.appendChild(a);a.click();a.remove();b.disabled=false;b.textContent="⏺ Record & Download";setStatus("✅ Saved. Send it on WhatsApp.");}
+  function fail(msg){b.disabled=false;b.textContent="⏺ Record & Download";setStatus(msg);}
+  var narration=SCENES.filter(function(s){return !s.isUrlCard&&!s.isHookFrame;}).map(function(s){return s.narration;}).join(" ");
+  if(!VOICE){go(null).then(finish).catch(function(e){fail("Record failed: "+e.message);});return;}
+  b.textContent="🎙 Voice…";
+  var body=JSON.stringify({text:narration,voice:VOICE}),i=0;
+  (function tryTts(){if(i>=TTS.length){setStatus("Voice unavailable (proxy/CORS) — recording silent video.");go(null).then(finish).catch(function(e){fail("Record failed: "+e.message);});return;}fetch(TTS[i]+"/tts-voicerss",{method:"POST",headers:{"Content-Type":"application/json"},body:body}).then(function(r){if(!r.ok)throw new Error("tts "+r.status);return r.blob();}).then(function(bl){go(bl).then(finish).catch(function(e){fail("Record failed: "+e.message);});}).catch(function(){i++;tryTts();});})();
 };
-document.getElementById("poster").onclick=function(){
-  var L=SCENES.length-1;
-  SCENES.forEach(function(s,i){
-    _kinDraw(ctx,720,1280,s,i,L,BRAND,{ctaText:(i===L?OPTS.ctaText:""),ctaUrl:OPTS.ctaUrl},999,true);
-    cv.toBlob(function(bl){var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download="promo-card-"+(i+1)+".png";a.click();},"image/png");
-  });
-};
-document.getElementById("wa").onclick=function(){
-  location.href="https://wa.me/"+(WA||"")+"?text="+encodeURIComponent("Here's a quick promo video I made for you — the full tool that books these customers is inside 👉 https://www.ai-business.com.ng/earn");
-};
+document.getElementById("poster").onclick=function(){var L=SCENES.length-1;SCENES.forEach(function(s,i){_kinDraw(ctx,720,1280,s,i,L,BRAND,{ctaText:(i===L?OPTS.ctaText:""),ctaUrl:OPTS.ctaUrl,safeArea:true},999,true);cv.toBlob(function(bl){var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download="promo-card-"+(i+1)+".png";a.click();},"image/png");});};
+document.getElementById("wa").onclick=function(){location.href="https://wa.me/"+(WA||"")+"?text="+encodeURIComponent("Here's a quick promo video I made for you — the full tool that books these customers is inside 👉 https://www.ai-business.com.ng/earn");};
 </script></body></html>
