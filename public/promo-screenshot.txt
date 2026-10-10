@@ -1,0 +1,6 @@
+Replace this file with a real screenshot:
+1. Open /promo
+2. Build a prospect video (fake salon, 2 services, pick Roger voice)
+3. Screenshot the canvas mid-animation + the voice dropdown
+4. Save as promo-screenshot.jpg in the public/ folder
+5. Push again
