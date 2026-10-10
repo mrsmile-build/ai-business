@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Promo Video | AI Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{font-family:"DM Sans",sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:24px 16px 64px;max-width:680px;margin:auto;line-height:1.6}
+h1{font-family:"Syne",sans-serif;font-size:24px;color:#f8fafc;margin:0 0 4px}.sub{color:#94a3b8;font-size:14px;margin:0 0 20px}
+.stage{display:flex;justify-content:center;margin:8px 0 16px}
+canvas{border-radius:14px;border:1px solid #1e293b;max-width:100%;height:auto;background:#000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+button{font-family:"Syne",sans-serif;font-weight:700;border:none;border-radius:10px;padding:13px 20px;cursor:pointer;font-size:14px}
+.rec{background:#ff5c00;color:#fff}.ghost{background:#1e293b;color:#e2e8f0;border:1px solid #334155}.green{background:#22c55e;color:#0b1220}
+button:disabled{opacity:.5;cursor:not-allowed}
+.note{font-size:12px;color:#64748b;text-align:center;margin-top:6px}
+.card{background:#111c2e;border:1px solid #1e293b;border-radius:12px;padding:16px;margin:14px 0}
+#status{text-align:center;color:#94a3b8;font-size:13px;min-height:20px}
+</style></head><body>
+<h1>🎬 Promo Video</h1>
+<p class="sub">A 20-second branded film for <b id="bn">your business</b>, built from your own services and price. Watch it, then download and send it to a client.</p>
+<div class="stage"><canvas id="cv" width="720" height="1280"></canvas></div>
+<div id="status">Loading your business data…</div>
+<div class="row">
+  <button class="ghost" id="play">▶ Replay preview</button>
+  <button class="rec" id="rec" disabled> Record &amp; Download video</button>
+  <button class="ghost" id="poster" disabled>🖼 Download poster cards</button>
+</div>
+<div class="row"><button class="green" id="wa" disabled>💬 Open WhatsApp to send it</button></div>
+<p class="note" id="fmt">Downloads as .webm — plays on Android, desktop &amp; most WhatsApp chats. (iPhone/IG-MP4 conversion is a later upgrade.)</p>
+<div class="card"><b>How partners use this:</b> walk into a shop, tap Record in front of the owner, hand them the phone with <i>their</i> name and price moving on screen. That 10 seconds sells the whole subscription. Then show them the rest of AI Business books the customers that video brings.</div>
+<script src="/kinetic.js"></script>
+<script>
+var API="https://ai-business-1-ok3x.onrender.com";
+var tok=localStorage.getItem("token");
+if(!tok){location.href="/auth";}
+var cv=document.getElementById("cv"),ctx=cv.getContext("2d");
+var SCENES=[],OPTS={},BRAND=Object.assign({},VK_BRAND),TOTAL=20,DURS=[],LAST=0,rafId=null;
+
+function esc(s){return String(s==null?"":s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});}
+function money(v){var n=Number(v);if(!isFinite(n)||n<=0)return "";return "₦"+n.toLocaleString();}
+
+function buildScenes(biz,services,owner){
+  var name=biz.name||biz.title||biz.business_name||owner.display_name||owner.username||"Our Business";
+  var tag=biz.tagline||biz.description||biz.about||"Now taking bookings";
+  var url=(biz.slug?("https://www.ai-business.com.ng/biz/"+biz.slug):"");
+  var wa=String(biz.whatsapp||"").replace(/[^0-9]/g,"");
+  if(wa.length<11&&wa.charAt(0)==="0")wa="234"+wa.slice(1);
+  var sc=[];
+  sc.push({isHookFrame:true,hookText:name.toUpperCase(),narration:tag});
+  (services||[]).slice(0,6).forEach(function(s){
+    var nm=s.name||s.title||s.service_name||"Service";
+    var pr=money(s.price!=null?s.price:s.amount);
+    sc.push({narration:nm+(pr?(" — just "+pr):"."),highlight:pr||nm});
+  });
+  if(!services||!services.length){
+    sc.push({narration:"Quality service. Fair price. No wahala.",highlight:"Fair price"});
+    sc.push({narration:"Book online or WhatsApp us directly.",highlight:"WhatsApp us"});
+  }
+  sc.push({isUrlCard:true,narration:url||("wa.me/"+wa),});
+  OPTS={totalLen:TOTAL,ctaText:(wa?("WhatsApp "+wa):"Book now"),ctaUrl:url,linkMode:"corner"};
+  // brand accent from the business's own theme colour
+  if(biz.theme_color){BRAND.stripe=biz.theme_color;BRAND.underline=biz.theme_color;}
+  try{localStorage.setItem("vk_handle","@"+String(name).toLowerCase().replace(/[^a-z0-9]+/g,"").slice(0,18));}catch(e){}
+  return sc;
+}
+function computeDurs(scenes){
+  var cc=scenes.map(function(s){return s.isUrlCard?0:Math.max((s.narration||"").length,10);});
+  var tc=cc.reduce(function(a,b){return a+b;},0)||1,run=0;
+  return cc.map(function(cnt,i){
+    if(scenes[i].isUrlCard){run+=2.5;return 2.5;}
+    if(i===cc.length-1)return Math.max(2,Math.round((TOTAL-run)*10)/10);
+    var d=Math.max(2,Math.round((cnt/tc)*TOTAL));run+=d;return d;
+  });
+}
+function stopPlay(){if(rafId){cancelAnimationFrame(rafId);rafId=null;}}
+function playPreview(){
+  stopPlay();DURS=computeDurs(SCENES);LAST=SCENES.length-1;
+  var t0=performance.now();
+  (function frame(){
+    var el=(performance.now()-t0)/1000,acc=0,idx=LAST,tIn=0;
+    for(var i=0;i<DURS.length;i++){if(el<acc+DURS[i]){idx=i;tIn=el-acc;break;}acc+=DURS[i];}
+    _kinDraw(ctx,720,1280,SCENES[idx],idx,LAST,BRAND,OPTS,tIn,false);
+    if(el>=DURS.reduce(function(a,b){return a+b;},0)){rafId=null;return;}
+    rafId=requestAnimationFrame(frame);
+  })();
+}
+fetch(API+"/api/biz/promo-data",{headers:{Authorization:"Bearer "+tok}}).then(function(r){return r.json();}).then(function(d){
+  if(!d.success){document.getElementById("status").textContent="Could not load: "+(d.error||"?");return;}
+  SCENES=buildScenes(d.biz||{},d.services||[],d.owner||{});
+  document.getElementById("bn").textContent=(d.biz&&d.biz.name)||d.owner.display_name||"your business";
+  document.getElementById("status").textContent="Ready. Watch it move, then record.";
+  document.getElementById("rec").disabled=false;
+  document.getElementById("poster").disabled=false;
+  document.getElementById("wa").disabled=false;
+  playPreview();
+}).catch(function(){document.getElementById("status").textContent="Network error — is the server awake? Try again in a minute.";});
+
+document.getElementById("play").onclick=playPreview;
+document.getElementById("rec").onclick=function(){
+  var b=this;b.disabled=true;b.textContent="⏺ Recording… (plays once, ~"+TOTAL+"s)";
+  stopPlay();
+  renderKineticVideo(SCENES,null,BRAND,OPTS).then(function(blob){
+    var u=URL.createObjectURL(blob),a=document.createElement("a");
+    a.href=u;a.download="ai-business-promo.webm";document.body.appendChild(a);a.click();a.remove();
+    b.disabled=false;b.textContent="⏺ Record & Download video";
+    document.getElementById("status").textContent="✅ Saved to your Downloads. Now send it on WhatsApp.";
+  }).catch(function(e){b.disabled=false;b.textContent="⏺ Record & Download video";document.getElementById("status").textContent="Record failed: "+e.message;});
+};
+document.getElementById("poster").onclick=function(){
+  var L=SCENES.length-1;
+  SCENES.forEach(function(s,i){
+    _kinDraw(ctx,720,1280,s,i,L,BRAND,{ctaText:(i===L?OPTS.ctaText:""),ctaUrl:OPTS.ctaUrl},999,true);
+    cv.toBlob(function(bl){var u=URL.createObjectURL(bl),a=document.createElement("a");a.href=u;a.download="promo-card-"+(i+1)+".png";a.click();},"image/png");
+  });
+};
+document.getElementById("wa").onclick=function(){
+  var wa=String((window.__waNum)||"");location.href="https://wa.me/"+(wa||"")+"?text="+encodeURIComponent("Here's a quick promo video I made for you — the full tool that books these customers is inside 👉 https://www.ai-business.com.ng/earn");
+};
+</script></body></html>
