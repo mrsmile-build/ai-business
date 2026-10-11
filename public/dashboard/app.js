@@ -6634,18 +6634,24 @@ async function loadGuide(){
     }catch(_){}
   }, false);
 })();
-/* AIB_FB_OPEN_FIX2 */
+/* AIB_FB_OPEN_FIX3 */
 (function(){
-  if(window.__aibFbFix2) return; window.__aibFbFix2=1;
+  if(window.__aibFbFix3) return; window.__aibFbFix3=1;
+  function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z]/g,""); }
+  function ownText(node){ var s="",cn=node.childNodes; for(var i=0;i<cn.length;i++){ if(cn[i].nodeType===3) s+=cn[i].nodeValue; } return s; }   // THIS node's words only, not its children's
+  function isFb(node){
+    if(norm(ownText(node))==="feedback") return true;
+    if(node.getAttribute){ var al=node.getAttribute("aria-label")||node.getAttribute("title")||""; if(norm(al)==="feedback") return true; }
+    return false;
+  }
   document.addEventListener("click", function(e){
     try{
-      if(document.getElementById("aib_feedback_modal")) return;          // already open -> never double
-      if(e.target.closest("#aib_feedback_modal")) return;                // click inside composer -> ignore
-      if(e.target.closest("#menu")) return;                              // admin menu (incl. Feedback Inbox) -> never hijack
+      if(document.getElementById("aib_feedback_modal")) return;        // already open -> never double
+      if(e.target.closest("#aib_feedback_modal")) return;             // click inside composer -> ignore
+      if(e.target.closest("#menu")) return;                           // admin menu (Feedback Inbox) -> never hijack
       var node=e.target, hit=false;
       while(node && node!==document.documentElement){
-        var t=(node.textContent||"").toLowerCase().replace(/[^a-z]/g,"");
-        if(t==="feedback"){ hit=true; break; }                           // the pill, whatever its tag
+        if(isFb(node)){ hit=true; break; }                            // only the pill's OWN text/label matches
         node=node.parentElement;
       }
       if(hit && typeof showFeedbackPopup==="function"){ e.preventDefault(); showFeedbackPopup(); }
