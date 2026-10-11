@@ -83,29 +83,43 @@ document.getElementById("dl").onclick=function(){
  }).catch(function(){btn.disabled=false;btn.textContent="\u2b07 Download PNG";alert("Image library couldn't load on this network \u2014 just screenshot the phone frame instead (it looks identical).");});
 };
 var ld=document.getElementById("loading");
-function showGate(msg){var g=document.getElementById("gate");g.style.display="block";g.innerHTML=msg+' <button onclick="checkAdmin()" style="margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retry</button>';}
-function checkAdmin(){
-  if(ld){ld.style.display="block";ld.textContent="Checking admin access\u2026 (first open can take ~30s while the server wakes)";}
+var API_ME="https://ai-business-1-ok3x.onrender.com/api/me";
+var MAX_TRY=4;
+function showGate(msg){var g=document.getElementById("gate");g.style.display="block";g.innerHTML=msg+' <button onclick="checkAdmin()" style="margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retry now</button>';}
+function setStatus(t){ if(ld){ld.style.display="block";ld.textContent=t;} }
+function attempt(n){
+  setStatus("Contacting server\u2026 attempt "+n+"/"+MAX_TRY+(n===1?" (first try can take ~30s while it wakes)":""));
   var ctl=("AbortController" in window)?new AbortController():null;
-  var to=ctl?setTimeout(function(){ctl.abort();},25000):null;
-  fetch("https://ai-business-1-ok3x.onrender.com/api/me",{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:ctl?ctl.signal:undefined})
-   .then(function(r){return r.json();}).then(function(d){
-     if(to)clearTimeout(to); if(ld)ld.style.display="none";
-     if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
-     else{showGate("Signed in, but not as the owner account.");}
-   }).catch(function(){
-     if(to)clearTimeout(to); if(ld)ld.style.display="none";
-     showGate("Couldn't reach the server (it may still be waking). Tap retry in a few seconds.");
+  var timedOut=false;
+  var to=ctl?setTimeout(function(){timedOut=true;ctl.abort();},20000):null;
+  fetch(API_ME,{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:ctl?ctl.signal:undefined})
+   .then(function(r){
+     if(to)clearTimeout(to);
+     if(!r.ok){
+       if(ld)ld.style.display="none";
+       showGate("Reached the server (status "+r.status+") but it refused the sign-in. Sign in as the owner account, then retry.");
+       return;
+     }
+     return r.json().then(function(d){
+       if(ld)ld.style.display="none";
+       if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
+       else{showGate("Reached the server, but you're signed in as "+((d&&d.user&&d.user.email)||"an unknown account")+" \u2014 not the owner. Switch to the owner account and retry.");}
+     });
+   })
+   .catch(function(){
+     if(to)clearTimeout(to);
+     var reason = timedOut ? "server still waking (no reply in 20s)" : "network dropped (couldn't reach the server at all)";
+     if(n<MAX_TRY){
+       var wait = n===1?3000:(n===2?6000:10000);
+       setStatus("Couldn't get through: "+reason+". Auto-retrying in "+Math.round(wait/1000)+"s\u2026");
+       setTimeout(function(){attempt(n+1);},wait);
+     } else {
+       if(ld)ld.style.display="none";
+       showGate("After "+MAX_TRY+" tries: "+reason+". If your internet is on, the server is asleep \u2014 wait ~30s and hit Retry.");
+     }
    });
 }
+function checkAdmin(){ attempt(1); }
 window.checkAdmin=checkAdmin;
 checkAdmin();
-</script><script>/* watchdog */
-setTimeout(function(){
-  var ld=document.getElementById("loading"),ui=document.getElementById("ui"),g=document.getElementById("gate");
-  if(ld && ld.style.display!=="none" && ui.style.display!=="block" && g.style.display!=="block"){
-    ld.innerHTML="Still checking \u2014 server asleep or this page is cached. <button onclick=\"location.href=location.pathname+'?v='+Date.now()\" style=\"margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer\">Force fresh load</button>";
-  }
-},10000);
-</script>
-</body></html>
+</script></body></html>
