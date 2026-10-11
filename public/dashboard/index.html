@@ -300,5 +300,20 @@ if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded"
   }).catch(function(){});
 })();
 </script>
+<!-- AIB_DEDUP --><style>
+/* the legacy clipped banner mounts as body's FIRST child; the correct v3 card sits after the header. Hide the ghost, keep the real one. */
+body > .aib-banner:first-child{display:none!important}
+</style>
+<script>
+/* belt-and-suspenders: once both fetches have settled, drop any extra banner, keeping the correctly-placed one */
+setTimeout(function(){
+  var all=[].slice.call(document.querySelectorAll('.aib-banner'));
+  if(all.length>1){
+    all.forEach(function(n){ if(n.parentElement===document.body && document.body.firstElementChild===n) n.remove(); });
+    var rest=[].slice.call(document.querySelectorAll('.aib-banner'));
+    while(rest.length>1){ rest.shift().remove(); rest=[].slice.call(document.querySelectorAll('.aib-banner')); }
+  }
+},1400);
+</script>
 </body>
 </html>
