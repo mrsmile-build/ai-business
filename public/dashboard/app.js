@@ -6619,51 +6619,42 @@ async function loadGuide(){
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount); else mount();
 })();
-/* AIB_FB_OPEN_FIX */
-(function(){
-  if(window.__aibFbFix) return; window.__aibFbFix=1;
-  document.addEventListener("click", function(e){
-    try{
-      if(document.getElementById("aib_feedback_modal")) return;          // composer already open -> never double-open
-      var el = e.target && e.target.closest ? e.target.closest("button,a,div,span") : null;
-      if(!el) return;
-      if(el.closest("#aib_feedback_modal") || el.closest("#menu")) return; // ignore clicks inside modal or admin menu
-      var t = (el.textContent||"").toLowerCase().replace(/[^a-z]/g,"");
-      if(t !== "feedback") return;                                       // ONLY the exact top-bar button
-      if(typeof showFeedbackPopup === "function"){ e.preventDefault(); showFeedbackPopup(); }
-    }catch(_){}
-  }, false);
-})();
-/* AIB_FB_V5 */
-(function(){
-  if(window.__aibFbV5) return; window.__aibFbV5=1;
-  function openFB(){
-    if(document.getElementById("aib_feedback_modal")) return;      // already open -> no flicker, no double
-    try{
-      if(typeof showFeedbackPopup==="function"){ showFeedbackPopup(); }
-      else { alert("FB: showFeedbackPopup not defined (app.js load order)"); }
-    }catch(e){ alert("FB error: "+e.message); }                    // surfaces the real cause on your phone, no devtools
-  }
-  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
-  ready(function(){
-    try{
-      /* DOOR 1: the real header button, bound directly by its known onclick (ground truth from grep).
-         addEventListener runs AFTER the inline onclick; if inline already opened it, the guard above returns.
-         If inline was being swallowed, THIS opens it. Either way the modal ends open. */
-      var hb=document.querySelector('button[onclick*="showFeedbackPopup"]');
-      if(hb){ hb.addEventListener("click", openFB, false); }
-      /* DOOR 2: a floating button I own end-to-end, so a tap CANNOT fail to reach openFB. */
-      if(!document.getElementById("aib_fb_fab")){
-        var b=document.createElement("button"); b.id="aib_fb_fab"; b.type="button";
-        b.setAttribute("aria-label","Feedback");
-        b.style.cssText="position:fixed;right:16px;bottom:18px;z-index:9997;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#ff7a1a,#ff5c00);color:#fff;font-size:22px;line-height:1;box-shadow:0 8px 24px rgba(255,92,0,.45);display:flex;align-items:center;justify-content:center;transition:transform .12s ease";
-        b.textContent="\ud83d\udcac";
-        b.onmousedown=function(){ b.style.transform="scale(.92)"; };
-        b.onmouseup=b.onmouseleave=function(){ b.style.transform="scale(1)"; };
-        b.onclick=function(e){ e.stopPropagation(); openFB(); };
-        document.body.appendChild(b);
-      }
-    }catch(_){}
-  });
-})();
+/* AIB_FB_READER */
+function fbStars(r){var n=(typeof r.rating==="number")?r.rating:null;if(n==null)return "";n=Math.max(1,Math.min(5,Math.round(n)));var s="";for(var i=1;i<=5;i++)s+=i<=n?"\u2605":"\u2606";return '<span style="color:#fbbf24;letter-spacing:2px;font-size:15px">'+s+'</span>';}
+function fbCard(r,dim){
+  var msg=(typeof r.message==="string"&&r.message.trim())?r.message:"(rating only \u2014 no written note)";
+  var who=r.user_id?(String(r.user_id).slice(0,8)+"\u2026"):"\u2014";
+  var when=r.created_at?new Date(r.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"";
+  var bg="";
+  if(r.feature_ok===true)bg+='<span style="display:inline-block;background:rgba(34,197,94,.14);color:#4ade80;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin:0 6px 4px 0">open to testimonial</span>';
+  if(r.testimonial_status==="pending")bg+='<span style="display:inline-block;background:rgba(251,191,36,.14);color:#fbbf24;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin:0 6px 4px 0">testimonial pending</span>';
+  var idSafe=String(r.id).replace(/'/g,"\\'");
+  return '<div style="border:1px solid #1e293b;border-radius:12px;padding:14px;margin:0 0 10px;background:#0b1220;'+(dim?"opacity:.45;":"")+'">'+
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">'+
+      '<div>'+fbStars(r)+bg+'</div>'+
+      '<button onclick="fbResolve(\''+idSafe+'\')" style="flex:0 0 auto;border:1px solid '+(dim?"#334155":"#22c55e")+';background:'+(dim?"transparent":"rgba(34,197,94,.12)")+';color:'+(dim?"#64748b":"#4ade80")+';border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer">'+(dim?"\u21a9 undo":"\u2713 handled")+'</button>'+
+    '</div>'+
+    '<div style="color:#e2e8f0;font-size:14px;line-height:1.55;margin-bottom:8px">'+String(msg).replace(/</g,"&lt;")+'</div>'+
+    '<div style="font-size:11px;color:#475569">'+who+(when?(" \u00b7 "+when):"")+'</div>'+
+  '</div>';
+}
+function fbResolve(id){var h={};try{h=JSON.parse(localStorage.getItem("fb_handled")||"{}");}catch(e){h={};}if(h[id])delete h[id];else h[id]=1;try{localStorage.setItem("fb_handled",JSON.stringify(h));}catch(e){}apiFetch("/api/admin/feedback/"+encodeURIComponent(id)+"/resolve",{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({resolved:!!h[id]})}).catch(function(){});renderFeedbackAdmin();}
+function renderFeedbackAdmin(){
+  setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#64748b">Loading\u2026</p></div>');
+  apiFetch("/api/admin/feedback",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(!data||!data.success){setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#ef4444">'+((data&&data.error)||"Could not load feedback")+'</p></div>');return;}
+      var rows=data.rows||[];var handled={};try{handled=JSON.parse(localStorage.getItem("fb_handled")||"{}");}catch(e){handled={};}
+      rows.sort(function(a,b){return String(b.created_at||"").localeCompare(String(a.created_at||""));});
+      var un=rows.filter(function(r){return !handled[r.id];});var dn=rows.filter(function(r){return handled[r.id];});
+      var html='<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard");
+      html+='<p style="margin:0 0 14px;font-size:12px;color:#64748b">'+rows.length+' note'+(rows.length===1?"":"s")+'. Tap \u2713 once you\u2019ve acted \u2014 it sinks so the open ones stay on top.</p>';
+      if(!rows.length)html+='<p style="color:#94a3b8">No feedback yet. It appears here the moment someone taps \ud83d\udcac Feedback at the top.</p>';
+      html+=un.map(function(r){return fbCard(r,false);}).join("");
+      if(dn.length){html+='<p style="margin:18px 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#475569">Handled</p>';html+=dn.map(function(r){return fbCard(r,true);}).join("");}
+      html+='</div>';setView(html);
+    })
+    .catch(function(e){setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#ef4444">'+e.message+'</p></div>');});
+}
 
