@@ -6634,28 +6634,38 @@ async function loadGuide(){
     }catch(_){}
   }, false);
 })();
-/* AIB_FB_OPEN_FIX3 */
+/* AIB_FB_V4 */
 (function(){
-  if(window.__aibFbFix3) return; window.__aibFbFix3=1;
+  if(window.__aibFbV4) return; window.__aibFbV4=1;
+  function open(){ try{ if(typeof showFeedbackPopup==="function" && !document.getElementById("aib_feedback_modal")) showFeedbackPopup(); }catch(_){} }
+  function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
+  ready(function(){
+    try{
+      /* DOOR 1 (guaranteed): a floating button I create + wire directly. No matching, no bubbling. */
+      if(!document.getElementById("aib_fb_fab")){
+        var b=document.createElement("button"); b.id="aib_fb_fab"; b.type="button";
+        b.setAttribute("aria-label","Feedback");
+        b.style.cssText="position:fixed;right:16px;bottom:18px;z-index:9997;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#ff7a1a,#ff5c00);color:#fff;font-size:22px;line-height:1;box-shadow:0 8px 24px rgba(255,92,0,.45);display:flex;align-items:center;justify-content:center;transition:transform .12s ease";
+        b.textContent="\ud83d\udcac";
+        b.onmousedown=function(){ b.style.transform="scale(.92)"; };
+        b.onmouseup=b.onmouseleave=function(){ b.style.transform="scale(1)"; };
+        b.onclick=function(e){ e.stopPropagation(); open(); };   // direct handler -> cannot be swallowed
+        document.body.appendChild(b);
+      }
+    }catch(_){}
+  });
+  /* DOOR 2 (best-effort): the real header pill, via capture phase + own-text/own-label only (containers can't trigger). */
   function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z]/g,""); }
-  function ownText(node){ var s="",cn=node.childNodes; for(var i=0;i<cn.length;i++){ if(cn[i].nodeType===3) s+=cn[i].nodeValue; } return s; }   // THIS node's words only, not its children's
-  function isFb(node){
-    if(norm(ownText(node))==="feedback") return true;
-    if(node.getAttribute){ var al=node.getAttribute("aria-label")||node.getAttribute("title")||""; if(norm(al)==="feedback") return true; }
-    return false;
-  }
+  function ownText(node){ var s="",cn=node.childNodes; for(var i=0;i<cn.length;i++){ if(cn[i].nodeType===3) s+=cn[i].nodeValue; } return s; }
+  function isFb(node){ if(norm(ownText(node))==="feedback") return true; if(node.getAttribute){ var al=(node.getAttribute("aria-label")||"")+(node.getAttribute("title")||""); if(norm(al)==="feedback") return true; } return false; }
   document.addEventListener("click", function(e){
     try{
-      if(document.getElementById("aib_feedback_modal")) return;        // already open -> never double
-      if(e.target.closest("#aib_feedback_modal")) return;             // click inside composer -> ignore
-      if(e.target.closest("#menu")) return;                           // admin menu (Feedback Inbox) -> never hijack
+      if(document.getElementById("aib_feedback_modal")) return;
+      if(e.target.closest("#aib_feedback_modal")||e.target.closest("#menu")||e.target.closest("#aib_fb_fab")) return;
       var node=e.target, hit=false;
-      while(node && node!==document.documentElement){
-        if(isFb(node)){ hit=true; break; }                            // only the pill's OWN text/label matches
-        node=node.parentElement;
-      }
-      if(hit && typeof showFeedbackPopup==="function"){ e.preventDefault(); showFeedbackPopup(); }
+      while(node && node!==document.documentElement){ if(isFb(node)){ hit=true; break; } node=node.parentElement; }
+      if(hit){ e.stopPropagation(); open(); }   // capture-phase stop -> the pill's own (possibly broken) inline handler is bypassed, we run the right one
     }catch(_){}
-  }, false);
+  }, true);   // <-- capture phase: defeats any stopPropagation that was eating the bubble listener
 })();
 
