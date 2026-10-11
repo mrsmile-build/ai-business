@@ -6619,3 +6619,19 @@ async function loadGuide(){
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount); else mount();
 })();
+/* AIB_FB_OPEN_FIX */
+(function(){
+  if(window.__aibFbFix) return; window.__aibFbFix=1;
+  document.addEventListener("click", function(e){
+    try{
+      if(document.getElementById("aib_feedback_modal")) return;          // composer already open -> never double-open
+      var el = e.target && e.target.closest ? e.target.closest("button,a,div,span") : null;
+      if(!el) return;
+      if(el.closest("#aib_feedback_modal") || el.closest("#menu")) return; // ignore clicks inside modal or admin menu
+      var t = (el.textContent||"").toLowerCase().replace(/[^a-z]/g,"");
+      if(t !== "feedback") return;                                       // ONLY the exact top-bar button
+      if(typeof showFeedbackPopup === "function"){ e.preventDefault(); showFeedbackPopup(); }
+    }catch(_){}
+  }, false);
+})();
+
