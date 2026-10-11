@@ -6634,4 +6634,22 @@ async function loadGuide(){
     }catch(_){}
   }, false);
 })();
+/* AIB_FB_OPEN_FIX2 */
+(function(){
+  if(window.__aibFbFix2) return; window.__aibFbFix2=1;
+  document.addEventListener("click", function(e){
+    try{
+      if(document.getElementById("aib_feedback_modal")) return;          // already open -> never double
+      if(e.target.closest("#aib_feedback_modal")) return;                // click inside composer -> ignore
+      if(e.target.closest("#menu")) return;                              // admin menu (incl. Feedback Inbox) -> never hijack
+      var node=e.target, hit=false;
+      while(node && node!==document.documentElement){
+        var t=(node.textContent||"").toLowerCase().replace(/[^a-z]/g,"");
+        if(t==="feedback"){ hit=true; break; }                           // the pill, whatever its tag
+        node=node.parentElement;
+      }
+      if(hit && typeof showFeedbackPopup==="function"){ e.preventDefault(); showFeedbackPopup(); }
+    }catch(_){}
+  }, false);
+})();
 
