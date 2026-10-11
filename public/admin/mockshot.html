@@ -12,6 +12,7 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
 .bar button{background:linear-gradient(135deg,#ff7a1a,#ff5c00);border:none;color:#fff;font-weight:700;border-radius:9px;padding:9px 14px;font-size:13px;cursor:pointer}
 .bar label{display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8}
 #gate{background:#3b1d1d;border:1px solid #7f1d1d;color:#fca5a5;border-radius:12px;padding:16px;font-size:14px}
+#loading{color:#94a3b8;font-size:13px;margin:0 0 14px}
 .phone{max-width:400px;margin:0 auto;background:#0d0d0d;border:1px solid #262626;border-radius:26px;padding:14px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .phone .notch{width:90px;height:6px;background:#262626;border-radius:6px;margin:0 auto 12px}
 #mock{background:#0b1220;border-radius:16px;overflow:hidden}
@@ -35,10 +36,10 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
 .promo .txt .price{color:#facc15;font-size:20px;font-weight:800}
 .cap{font-size:10px;color:#64748b;text-align:center;padding:8px 0 10px}
 </style></head><body>
-<h1>🎨 MockShot Studio <span style="font-size:11px;color:#475569;font-weight:400">v2</span></h1>
+<h1>🎨 MockShot Studio <span style="font-size:11px;color:#475569;font-weight:400">v3</span></h1>
 <p class="sub">Admin-only. Renders AI Business UI with <b>sample data</b> for marketing images. Interface is illustrated; never use it to fake testimonials or reviews.</p>
-<div id="loading" style="color:#94a3b8;font-size:13px;margin:0 0 14px">Checking admin access… (first open can take ~30s while the server wakes)</div>
-<div id="gate" style="display:none">Admin only. Sign in with the owner account first.</div>
+<div id="loading">Checking admin access…</div>
+<div id="gate" style="display:none"></div>
 <div id="ui" style="display:none">
   <div class="bar">
     <select id="biz"><option value="realestate">Real estate</option><option value="salon">Salon</option><option value="mechanical">Mechanical</option></select>
@@ -51,15 +52,17 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
 </div>
 <script>
 var ADMIN="mrsmile4569@gmail.com";
+var API_ME="https://ai-business-1-ok3x.onrender.com/api/me";
+var MAX_TRY=4;
 var PRESETS={
  realestate:{name:"Zebra Realty & Homes",loc:"Lekki, Lagos",phone:"0803 000 1122",svc:[["Property inspection","150000"],["Title processing","450000"]],color:"#22c55e"},
  salon:{name:"Glow & Go Beauty Studio",loc:"Yaba, Lagos",phone:"0805 220 4471",svc:[["Braids","15000"],["Manicure","8000"]],color:"#ff5c00"},
  mechanical:{name:"TorqueWorks Auto & Mechanical",loc:"Ikeja, Lagos",phone:"0807 118 9903",svc:[["Full service","85000"],["Diagnostics","30000"]],color:"#3b82f6"}
 };
 function money(n){return "\u20a6"+Number(n).toLocaleString();}
-function top(b){return '<div class="m-top"><div class="m-logo">\ud83d\udcca</div><div class="m-name">AI Business</div><div class="m-plan">Starter</div></div>';}
+function topbar(){return '<div class="m-top"><div class="m-logo">\ud83d\udcca</div><div class="m-name">AI Business</div><div class="m-plan">Starter</div></div>';}
 function sceneHTML(b,s){
- if(s==="lead")return '<div class="m-body"><div class="card"><h4>'+b.name+'</h4><p class="meta">'+b.loc+' \u00b7 Real estate &amp; services \u00b7 '+b.phone+'</p><span class="pill red">quiet 4 days</span><span class="pill amber">no follow-up sent</span><div class="row"><span>Last enquiry</span><span>Mon, 9:12 AM</span></div><div class="row"><span>Suggested action</span><span>Draft follow-up \u2192</span></div></div><div class="card"><h4>Next best lead</h4><p class="meta">Matched by services + location</p><span class="pill green">reachable</span></div></div>';
+ if(s==="lead")return '<div class="m-body"><div class="card"><h4>'+b.name+'</h4><p class="meta">'+b.loc+' \u00b7 '+b.phone+'</p><span class="pill red">quiet 4 days</span><span class="pill amber">no follow-up sent</span><div class="row"><span>Last enquiry</span><span>Mon, 9:12 AM</span></div><div class="row"><span>Suggested action</span><span>Draft follow-up \u2192</span></div></div><div class="card"><h4>Next best lead</h4><p class="meta">Matched by services + location</p><span class="pill green">reachable</span></div></div>';
  if(s==="whatsapp")return '<div class="m-body"><div class="bub">Hi '+b.name.split(" ")[0]+' \ud83d\udc4b saw you were looking at '+b.svc[0][0].toLowerCase()+' \u2014 we still have a slot this week at '+money(b.svc[0][1])+'. Want me to hold it for you?<span class="t">9:14 AM \u2713\u2713</span></div><div class="bub">Also sharing our full price list \u2014 '+b.svc.map(function(x){return x[0]+" "+money(x[1]);}).join(", ")+'.<span class="t">9:14 AM \u2713\u2713</span></div></div>';
  if(s==="proposal")return '<div class="m-body"><div class="card"><h4>Proposal \u2014 '+b.name+'</h4><p class="meta">Prepared today \u00b7 valid 7 days</p>'+b.svc.map(function(x){return '<div class="row"><span>'+x[0]+'</span><span>'+money(x[1])+'</span></div>';}).join("")+'<div class="row" style="border-top:1px solid #334155"><b>Total</b><b>'+money(b.svc.reduce(function(a,x){return a+Number(x[1]);},0))+'</b></div></div></div>';
  if(s==="promo")return '<div class="m-body"><div class="promo"><div class="stripe" style="background:'+b.color+'"></div><div class="txt"><b>'+b.name.toUpperCase()+'</b><span class="price">'+b.svc[0][0]+' \u2014 just '+money(b.svc[0][1])+'</span></div></div><p class="meta" style="text-align:center;margin:8px 0 0">2-min promo video \u00b7 22+ AI voices</p></div>';
@@ -67,14 +70,38 @@ function sceneHTML(b,s){
 }
 function render(){
  var b=PRESETS[document.getElementById("biz").value];
- var name=document.getElementById("custom").value.trim();
- if(name)b=Object.assign({},b,{name:name});
+ var nm=document.getElementById("custom").value.trim();
+ if(nm)b=Object.assign({},b,{name:nm});
  var s=document.getElementById("scene").value;
  var cap=document.getElementById("capOn").checked?'<div class="cap">Illustration \u00b7 sample data</div>':'';
- document.getElementById("mock").innerHTML=top(b)+sceneHTML(b,s)+cap;
+ document.getElementById("mock").innerHTML=topbar()+sceneHTML(b,s)+cap;
 }
-["biz","scene","custom","capOn"].forEach(function(id){document.getElementById(id).addEventListener("input",render);document.getElementById(id).addEventListener("change",render);});
 function loadH2C(){return new Promise(function(res,rej){if(window.html2canvas)return res();var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=function(){res();};s.onerror=function(){rej(new Error("cdn"));};document.head.appendChild(s);});}
+function setStatus(t){var ld=document.getElementById("loading");if(ld){ld.style.display="block";ld.textContent=t;}}
+function showGate(msg){var g=document.getElementById("gate");g.style.display="block";g.innerHTML=msg+' <button onclick="checkAdmin()" style="margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retry now</button>';}
+function attempt(n){
+ setStatus("Contacting server\u2026 attempt "+n+"/"+MAX_TRY+(n===1?" (first try can take ~30s while it wakes)":""));
+ var ctl=("AbortController" in window)?new AbortController():null;
+ var timedOut=false;
+ var to=ctl?setTimeout(function(){timedOut=true;ctl.abort();},20000):null;
+ fetch(API_ME,{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:ctl?ctl.signal:undefined})
+  .then(function(r){
+    if(to)clearTimeout(to);
+    if(!r.ok){document.getElementById("loading").style.display="none";showGate("Reached the server (status "+r.status+") but it refused the sign-in. Sign in as the owner account, then retry.");return null;}
+    return r.json().then(function(d){
+      document.getElementById("loading").style.display="none";
+      if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
+      else{showGate("Reached the server, but you're signed in as "+((d&&d.user&&d.user.email)||"an unknown account")+" \u2014 not the owner. Switch accounts and retry.");}
+    });
+  })
+  .catch(function(){
+    if(to)clearTimeout(to);
+    var reason=timedOut?"server still waking (no reply in 20s)":"network dropped (couldn't reach the server at all)";
+    if(n<MAX_TRY){var wait=(n===1?3000:(n===2?6000:10000));setStatus("Couldn't get through: "+reason+". Auto-retrying in "+Math.round(wait/1000)+"s\u2026");setTimeout(function(){attempt(n+1);},wait);}
+    else{document.getElementById("loading").style.display="none";showGate("After "+MAX_TRY+" tries: "+reason+". If your internet is on, the server is asleep \u2014 wait ~30s and hit Retry.");}
+  });
+}
+function checkAdmin(){attempt(1);}
 document.getElementById("dl").onclick=function(){
  var btn=this;btn.disabled=true;btn.textContent="Rendering\u2026";
  loadH2C().then(function(){return html2canvas(document.getElementById("mock"),{backgroundColor:"#0b1220",scale:2});}).then(function(c){
@@ -82,44 +109,6 @@ document.getElementById("dl").onclick=function(){
    btn.disabled=false;btn.textContent="\u2b07 Download PNG";
  }).catch(function(){btn.disabled=false;btn.textContent="\u2b07 Download PNG";alert("Image library couldn't load on this network \u2014 just screenshot the phone frame instead (it looks identical).");});
 };
-var ld=document.getElementById("loading");
-var API_ME="https://ai-business-1-ok3x.onrender.com/api/me";
-var MAX_TRY=4;
-function showGate(msg){var g=document.getElementById("gate");g.style.display="block";g.innerHTML=msg+' <button onclick="checkAdmin()" style="margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retry now</button>';}
-function setStatus(t){ if(ld){ld.style.display="block";ld.textContent=t;} }
-function attempt(n){
-  setStatus("Contacting server\u2026 attempt "+n+"/"+MAX_TRY+(n===1?" (first try can take ~30s while it wakes)":""));
-  var ctl=("AbortController" in window)?new AbortController():null;
-  var timedOut=false;
-  var to=ctl?setTimeout(function(){timedOut=true;ctl.abort();},20000):null;
-  fetch(API_ME,{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:ctl?ctl.signal:undefined})
-   .then(function(r){
-     if(to)clearTimeout(to);
-     if(!r.ok){
-       if(ld)ld.style.display="none";
-       showGate("Reached the server (status "+r.status+") but it refused the sign-in. Sign in as the owner account, then retry.");
-       return;
-     }
-     return r.json().then(function(d){
-       if(ld)ld.style.display="none";
-       if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
-       else{showGate("Reached the server, but you're signed in as "+((d&&d.user&&d.user.email)||"an unknown account")+" \u2014 not the owner. Switch to the owner account and retry.");}
-     });
-   })
-   .catch(function(){
-     if(to)clearTimeout(to);
-     var reason = timedOut ? "server still waking (no reply in 20s)" : "network dropped (couldn't reach the server at all)";
-     if(n<MAX_TRY){
-       var wait = n===1?3000:(n===2?6000:10000);
-       setStatus("Couldn't get through: "+reason+". Auto-retrying in "+Math.round(wait/1000)+"s\u2026");
-       setTimeout(function(){attempt(n+1);},wait);
-     } else {
-       if(ld)ld.style.display="none";
-       showGate("After "+MAX_TRY+" tries: "+reason+". If your internet is on, the server is asleep \u2014 wait ~30s and hit Retry.");
-     }
-   });
-}
-function checkAdmin(){ attempt(1); }
-window.checkAdmin=checkAdmin;
+["biz","scene","custom","capOn"].forEach(function(id){var el=document.getElementById(id);el.addEventListener("input",render);el.addEventListener("change",render);});
 checkAdmin();
 </script></body></html>
