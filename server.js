@@ -4409,6 +4409,26 @@ app.post("/api/admin/broadcast", async (req, res) => {
     res.json({ success: true, sent, failed, total: (users||[]).length });
   } catch(e){ res.status(500).json({ error: e.message }); }
 });
+
+/* ---------------- FEEDBACK INBOX (admin reader; same guard as Manage Blog) ---------------- */
+app.get("/api/admin/feedback", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    const c = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data, error } = await c.from("feedback").select("*");
+    if(error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, rows: data || [] });
+  } catch(err){ res.status(500).json({ error: err.message }); }
+});
+app.patch("/api/admin/feedback/:id/resolve", authMiddleware, async (req, res) => {
+  try {
+    if(req.user.email !== BLOG_ADMIN_EMAIL) return res.status(403).json({ error: "Not authorized" });
+    const c = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { error } = await c.from("feedback").update({ resolved: !!(req.body && req.body.resolved) }).eq("id", req.params.id);
+    if(error) return res.json({ success: false, error: error.message });   // non-fatal: tick still works locally
+    res.json({ success: true });
+  } catch(err){ res.json({ success: false, error: err.message }); }
+});
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });

@@ -425,6 +425,13 @@ async function init(){
         testimonialLink.setAttribute("onclick", "loadPage('testimonials')");
         testimonialLink.textContent = "💬 Testimonials";
         menuEl.insertBefore(testimonialLink, menuEl.firstChild);
+        if(!document.getElementById("feedback_admin_link")){
+          var fbLink = document.createElement("div");
+          fbLink.id = "feedback_admin_link";
+          fbLink.setAttribute("onclick","renderFeedbackAdmin()");
+          fbLink.textContent = "\ud83d\udcac Feedback Inbox";
+          menuEl.insertBefore(fbLink, menuEl.firstChild);
+        }
       }
     }
     }
