@@ -35,6 +35,7 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
 </style></head><body>
 <h1>🎨 MockShot Studio</h1>
 <p class="sub">Admin-only. Renders AI Business UI with <b>sample data</b> for marketing images. Interface is illustrated; never use it to fake testimonials or reviews.</p>
+<div id="loading" style="color:#94a3b8;font-size:13px;margin:0 0 14px">Checking admin access… (first open can take ~30s while the server wakes)</div>
 <div id="gate" style="display:none">Admin only. Sign in with the owner account first.</div>
 <div id="ui" style="display:none">
   <div class="bar">
@@ -78,9 +79,11 @@ document.getElementById("dl").onclick=function(){
    btn.disabled=false;btn.textContent="\u2b07 Download PNG";
  }).catch(function(){btn.disabled=false;btn.textContent="\u2b07 Download PNG";alert("Download blocked on this browser \u2014 just screenshot the phone frame instead.");});
 };
+var ld=document.getElementById("loading");
 fetch("https://ai-business-1-ok3x.onrender.com/api/me",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
  .then(function(r){return r.json();}).then(function(d){
+   if(ld)ld.style.display="none";
    if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
    else{document.getElementById("gate").style.display="block";}
- }).catch(function(){document.getElementById("gate").style.display="block";});
+ }).catch(function(){if(ld)ld.style.display="none";document.getElementById("gate").style.display="block";});
 </script></body></html>

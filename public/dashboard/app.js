@@ -431,6 +431,13 @@ async function init(){
           fbLink.setAttribute("onclick","renderFeedbackAdmin()");
           fbLink.textContent = "\ud83d\udcac Feedback Inbox";
           menuEl.insertBefore(fbLink, menuEl.firstChild);
+        if(!document.getElementById("mockshot_admin_link")){
+          var msLink = document.createElement("div");
+          msLink.id = "mockshot_admin_link";
+          msLink.setAttribute("onclick","window.open('/admin/mockshot.html','_blank')");
+          msLink.textContent = "\ud83c\udfa8 MockShot Studio";
+          menuEl.insertBefore(msLink, menuEl.firstChild);
+        }
         }
       }
     }
