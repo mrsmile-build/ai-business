@@ -1,7 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MockShot Studio | AI Business (admin)</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0b1220;color:#e2e8f0;margin:0;padding:20px 14px 60px}
 h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18px}
@@ -72,18 +71,30 @@ function render(){
  document.getElementById("mock").innerHTML=top(b)+sceneHTML(b,s)+cap;
 }
 ["biz","scene","custom","capOn"].forEach(function(id){document.getElementById(id).addEventListener("input",render);document.getElementById(id).addEventListener("change",render);});
+function loadH2C(){return new Promise(function(res,rej){if(window.html2canvas)return res();var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=function(){res();};s.onerror=function(){rej(new Error("cdn"));};document.head.appendChild(s);});}
 document.getElementById("dl").onclick=function(){
  var btn=this;btn.disabled=true;btn.textContent="Rendering\u2026";
- html2canvas(document.getElementById("mock"),{backgroundColor:"#0b1220",scale:2}).then(function(c){
+ loadH2C().then(function(){return html2canvas(document.getElementById("mock"),{backgroundColor:"#0b1220",scale:2});}).then(function(c){
    var a=document.createElement("a");a.download="aib-mockshot-"+Date.now()+".png";a.href=c.toDataURL("image/png");a.click();
    btn.disabled=false;btn.textContent="\u2b07 Download PNG";
- }).catch(function(){btn.disabled=false;btn.textContent="\u2b07 Download PNG";alert("Download blocked on this browser \u2014 just screenshot the phone frame instead.");});
+ }).catch(function(){btn.disabled=false;btn.textContent="\u2b07 Download PNG";alert("Image library couldn't load on this network \u2014 just screenshot the phone frame instead (it looks identical).");});
 };
 var ld=document.getElementById("loading");
-fetch("https://ai-business-1-ok3x.onrender.com/api/me",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}})
- .then(function(r){return r.json();}).then(function(d){
-   if(ld)ld.style.display="none";
-   if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
-   else{document.getElementById("gate").style.display="block";}
- }).catch(function(){if(ld)ld.style.display="none";document.getElementById("gate").style.display="block";});
+function showGate(msg){var g=document.getElementById("gate");g.style.display="block";g.innerHTML=msg+' <button onclick="checkAdmin()" style="margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer">Retry</button>';}
+function checkAdmin(){
+  if(ld){ld.style.display="block";ld.textContent="Checking admin access\u2026 (first open can take ~30s while the server wakes)";}
+  var ctl=("AbortController" in window)?new AbortController():null;
+  var to=ctl?setTimeout(function(){ctl.abort();},25000):null;
+  fetch("https://ai-business-1-ok3x.onrender.com/api/me",{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:ctl?ctl.signal:undefined})
+   .then(function(r){return r.json();}).then(function(d){
+     if(to)clearTimeout(to); if(ld)ld.style.display="none";
+     if(d&&d.user&&d.user.email===ADMIN){document.getElementById("ui").style.display="block";render();}
+     else{showGate("Signed in, but not as the owner account.");}
+   }).catch(function(){
+     if(to)clearTimeout(to); if(ld)ld.style.display="none";
+     showGate("Couldn't reach the server (it may still be waking). Tap retry in a few seconds.");
+   });
+}
+window.checkAdmin=checkAdmin;
+checkAdmin();
 </script></body></html>
