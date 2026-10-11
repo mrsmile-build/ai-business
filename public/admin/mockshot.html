@@ -1,4 +1,7 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MockShot Studio | AI Business (admin)</title>
 <style>
@@ -32,7 +35,7 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
 .promo .txt .price{color:#facc15;font-size:20px;font-weight:800}
 .cap{font-size:10px;color:#64748b;text-align:center;padding:8px 0 10px}
 </style></head><body>
-<h1>🎨 MockShot Studio</h1>
+<h1>🎨 MockShot Studio <span style="font-size:11px;color:#475569;font-weight:400">v2</span></h1>
 <p class="sub">Admin-only. Renders AI Business UI with <b>sample data</b> for marketing images. Interface is illustrated; never use it to fake testimonials or reviews.</p>
 <div id="loading" style="color:#94a3b8;font-size:13px;margin:0 0 14px">Checking admin access… (first open can take ~30s while the server wakes)</div>
 <div id="gate" style="display:none">Admin only. Sign in with the owner account first.</div>
@@ -97,4 +100,12 @@ function checkAdmin(){
 }
 window.checkAdmin=checkAdmin;
 checkAdmin();
-</script></body></html>
+</script><script>/* watchdog */
+setTimeout(function(){
+  var ld=document.getElementById("loading"),ui=document.getElementById("ui"),g=document.getElementById("gate");
+  if(ld && ld.style.display!=="none" && ui.style.display!=="block" && g.style.display!=="block"){
+    ld.innerHTML="Still checking \u2014 server asleep or this page is cached. <button onclick=\"location.href=location.pathname+'?v='+Date.now()\" style=\"margin-left:8px;background:#ff5c00;border:none;color:#fff;border-radius:8px;padding:6px 12px;font-weight:700;cursor:pointer\">Force fresh load</button>";
+  }
+},10000);
+</script>
+</body></html>
