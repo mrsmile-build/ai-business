@@ -6634,14 +6634,25 @@ async function loadGuide(){
     }catch(_){}
   }, false);
 })();
-/* AIB_FB_V4 */
+/* AIB_FB_V5 */
 (function(){
-  if(window.__aibFbV4) return; window.__aibFbV4=1;
-  function open(){ try{ if(typeof showFeedbackPopup==="function" && !document.getElementById("aib_feedback_modal")) showFeedbackPopup(); }catch(_){} }
+  if(window.__aibFbV5) return; window.__aibFbV5=1;
+  function openFB(){
+    if(document.getElementById("aib_feedback_modal")) return;      // already open -> no flicker, no double
+    try{
+      if(typeof showFeedbackPopup==="function"){ showFeedbackPopup(); }
+      else { alert("FB: showFeedbackPopup not defined (app.js load order)"); }
+    }catch(e){ alert("FB error: "+e.message); }                    // surfaces the real cause on your phone, no devtools
+  }
   function ready(fn){ if(document.readyState!=="loading") fn(); else document.addEventListener("DOMContentLoaded",fn); }
   ready(function(){
     try{
-      /* DOOR 1 (guaranteed): a floating button I create + wire directly. No matching, no bubbling. */
+      /* DOOR 1: the real header button, bound directly by its known onclick (ground truth from grep).
+         addEventListener runs AFTER the inline onclick; if inline already opened it, the guard above returns.
+         If inline was being swallowed, THIS opens it. Either way the modal ends open. */
+      var hb=document.querySelector('button[onclick*="showFeedbackPopup"]');
+      if(hb){ hb.addEventListener("click", openFB, false); }
+      /* DOOR 2: a floating button I own end-to-end, so a tap CANNOT fail to reach openFB. */
       if(!document.getElementById("aib_fb_fab")){
         var b=document.createElement("button"); b.id="aib_fb_fab"; b.type="button";
         b.setAttribute("aria-label","Feedback");
@@ -6649,23 +6660,10 @@ async function loadGuide(){
         b.textContent="\ud83d\udcac";
         b.onmousedown=function(){ b.style.transform="scale(.92)"; };
         b.onmouseup=b.onmouseleave=function(){ b.style.transform="scale(1)"; };
-        b.onclick=function(e){ e.stopPropagation(); open(); };   // direct handler -> cannot be swallowed
+        b.onclick=function(e){ e.stopPropagation(); openFB(); };
         document.body.appendChild(b);
       }
     }catch(_){}
   });
-  /* DOOR 2 (best-effort): the real header pill, via capture phase + own-text/own-label only (containers can't trigger). */
-  function norm(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z]/g,""); }
-  function ownText(node){ var s="",cn=node.childNodes; for(var i=0;i<cn.length;i++){ if(cn[i].nodeType===3) s+=cn[i].nodeValue; } return s; }
-  function isFb(node){ if(norm(ownText(node))==="feedback") return true; if(node.getAttribute){ var al=(node.getAttribute("aria-label")||"")+(node.getAttribute("title")||""); if(norm(al)==="feedback") return true; } return false; }
-  document.addEventListener("click", function(e){
-    try{
-      if(document.getElementById("aib_feedback_modal")) return;
-      if(e.target.closest("#aib_feedback_modal")||e.target.closest("#menu")||e.target.closest("#aib_fb_fab")) return;
-      var node=e.target, hit=false;
-      while(node && node!==document.documentElement){ if(isFb(node)){ hit=true; break; } node=node.parentElement; }
-      if(hit){ e.stopPropagation(); open(); }   // capture-phase stop -> the pill's own (possibly broken) inline handler is bypassed, we run the right one
-    }catch(_){}
-  }, true);   // <-- capture phase: defeats any stopPropagation that was eating the bubble listener
 })();
 
