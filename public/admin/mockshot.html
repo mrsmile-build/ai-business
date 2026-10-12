@@ -45,10 +45,13 @@ h1{font-size:20px;margin:0 0 4px}.sub{color:#94a3b8;font-size:13px;margin:0 0 18
   <div class="bar">
     <select id="biz"></select>
     <select id="scene"></select>
+    <select id="count"><option value="1">1 business</option><option value="3">3</option><option value="5">5</option><option value="8">8</option><option value="10">10</option></select>
+    <select id="mix"><option value="mixed">Mixed niches</option><option value="same">Same niche</option></select>
   </div>
   <div class="fld"><label>Business name</label><input id="bname"></div>
   <div class="fld"><label>Location (any city / country)</label><input id="bloc"></div>
   <div class="fld"><label>Services (one per line: Name | price)</label><textarea id="bsvc"></textarea></div>
+  <div id="multiNote" style="font-size:11px;color:#64748b;margin:2px 0 8px"></div>
   <div class="bar">
     <label><input type="checkbox" id="capOn" checked> "Sample data" caption</label>
     <button id="dl">⬇ Download PNG</button>
@@ -72,7 +75,13 @@ var PRESETS={
  world_uk:{l:"World · UK",name:"Thames Side Lettings",loc:"London, UK",phone:"+44 20 7000 1122",svc:[["Tenant referencing","180"],["Inventory check","240"]],color:"#3b82f6"},
  world_us:{l:"World · USA",name:"Lone Star Auto Care",loc:"Houston, USA",phone:"+1 713 000 1122",svc:[["Full service","180"],["Diagnostics","65"]],color:"#ef4444"},
  world_ke:{l:"World · Kenya",name:"Savannah Bloom Salon",loc:"Nairobi, Kenya",phone:"+254 700 001122",svc:[["Braids","2500"],["Manicure","1200"]],color:"#22c55e"},
- custom:{l:"Custom… (type your own)",name:"Your Business",loc:"Your City",phone:"",svc:[["Your service","10000"]],color:"#ff7a1a"}
+ custom:{l:"Custom… (type your own)",name:"Your Business",loc:"Your City",phone:"",svc:[["Your service","10000"]],color:"#ff7a1a"},
+ designer:{l:"Freelance · designer",name:"PixelForge Design",loc:"Remote · Lagos",phone:"",svc:[["Brand identity","80000"],["Social pack","35000"]],color:"#a855f7"},
+ developer:{l:"Freelance · developer",name:"ShipFast Dev Studio",loc:"Remote · Abuja",phone:"",svc:[["Landing page","120000"],["Web app sprint","350000"]],color:"#3b82f6"},
+ writer:{l:"Freelance · writer",name:"InkWell Content Co",loc:"Remote · Ibadan",phone:"",svc:[["Blog package","40000"],["Ad copy set","25000"]],color:"#f59e0b"},
+ va:{l:"Freelance · assistant",name:"Orderly VA Hub",loc:"Remote · Lagos",phone:"",svc:[["Monthly retainer","90000"],["Inbox setup","30000"]],color:"#10b981"},
+ caterer:{l:"Catering",name:"TableTurn Catering",loc:"Magodo, Lagos",phone:"0803 771 2244",svc:[["Per head (event)","6500"],["Corporate lunch/mo","180000"]],color:"#ef4444"},
+ trainer:{l:"Personal training",name:"RepCount Fitness",loc:"Wuse 2, Abuja",phone:"0806 119 8830",svc:[["12-session block","75000"],["Single session","8000"]],color:"#06b6d4"}
 };
 /* SCENES registry — a curated gallery. To add a FUTURE feature, add one entry here (~5 lines).
    It will NOT auto-appear; a human designs how it looks, then registers it. announcements.json
@@ -92,6 +101,63 @@ var SCENES={
  invoice:{l:"Invoice",render:function(b){return '<div class="m-body"><div class="card"><h4>Invoice #0042 \u00b7 '+b.name+'</h4><p class="meta">Issued today \u00b7 due in 7 days</p>'+b.svc.map(function(x){return '<div class="row"><span>'+x[0]+'</span><span>'+money(x[1])+'</span></div>';}).join("")+'<div class="row" style="border-top:1px solid #334155"><b>Total</b><b>'+money(b.svc.reduce(function(a,x){return a+Number(x[1]);},0))+'</b></div><div style="margin-top:8px"><span class="pill amber">awaiting payment</span></div></div></div>';}},
  reviews:{l:"Review collector",render:function(b){return '<div class="m-body"><div class="card"><h4>Review request sent</h4><p class="meta">'+b.name+' \u00b7 after last sale</p><div style="font-size:20px;letter-spacing:3px;color:#fbbf24;margin:6px 0">\u2605\u2605\u2605\u2605\u2605</div><p style="font-size:12px;color:#cbd5e1;margin:0 0 8px">\u201c'+b.svc[0][0]+' was excellent \u2014 fast and friendly.\u201d</p><span class="pill green">posted to Google</span></div></div>';}}
 };
+var LOC_POOL=["Lekki, Lagos","Yaba, Lagos","Ikeja, Lagos","Victoria Island, Lagos","Surulere, Lagos","Garki, Abuja","Wuse 2, Abuja","Port Harcourt","Enugu","Kano","Ibadan","Abeokuta"];
+var NAME_POOL={
+ realestate:["Zebra Realty","Anchor Homes","Keystone Properties","Skyline Lets","Urban Key"],
+ salon:["Glow & Go","Royal Touch","Serene Studio","AfroBraid Bar","Luxe Lathers"],
+ mechanical:["TorqueWorks","AutoPulse","GearHead Garage","Precision Motors","IronWill Auto"],
+ restaurant:["Mama Put Grill","PlateHouse","Suya Point","The Chop Bar","Golden Ladle"],
+ fashion:["Adire & Threads","Stitch Lab","Vogue Vault","Closet Co","Thread Republic"],
+ pharmacy:["CarePoint","MediTrust","WellScript","HealthNest","Rx Corner"],
+ gym:["IronWill Hub","PulseFit","RepCount","FlexDomain","CoreClub"],
+ photography:["LensLight","FrameForge","ShutterSide","Aperture Co","GoldHour"],
+ designer:["PixelForge","BrandSmith","Canvas Collective","LogoLab","Studio Nine"],
+ developer:["ShipFast","CodeCrate","BuildLoop","StackWorks","DevDock"],
+ writer:["InkWell","WordForge","CopyCartel","Narrative Co","PenPoint"],
+ va:["Orderly Hub","TaskTide","AdminAlly","DeskZero","FlowVA"],
+ caterer:["TableTurn","FeastLine","Platter Co","CaterCraft","SpoonFed"],
+ trainer:["RepCount","FormFirst","SetPoint","Stride Coach","PeakPlan"]
+};
+var MIX_ORDER=["salon","mechanical","restaurant","realestate","fashion","pharmacy","gym","photography","designer","developer","writer","caterer"];
+var MULTI={lead:1,whatsapp:1,social:1,reviews:1};
+var STATUS=[["quiet 4 days","red"],["no follow-up","amber"],["new enquiry","green"],["reachable","green"],["replied 2h ago","amber"]];
+var TIMES=["9:12 AM","8:40 AM","Yesterday","Mon, 4:18 PM","Tue, 11:02 AM","3 days ago","1h ago","Fri, 2:30 PM"];
+function buildList(count,mix,nicheKey){
+ var out=[],i,p,names;
+ if(mix==="mixed"){
+   for(i=0;i<count;i++){ p=PRESETS[MIX_ORDER[i%MIX_ORDER.length]];
+     out.push({name:p.name,loc:LOC_POOL[(i*5+3)%LOC_POOL.length],phone:p.phone||"",svc:p.svc,color:p.color}); }
+ } else {
+   p=PRESETS[nicheKey]||PRESETS.realestate; names=NAME_POOL[nicheKey]||NAME_POOL.realestate;
+   for(i=0;i<count;i++){ out.push({name:names[i%names.length],loc:LOC_POOL[(i*7+1)%LOC_POOL.length],phone:p.phone||"",svc:p.svc,color:p.color}); }
+ }
+ return out;
+}
+function renderMulti(s,arr){
+ var i,b,h="",st,tm;
+ if(s==="lead"){
+   h+='<div style="padding:2px 0 8px"><b style="font-size:12px;color:#94a3b8">Lead Finder \u00b7 '+arr.length+' results</b></div>';
+   for(i=0;i<arr.length;i++){ b=arr[i]; st=STATUS[i%STATUS.length]; tm=TIMES[(i*3)%TIMES.length];
+     h+='<div class="card" style="padding:11px 12px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="min-width:0"><b style="font-size:13px;color:#f8fafc;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+b.name+'</b><div class="meta" style="margin:2px 0 0">'+b.loc+(b.phone?(' \u00b7 '+b.phone):'')+'</div></div><span class="pill '+st[1]+'" style="margin:0">'+st[0]+'</span></div><div class="row" style="margin-top:6px"><span>Suggested action</span><span style="color:#60a5fa">Draft follow-up \u2192</span></div></div>';
+   }
+ } else if(s==="whatsapp"){
+   h+='<div style="padding:2px 0 8px"><b style="font-size:12px;color:#94a3b8">Follow-up inbox \u00b7 '+arr.length+' threads</b></div>';
+   for(i=0;i<arr.length;i++){ b=arr[i]; tm=TIMES[(i*2+1)%TIMES.length];
+     h+='<div style="display:flex;gap:10px;align-items:center;padding:11px 4px;border-bottom:1px solid #1e293b"><div style="width:34px;height:34px;border-radius:50%;background:'+b.color+';flex:0 0 auto"></div><div style="flex:1;min-width:0"><b style="font-size:13px;color:#f8fafc;display:block">'+b.name+'</b><div style="font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">re: '+b.svc[0][0].toLowerCase()+' \u2014 follow-up drafted, awaiting reply</div></div><div style="font-size:10px;color:#64748b;flex:0 0 auto">'+tm+'</div><div style="width:7px;height:7px;border-radius:50%;background:#22c55e;flex:0 0 auto"></div></div>';
+   }
+ } else if(s==="social"){
+   h+='<div style="padding:2px 0 8px"><b style="font-size:12px;color:#94a3b8">Social feed \u00b7 '+arr.length+' businesses posting</b></div>';
+   for(i=0;i<arr.length;i++){ b=arr[i];
+     h+='<div class="card"><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><div style="width:30px;height:30px;border-radius:50%;background:'+b.color+'"></div><div><b style="font-size:12px;color:#f8fafc">'+b.name+'</b><div style="font-size:10px;color:#64748b">'+b.loc+'</div></div></div><p style="font-size:12px;color:#cbd5e1;margin:0 0 8px">Now booking '+b.svc[0][0].toLowerCase()+' this week \ud83d\udd25 '+money(b.svc[0][1])+'. DM or WhatsApp to reserve \ud83d\udc47</p><span class="pill amber">#'+b.loc.split(",")[0].replace(/\s/g,"")+'</span><span class="pill green">#SmallBusiness</span><span class="pill red">#NowBooking</span></div>';
+   }
+ } else if(s==="reviews"){
+   h+='<div style="padding:2px 0 8px"><b style="font-size:12px;color:#94a3b8">Review wall \u00b7 '+arr.length+' happy customers</b></div>';
+   for(i=0;i<arr.length;i++){ b=arr[i];
+     h+='<div class="card"><div style="font-size:16px;letter-spacing:2px;color:#fbbf24;margin-bottom:6px">\u2605\u2605\u2605\u2605\u2605</div><p style="font-size:12px;color:#cbd5e1;margin:0 0 8px">\u201c'+b.svc[0][0]+' was excellent \u2014 fast, fair price, would refer.\u201d</p><div style="font-size:11px;color:#64748b">'+b.name+' \u00b7 '+b.loc+'</div></div>';
+   }
+ }
+ return '<div class="m-body">'+h+'</div>';
+}
 function money(n){return "\u20a6"+Number(String(n).replace(/[^0-9.]/g,"")||0).toLocaleString();}
 function fillSelects(){
   var bz=document.getElementById("biz"),sc=document.getElementById("scene");
@@ -114,10 +180,21 @@ function currentBiz(){
   return {name:document.getElementById("bname").value.trim()||p.name,loc:document.getElementById("bloc").value.trim()||p.loc,phone:p.phone||"",svc:svc,color:p.color};
 }
 function render(){
-  var b=currentBiz();
-  var s=document.getElementById("scene").value;
-  var cap=document.getElementById("capOn").checked?'<div class="cap">Illustration \u00b7 sample data</div>':'';
-  document.getElementById("mock").innerHTML='<div class="m-top"><div class="m-logo">\ud83d\udcca</div><div class="m-name">AI Business</div><div class="m-plan">Starter</div></div>'+SCENES[s].render(b)+cap;
+ var s=document.getElementById("scene").value;
+ var cap=document.getElementById("capOn").checked?'<div class="cap">Illustration \u00b7 sample data</div>':'';
+ var top='<div class="m-top"><div class="m-logo">\ud83d\udcca</div><div class="m-name">AI Business</div><div class="m-plan">Starter</div></div>';
+ var count=parseInt(document.getElementById("count").value,10)||1;
+ var mix=document.getElementById("mix").value;
+ var note=document.getElementById("multiNote");
+ if(MULTI[s] && count>1){
+   var arr=buildList(count,mix,document.getElementById("biz").value);
+   document.getElementById("mock").innerHTML=top+renderMulti(s,arr)+cap;
+   if(note)note.textContent="List mode \u00b7 "+arr.length+" businesses ("+(mix==="mixed"?"mixed niches":"same niche")+"). Name/location/services fields apply to single views.";
+ } else {
+   var b=currentBiz();
+   document.getElementById("mock").innerHTML=top+SCENES[s].render(b)+cap;
+   if(note)note.textContent=MULTI[s]?"":"Single-document view \u00b7 switch scene to Lead Finder / WhatsApp / Social / Reviews for multi-business lists.";
+ }
 }
 function loadH2C(){return new Promise(function(res,rej){if(window.html2canvas)return res();var s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";s.onload=function(){res();};s.onerror=function(){rej(new Error("cdn"));};document.head.appendChild(s);});}
 function setStatus(t){var ld=document.getElementById("loading");if(ld){ld.style.display="block";ld.textContent=t;}}
@@ -140,7 +217,7 @@ function attempt(n){
 }
 function checkAdmin(){attempt(1);}
 document.getElementById("biz").addEventListener("change",applyPreset);
-["scene","bname","bloc","bsvc","capOn"].forEach(function(id){var el=document.getElementById(id);el.addEventListener("input",render);el.addEventListener("change",render);});
+["scene","bname","bloc","bsvc","capOn","count","mix"].forEach(function(id){var el=document.getElementById(id);el.addEventListener("input",render);el.addEventListener("change",render);});
 document.getElementById("dl").onclick=function(){
  var btn=this;btn.disabled=true;btn.textContent="Rendering\u2026";
  loadH2C().then(function(){return html2canvas(document.getElementById("mock"),{backgroundColor:"#0b1220",scale:2});}).then(function(c){
