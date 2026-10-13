@@ -3025,6 +3025,13 @@ async function renderRevenue(){
 /* =========================
    PROPOSAL GENERATOR
 ========================= */
+function normNaira(t){
+  if(typeof t!=="string") return t;
+  return t
+    .replace(/\u20a6\s*\u20a6+/g,"\u20a6")
+    .replace(/(&#8358;)\s*(&#8358;)+/g,"$1")
+    .replace(/\u20a6\s*(\d[\d,]*(?:\.\d+)?)\s*\u20a6/g,"\u20a6$1");
+}
 function renderProposal(){
   setView(`
     <div class="card">
@@ -3078,6 +3085,7 @@ async function generateProposal(){
   const selectedLead = window._selectedLeadForProposal || {};
   
   try{
+    {var _d=document.getElementById("pr_details"); if(_d){ _d.value=_d.value.replace(/\u20a6\s*\u20a6+/g,"\u20a6"); } }
     const res = await apiFetch("/api/generate-proposal",{
       method:"POST",
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
@@ -3106,7 +3114,7 @@ async function generateProposal(){
             <p style="margin:0;font-size:13px;color:#94a3b8">Your proposal is ready</p>
             <button onclick="copyProposal()" style="padding:6px 12px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy All</button>
           </div>
-          <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${data.proposal.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+          <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${normNaira(data.proposal).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
           <button onclick="shareProposal()" style="width:100%;margin-top:10px;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📤 Share Proposal</button>
         </div>`;
     } else {
