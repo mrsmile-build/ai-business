@@ -1218,6 +1218,12 @@ async function renderLeadDetailObj(lead){
       </div>
 
       <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
+        <p style="margin:0 0 10px;font-size:13px;font-weight:bold">ℹ️ Business Information</p>
+        ${lead.address?`<p style="margin:0 0 6px;font-size:12px;color:#cbd5e1">📍 ${lead.address}</p>`:""}
+        ${lead.website?`<p style="margin:0 0 6px;font-size:12px"><a href="${lead.website}" target="_blank" rel="noopener" style="color:#60a5fa;text-decoration:none">🌐 ${lead.website}</a></p>`:`<p style="margin:0 0 6px;font-size:12px;color:#64748b">🌐 No website found</p>`}
+        ${lead.rating?`<p style="margin:0 0 6px;font-size:12px;color:#cbd5e1">⭐ ${lead.rating} / 5${lead.review_count?` (${lead.review_count} reviews)`:""}</p>`:""}
+      </div>
+      <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
         <p style="margin:0 0 10px;font-size:13px;font-weight:bold">⏰ Follow-up Reminder</p>
         <p style="margin:0 0 6px;font-size:12px;color:#64748b">Set a date to follow up with this lead</p>
         <input type="date" id="ld_followup" value="${lead.follow_up_date||""}" min="${new Date().toISOString().split("T")[0]}" style="width:100%;padding:9px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;margin-bottom:8px">
@@ -3025,6 +3031,14 @@ async function renderRevenue(){
 /* =========================
    PROPOSAL GENERATOR
 ========================= */
+function proposalWithGuarantee(t){
+  var on=document.getElementById("pr_include_guarantee");
+  if(!on||!on.checked||typeof t!=="string") return t;
+  var g="\n\nGUARANTEE (optional \u2014 edit or delete this block): [State your guarantee here, e.g. If X doesn't improve within Y days, I'll do Z at no cost.]";
+  var ls=t.split("\n");
+  for(var i=0;i<ls.length;i++){ if(/terms\s*&?\s*validity/i.test(ls[i])){ ls.splice(i,0,g); return ls.join("\n"); } }
+  return t+g;
+}
 function normNaira(t){
   if(typeof t!=="string") return t;
   return t
@@ -3056,6 +3070,10 @@ function renderProposal(){
           <option value="winback">💌 Win-back Offer (re-engage past clients)</option>
         </select>
       </div>
+      <label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;cursor:pointer">
+        <input type="checkbox" id="pr_include_guarantee" style="margin-top:3px;accent-color:#3b82f6">
+        <span style="font-size:12px;color:#94a3b8;line-height:1.5">Add an optional guarantee section (editable placeholder — delete it if you don't offer one)</span>
+      </label>
       <button onclick="generateProposal()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;margin-bottom:15px">📄 Generate Proposal</button>
 
       <div id="proposal_result"></div>
@@ -3114,7 +3132,7 @@ async function generateProposal(){
             <p style="margin:0;font-size:13px;color:#94a3b8">Your proposal is ready</p>
             <button onclick="copyProposal()" style="padding:6px 12px;background:#10b981;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy All</button>
           </div>
-          <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${normNaira(data.proposal).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
+          <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${proposalWithGuarantee(normNaira(data.proposal)).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
           <button onclick="shareProposal()" style="width:100%;margin-top:10px;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📤 Share Proposal</button>
         </div>`;
     } else {
