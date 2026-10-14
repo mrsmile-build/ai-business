@@ -416,12 +416,15 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
     if (limits.leads !== Infinity && count >= limits.leads) {
       return res.json({ success: false, error: "Lead limit reached. Upgrade your plan." });
     }
-    const { name, phone, email, business, message } = req.body;
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({ user_id: req.user.id, name, phone, email, business, message })
-      .select()
-      .single();
+    const { name, phone, email, business, message, website, rating, review_count } = req.body;
+    const base = { user_id: req.user.id, name, phone, email, business, message };
+    const extra = {};
+    if (website !== undefined) extra.website = website || null;
+    if (rating !== undefined && rating !== null && rating !== "") extra.rating = Number(rating);
+    if (review_count !== undefined && review_count !== null && review_count !== "") extra.review_count = Number(review_count);
+    let _r = await supabase.from("leads").insert({ ...base, ...extra }).select().single();
+    if (_r.error) _r = await supabase.from("leads").insert(base).select().single(); // migration pending -> graceful fallback
+    const { data, error } = _r;
     if (error) throw error;
     const { count: leadCount } = await supabase.from("leads").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
     const ord = (leadCount===1)?"1st":(leadCount===2?"2nd":(leadCount===3?"3rd":(leadCount||0)+"th"));
@@ -438,7 +441,7 @@ app.post("/api/leads", authMiddleware, async (req, res) => {
 /* ---------------- LEADS UPDATE ---------------- */
 app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
   try {
-    const { status, notes, name, phone, email, business, follow_up_date, sale_amount } = req.body;
+    const { status, notes, name, phone, email, business, follow_up_date, sale_amount, website, rating, review_count } = req.body;
     const updates = {};
     if(status !== undefined) updates.status = status;
     if(notes !== undefined) updates.notes = notes;
@@ -448,6 +451,9 @@ app.patch("/api/leads/:id", authMiddleware, async (req, res) => {
     if(business !== undefined) updates.business = business;
     if(follow_up_date !== undefined) updates.follow_up_date = follow_up_date;
     if(sale_amount !== undefined) updates.sale_amount = sale_amount;
+    if(website !== undefined) updates.website = website || null;
+    if(rating !== undefined) updates.rating = (rating===null||rating==="")?null:Number(rating);
+    if(review_count !== undefined) updates.review_count = (review_count===null||review_count==="")?null:Number(review_count);
     updates.updated_at = new Date();
     const { data, error } = await supabase
       .from("leads")

@@ -2856,7 +2856,7 @@ async function searchLeads(){
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
             <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
             ${l.phone?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
-            <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
+            <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save',${(l.rating ?? l.ratingValue ?? l.stars) ?? 'null'},${(l.review_count ?? l.reviews ?? l.userRatingCount ?? l.num_reviews) ?? 'null'})" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
           </div>
           <div id="note_${i}" style="display:none;margin-top:10px">
@@ -2914,7 +2914,7 @@ function copyEditedMsg(i){
   });
 }
 
-async function saveToLeads(i, name, phone, business, address, website, action){
+async function saveToLeads(i, name, phone, business, address, website, action, rating, review_count){
   const message = document.getElementById("msg_"+i)?.value||"";
   try{
     const res = await apiFetch("/api/leads",{
@@ -2922,6 +2922,9 @@ async function saveToLeads(i, name, phone, business, address, website, action){
       headers:{"Content-Type":"application/json", Authorization:"Bearer "+localStorage.getItem("token")},
       body: JSON.stringify({
         name, phone, email: "", business,
+        website: website || null,
+        rating: (rating!==""&&rating!=null)?Number(rating):null,
+        review_count: (review_count!==""&&review_count!=null)?Number(review_count):null,
         message: "Found via Lead Finder. Address: "+address+". Website: "+website+". Drafted: "+message.slice(0,200),
         status: action==="wa" ? "contacted" : "new"
       })
