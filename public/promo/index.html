@@ -156,7 +156,37 @@ document.getElementById("pColor").addEventListener("input",function(){document.g
 document.getElementById("pImg").addEventListener("change",function(){var box=document.getElementById("pImgBox"),self=this;box.innerHTML="Loading photos…";loadImgs(self.files,function(){var h="Photos ready ("+IMGELS.length+"): ";IMGELS.forEach(function(im){if(im)h+='<img src="'+im.src+'">';});box.innerHTML=h;});});
 document.getElementById("rec").onclick=function(){
   var b=this;b.disabled=true;
-  function finish(blob){var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="ai-business-promo.webm";document.body.appendChild(a);a.click();a.remove();b.disabled=false;b.textContent="⏺ Record & Download";setStatus("✅ Saved. Send it on WhatsApp.");}
+  function promoCaption(){
+  return "🎬 Promo made with AI Business — the free tool that finds & books customers for businesses like this one. Try it 👉 https://www.ai-business.com.ng";
+}
+function promoShareClick(){
+  var blob=window._promoBlob, cap=promoCaption();
+  if(!blob){ if(navigator.clipboard){navigator.clipboard.writeText(cap).then(function(){alert("Caption copied — paste it under your video.");});} else {alert(cap);} return; }
+  var file=new File([blob],"ai-business-promo.webm",{type:blob.type||"video/webm"});
+  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:"AI Business promo",text:cap}).catch(function(){});
+  } else if(navigator.share){
+    navigator.share({title:"AI Business promo",text:cap}).catch(function(){});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(cap).then(function(){alert("Video downloaded. Caption copied — paste it under the video on WhatsApp/Status.");});
+  } else { alert("Video downloaded. Post it with: "+cap); }
+}
+function showPromoShare(blob){
+  window._promoBlob=blob;
+  var rec=document.getElementById("rec");
+  if(!rec||!rec.parentElement) return;
+  var btn=document.getElementById("promo_share_btn");
+  if(!btn){
+    btn=document.createElement("button");
+    btn.id="promo_share_btn"; btn.className="act";
+    btn.style.cssText="margin-top:8px;background:#8b5cf6;color:white;border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;width:100%;cursor:pointer";
+    btn.textContent="📤 Share this video (with your link)";
+    btn.onclick=promoShareClick;
+    rec.parentElement.appendChild(btn);
+  }
+  btn.style.display="block";
+}
+function finish(blob){var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="ai-business-promo.webm";document.body.appendChild(a);a.click();a.remove();b.disabled=false;b.textContent="⏺ Record & Download";setStatus("✅ Saved. Tap Share to post it with your link.");showPromoShare(blob);}
   function fail(m){b.disabled=false;b.textContent="⏺ Record & Download";setStatus(m);}
   var narration=sanitize(SCENES.filter(function(s){return !s.isUrlCard&&!s.isHookFrame;}).map(function(s){return s.narration;}).join(" "));
   if(!VOICE){b.textContent="⏺ Recording… (~"+TOTAL+"s)";renderKineticVideo(SCENES,null,BRAND,OPTS).then(finish).catch(function(e){fail("Record failed: "+e.message);});return;}

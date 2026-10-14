@@ -14,8 +14,8 @@
 - 60-sec tour, lead fit-scores, note persistence, "Reminder only — nothing auto-sends" clarity (Precious-confirmed)
 - Referral/share via navigator.share exists in code
 
-## 🔧 ACTIVE — finish first (do not start anything else until this is green)
-- [ ] Rating/review_count on the BULK + WhatsApp-save paths (the single Save button already passes it; the read above names the real leak). Then verify in incognito via the green button on a FRESH finder lead.
+## ✅ JUST CLOSED — verified live (⭐ 4.5/5, 51 reviews on a fresh finder lead)
+- [x] Rating/review_count now passes on ALL three save paths (single Save, WhatsApp-send, bulk) and stores correctly. Old rows stay NULL (data was never captured); only new saves populate.
 
 ## ⏭ NEXT bounded builds (pick ONE, ship, then stop)
 - [ ] Share-on-output: native sheet + "Made with AI Business → link" caption on the promo-video result AND storefront. (The ChatGPT mechanic: the artifact carries the brand. ~90% exists already.)
@@ -41,6 +41,7 @@
 - [ ] SEND Glory's proposal (it's clean, over-promises nothing, Precious's principle in prose — and it's sitting UNSENT).
 - [ ] Reply to Victor / Emmanuel / Aisha (warm threads go cold by noon).
 - [ ] Draft Precious's blog ONLY after her exams + her explicit approval of wording & name format (she asked to see it first — honor that literally; she's co-author now, not source).
+- [ ] Appreciate Precious the RIGHT way — NOT a public git-commit credit (an attribution she never approved, and it's *her own* principle applied to her name). Instead: a named role — 'Founding Product Tester' — she can put on her CV/LinkedIn; a PRIVATE thank-you naming the specific bugs she caught and what each became; the public blog stays gated on her approval + her chosen name format. A 'Founding Tester' in-app badge or a free Pro month are real, costless, flattering. The homepage pull-quote is already live & consented — leave it, don't over-expose her.
 - [ ] Post: brother's 10 heart-posts + our proof-carousels, interleaved; each ends with a QUESTION + "repost if this helps one owner you know" + tag the people who helped (that's how her 500 comments happened — a gratitude loop, free at any follower count).
 - [ ] Decide in one word each: Render pinger (UptimeRobot/cron-job.org, keep ONE backend warm)? Weekly pg_dump recipe (disaster insurance + self-host seed)? Both are decisions, not reflexes.
 
