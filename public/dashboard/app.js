@@ -2855,7 +2855,7 @@ async function searchLeads(){
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
             <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
-            ${l.phone?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa')" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
+            ${l.phone?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa',${l.rating ?? ""},${l.reviews ?? ""})" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
             <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save',${(l.rating ?? l.ratingValue ?? l.stars) ?? 'null'},${(l.review_count ?? l.reviews ?? l.userRatingCount ?? l.num_reviews) ?? 'null'})" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
           </div>
@@ -6492,7 +6492,7 @@ window.openBulkWhatsApp = function(i){
    const lead = window._lfLeads[i];
    const phone = (lead.phone||"").replace(/[^0-9]/g,"").replace(/^0/,"234");
    // Save to CRM as contacted
-   saveToLeads(i, lead.name, lead.phone, lead.type, lead.address, lead.website, 'wa');
+   saveToLeads(i, lead.name, lead.phone, lead.type, lead.address, lead.website, 'wa', lead.rating ?? "", lead.reviews ?? "");
    window.open("https://wa.me/" + phone + "?text=" + encodeURIComponent(msg + (window._lfBrand||"")), "_blank");
 };
 
