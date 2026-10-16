@@ -528,6 +528,7 @@ function loadPage(page){
     appointments: 'renderAppointments',
     invoice: 'renderInvoice',
     bizpage: 'renderBizPage',
+    files: 'renderFiles',
     b2cgrowth: 'renderB2CGrowth'
   };
 
@@ -1225,6 +1226,98 @@ function coachStrip(lead){
 }
 function coachFocus(elId){ const el=document.getElementById(elId); if(!el) return; el.scrollIntoView({behavior:"smooth",block:"center"}); try{ el.focus({preventScroll:true}); }catch(e){ el.focus(); } el.style.outline="2px solid #f97316"; el.style.boxShadow="0 0 0 4px rgba(249,115,22,.25)"; setTimeout(()=>{ el.style.outline=""; el.style.boxShadow=""; },2200); }
 
+
+/* ===== MY FILES (plain-text docs; no folders/rich-text/sharing by design) ===== */
+function fileToast(msg){ var t=document.getElementById("file_toast"); if(!t){ t=document.createElement("div"); t.id="file_toast"; t.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#10b981;color:#04221a;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.4)"; document.body.appendChild(t);} t.textContent=msg; t.style.opacity="1"; setTimeout(function(){ t.style.opacity="0"; },2200); }
+async function saveToFile(content, defaultName){
+  var name = window.prompt("Save as file — give it a name:", defaultName||"Untitled");
+  if(name===null) return; name=String(name).trim(); if(!name){ fileToast("Needs a name"); return; }
+  try{
+    var res = await apiFetch("/api/files",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name:name,content:content||""})});
+    var d = await res.json();
+    if(d.success){ fileToast("📁 Saved to \""+name+"\""); } else { fileToast(d.error||"Save failed"); }
+  }catch(e){ fileToast("Save failed"); }
+}
+function saveLeadToFile(id){
+  var lead = window._currentOpenLead || (window._allLeads||[]).find(function(x){return x.id===id;});
+  if(!lead){ fileToast("Lead not found"); return; }
+  var lines = [];
+  lines.push("# "+(lead.name||"Lead"));
+  if(lead.business) lines.push(lead.business);
+  lines.push("");
+  lines.push("## Contact");
+  if(lead.phone) lines.push("Phone: "+lead.phone);
+  if(lead.email) lines.push("Email: "+lead.email);
+  if(lead.address) lines.push("Address: "+lead.address);
+  if(lead.website) lines.push("Website: "+lead.website);
+  if(lead.rating) lines.push("Rating: "+lead.rating+"/5"+(lead.review_count?" ("+lead.review_count+" reviews)":""));
+  lines.push("");
+  if(lead.status) lines.push("Status: "+lead.status);
+  if(lead.follow_up_date) lines.push("Follow-up: "+lead.follow_up_date);
+  if(lead.sale_amount) lines.push("Sale amount: "+lead.sale_amount);
+  lines.push("");
+  if(lead.notes){ lines.push("## Notes"); lines.push(lead.notes); lines.push(""); }
+  if(lead.message){ lines.push("## Last message / history"); lines.push(lead.message); }
+  saveToFile(lines.join("\n"), lead.name||"Lead");
+}
+async function renderFiles(){
+  setView('<div class="card">'+header("📁 My Files","dashboard")+'<p style="color:#64748b">Loading…</p></div>');
+  var files=[];
+  try{
+    var res = await apiFetch("/api/files",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var d = await res.json(); files = d.files||[];
+  }catch(e){}
+  var rows = files.length ? files.map(function(f){
+    var ex=(f.content||"").replace(/\s+/g," ").trim().slice(0,90);
+    return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px">'
+      +'<div style="min-width:0;flex:1"><p style="margin:0;font-size:14px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escapeHtml(f.name)+'</p>'
+      +'<p style="margin:2px 0 0;font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(ex?escapeHtml(ex):"empty file")+'</p>'
+      +'<p style="margin:2px 0 0;font-size:10px;color:#475569">edited '+new Date(f.updated_at).toLocaleDateString()+'</p></div>'
+      +'<div style="display:flex;gap:6px;flex-shrink:0">'
+      +'<button onclick="openFileEditor(\''+f.id+'\',\''+escapeAttr(f.name)+'\',\''+escapeAttr(f.content||"")+'\')" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:7px;cursor:pointer;font-size:12px">Edit</button>'
+      +'<button onclick="deleteFile(\''+f.id+'\')" style="padding:7px 10px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:7px;cursor:pointer;font-size:12px">🗑</button>'
+      +'</div></div>';
+  }).join("") : '<p style="color:#64748b;font-size:13px;text-align:center;padding:24px 0">No files yet. Create one, or open a lead and tap <b>📁 Save lead as file</b>.</p>';
+  setView('<div class="card">'+header("📁 My Files","dashboard")
+    +'<p style="font-size:12px;color:#64748b;margin:0 0 14px">Plain-text notes &amp; dossiers. Save a lead as a readable file, or start a blank one.</p>'
+    +'<button onclick="openFileEditor(null,\'New file\',\'\')" style="width:100%;padding:11px;background:#10b981;color:#04221a;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:14px">＋ New file</button>'
+    +rows+'</div>');
+}
+function openFileEditor(id, name, content){
+  var isNew = !id;
+  setView('<div class="card">'+header(isNew?"New file":"Edit file","files")
+    +'<label style="font-size:11px;color:#64748b;display:block;margin:0 0 4px">NAME</label>'
+    +'<input id="fe_name" value="'+escapeAttr(name||"")+'" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:14px;box-sizing:border-box;margin-bottom:12px">'
+    +'<label style="font-size:11px;color:#64748b;display:block;margin:0 0 4px">CONTENT</label>'
+    +'<textarea id="fe_content" placeholder="Type here… (plain text; # headings read nicely)" style="width:100%;min-height:320px;padding:12px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#e2e8f0;font-size:13px;line-height:1.6;box-sizing:border-box;font-family:ui-monospace,Menlo,Consolas,monospace;resize:vertical">'+escapeHtml(content||"")+'</textarea>'
+    +'<div style="display:flex;gap:8px;margin-top:12px">'
+    +'<button onclick="saveFileEditor(\''+(id||"")+'\')" style="flex:1;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">💾 Save</button>'
+    +'<button onclick="renderFiles()" style="padding:11px 16px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:13px">← Back</button>'
+    +'</div></div>');
+}
+async function saveFileEditor(id){
+  var name=(document.getElementById("fe_name").value||"").trim();
+  var content=document.getElementById("fe_content").value||"";
+  if(!name){ fileToast("Needs a name"); return; }
+  try{
+    var url = id ? "/api/files/"+id : "/api/files";
+    var method = id ? "PATCH" : "POST";
+    var res = await apiFetch(url,{method:method,headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name:name,content:content})});
+    var d = await res.json();
+    if(d.success){ fileToast(id?"Saved":"📁 Created"); renderFiles(); } else { fileToast(d.error||"Save failed"); }
+  }catch(e){ fileToast("Save failed"); }
+}
+async function deleteFile(id){
+  if(!window.confirm("Delete this file? This can't be undone.")) return;
+  try{
+    var res = await apiFetch("/api/files/"+id,{method:"DELETE",headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var d = await res.json();
+    if(d.success){ fileToast("Deleted"); renderFiles(); } else { fileToast(d.error||"Delete failed"); }
+  }catch(e){ fileToast("Delete failed"); }
+}
+function escapeHtml(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escapeAttr(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g," "); }
+
 async function renderLeadDetailObj(lead){
 
   const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
@@ -1292,8 +1385,10 @@ async function renderLeadDetailObj(lead){
         </div>
       `:""}
 
-      <div style="display:flex;gap:8px">
-        <button onclick="selectLeadForProposal('${lead.id}')" style="flex:1;padding:11px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:12px">📄 Generate Proposal</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="selectLeadForProposal('${lead.id}')" style="flex:1;min-width:140px;padding:11px;background:#0f172a;border:1px solid #334155;color:white;border-radius:8px;cursor:pointer;font-size:12px">📄 Generate Proposal</button>
+        <button onclick="saveLeadToFile('${lead.id}')" style="flex:1;min-width:140px;padding:11px;background:#0f172a;border:1px solid #1e293b;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:12px">📁 Save lead as file</button>
+        <button onclick="renderFiles()" style="padding:11px 14px;background:#0f172a;border:1px solid #1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:12px">📁 My Files</button>
         <button onclick="deleteLead('${lead.id}')" style="padding:11px 14px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;cursor:pointer;font-size:12px">🗑️ Delete</button>
       </div>
     </div>

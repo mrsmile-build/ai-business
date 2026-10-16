@@ -390,6 +390,42 @@ app.get("/api/me", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- LEADS GET ---------------- */
+// ===== MY FILES (cloned from the leads CRUD idiom; every write scoped by user_id) =====
+app.get("/api/files", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase.from("files").select("*").eq("user_id", req.user.id).order("updated_at", { ascending: false });
+    if (error) throw error;
+    res.json({ success: true, files: data || [] });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.post("/api/files", authMiddleware, async (req, res) => {
+  try {
+    const { name, content } = req.body;
+    if (!name || !String(name).trim()) return res.json({ success: false, error: "File needs a name." });
+    const { data, error } = await supabase.from("files").insert({ user_id: req.user.id, name: String(name).trim(), content: content || "" }).select().single();
+    if (error) throw error;
+    res.json({ success: true, file: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.patch("/api/files/:id", authMiddleware, async (req, res) => {
+  try {
+    const { name, content } = req.body;
+    const updates = { updated_at: new Date() };
+    if (name !== undefined) updates.name = String(name).trim();
+    if (content !== undefined) updates.content = content;
+    const { data, error } = await supabase.from("files").update(updates).eq("id", req.params.id).eq("user_id", req.user.id).select().single();
+    if (error) throw error;
+    res.json({ success: true, file: data });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+app.delete("/api/files/:id", authMiddleware, async (req, res) => {
+  try {
+    const { error } = await supabase.from("files").delete().eq("id", req.params.id).eq("user_id", req.user.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get("/api/leads", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase
