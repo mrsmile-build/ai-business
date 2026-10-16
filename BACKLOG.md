@@ -45,5 +45,14 @@
 - [ ] Post: brother's 10 heart-posts + our proof-carousels, interleaved; each ends with a QUESTION + "repost if this helps one owner you know" + tag the people who helped (that's how her 500 comments happened — a gratitude loop, free at any follower count).
 - [ ] Decide in one word each: Render pinger (UptimeRobot/cron-job.org, keep ONE backend warm)? Weekly pg_dump recipe (disaster insurance + self-host seed)? Both are decisions, not reflexes.
 
+## Quick-Actions launcher ("follow come") - CONFIRM scope, then build read-first
+Read of the phrase: one launcher surfacing the ~5 most-used actions (Find Leads, Follow-Ups, Proposals, My Files, Lead Finder); rest reachable; user can pin/unpin and CREATE custom; cap visible at 5.
+Held because it is a SUBSYSTEM (persist which-5 + custom actions) and the phrase is ambiguous; chooser shipped tonight is the safe yes, this is a confirmed yes next.
+Build shape when confirmed: frontend-first, localStorage for pinned ids (no new table v1), mounted as menu item + dashboard strip; reuse loadPage()/saveToFile(); read the dashboard render + menu-injection JS first.
+
+## Connection banner ("Connection problem") - real bug, parked for a read-verified fix
+Symptom (user-reported): shows on refresh even when net is fine (likely a single cold-start/5xx fetch during boot trips it), and once dismissed it never re-shows on a genuine outage (one-shot latch).
+Fix shape (do NOT guess-build): only raise on a TRUE network error (fetch TypeError = DNS/refused), NOT on 5xx/timeout (those = "server waking, retry" w/ gentler msg or auto-retry); make it REACTIVE - re-evaluate every failed call, auto-hide on every success, re-show on later failure; debounce so one blip does not flash it. Read the global fetch wrapper + the banner show/hide wiring first.
+
 ## North star (so the list never loses the plot)
 Compute is disposable; DATA is the moat. Three Renders, a pinger, a $7 upgrade — all replaceable boxes. The irreplaceable thing is the rows: their 200 tagged leads, their notes, the ratings we just stopped dropping, their proposals, their videos, the links pointing at us, and the founder who remembers their exam. Stop optimizing the box. Protect the rows. Answer the humans.
