@@ -3273,6 +3273,7 @@ async function generateProposal(){
           </div>
           <textarea id="proposal_text" style="width:100%;padding:10px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:#cbd5e1;font-size:12px;height:350px;resize:vertical;box-sizing:border-box;line-height:1.6;font-family:monospace">${proposalWithGuarantee(normNaira(data.proposal)).replace(/</g,"&lt;").replace(/>/g,"&gt;")}</textarea>
           <button onclick="shareProposal()" style="width:100%;margin-top:10px;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px">📤 Share Proposal</button>
+        <button onclick="saveToFile((document.getElementById('proposal_text')?.value||''), 'Proposal')" style="width:100%;margin-top:8px;padding:10px;background:#0f172a;border:1px solid #1e293b;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:13px">📁 Save proposal as file</button>
         </div>`;
     } else {
       if(result) result.innerHTML = "<div style='text-align:center'><p style='color:red'>Failed to generate. " + (data && data.error ? data.error : "The AI service is busy.") + "</p><button onclick='generateProposal()' style='margin-top:8px;padding:8px 16px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer'>🔄 Retry</button></div>";
