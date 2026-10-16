@@ -1235,8 +1235,8 @@ async function saveToFile(content, defaultName){
   try{
     var res = await apiFetch("/api/files",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name:name,content:content||""})});
     var d = await res.json();
-    if(d.success){ fileToast("📁 Saved to \""+name+"\""); } else { fileToast(d.error||"Save failed"); }
-  }catch(e){ fileToast("Save failed"); }
+    if(d.success){ fileToast("📁 Saved to \""+name+"\""); } else { fileToast("Save failed: "+(d.error||"server rejected (check table/RLS)")); }
+  }catch(e){ console.error("saveToFile failed:", e); fileToast("Save failed: "+((e&&e.message)||"network/endpoint — is /api/files deployed?")); }
 }
 function saveLeadToFile(id){
   var lead = window._currentOpenLead || (window._allLeads||[]).find(function(x){return x.id===id;});
