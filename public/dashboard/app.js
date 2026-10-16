@@ -1186,6 +1186,45 @@ async function renderLeadDetail(id){
   renderLeadDetailObj(lead);
 }
 
+
+function coachStrip(lead){
+  const st=(lead.status||"new").toLowerCase();
+  const today=new Date().toISOString().split("T")[0];
+  const due = lead.follow_up_date && lead.follow_up_date<=today;
+  const hasMsg = !!(lead.message && String(lead.message).trim());
+  const hasPhone = !!lead.phone;
+  const id = lead.id;
+  const name = (lead.name||"this lead");
+  const BG="background:#25d366;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;padding:9px 14px";
+  const BB="background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;padding:9px 14px";
+  const BO="background:#f59e0b;color:black;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;padding:9px 14px";
+  let head="", primary="", secondary="", tone="blue";
+  if(st==="won"){
+    if(!lead.sale_amount){ head=`🎉 You won ${name}! Log the sale amount to track your revenue.`; primary=`<button onclick="coachFocus('ld_sale')" style="${BO}">💰 Add sale amount</button>`; tone="green"; }
+    else { head=`🎉 ${name} won and logged — nice work. The next one is closer.`; tone="green"; }
+  } else if(st==="lost"){
+    head=`Marked lost — that's okay. Every 'no' clears the path to a 'yes'.`; tone="grey";
+  } else if(st==="new"){
+    if(hasMsg){ head=`✉️ You saved ${name} with a drafted message. Send it now, then set a follow-up so it doesn't go cold.`; primary=`<button onclick="coachFocus('ld_msg')" style="${BG}">💬 Send the first message</button>`; secondary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; tone="orange"; }
+    else { head=`📄 First move for ${name}: send a message or draw up a proposal.`; primary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; if(hasPhone) secondary=`<button onclick="coachFocus('ld_msg')" style="${BG}">💬 Write a message</button>`; tone="blue"; }
+  } else if(st==="contacted"||st==="interested"){
+    if(due){ head=`⏰ Follow-up due today for ${name}. A second touch is where most deals actually close.`; primary=`<button onclick="coachFocus('ld_msg')" style="${BG}">💬 Send the follow-up</button>`; if(st==="interested") secondary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; tone="red"; }
+    else if(!lead.follow_up_date){ head=`You reached out to ${name} — now protect the deal. Set a follow-up date so this doesn't slip.`; primary=`<button onclick="coachFocus('ld_followup')" style="${BO}">⏰ Set a follow-up date</button>`; secondary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; tone="orange"; }
+    else { head=`Follow-up booked for ${lead.follow_up_date}. Until then ${name} is warm — a proposal keeps you ahead of silence.`; primary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; tone="blue"; }
+  } else if(st==="negotiation"){
+    head=`🤝 ${name} is in negotiation — the close is right here. Send a proposal or a final nudge.`; primary=`<button onclick="selectLeadForProposal('${id}')" style="${BB}">📄 Generate proposal</button>`; if(hasPhone) secondary=`<button onclick="coachFocus('ld_msg')" style="${BG}">💬 Send a message</button>`; tone="purple";
+  } else { return ""; }
+  if(!head) return "";
+  const accent = tone==="red"?"#ef4444":tone==="green"?"#10b981":tone==="orange"?"#f97316":tone==="purple"?"#8b5cf6":tone==="grey"?"#64748b":"#3b82f6";
+  const bg = tone==="red"?"rgba(239,68,68,.08)":tone==="green"?"rgba(16,185,129,.08)":tone==="orange"?"rgba(249,115,22,.08)":tone==="purple"?"rgba(139,92,246,.08)":tone==="grey"?"rgba(100,116,139,.06)":"rgba(59,130,246,.08)";
+  return `<div style="background:${bg};border:1px solid ${accent}44;border-left:4px solid ${accent};border-radius:12px;padding:14px 15px;margin-bottom:14px">`
+    + `<p style="margin:0 0 4px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:${accent}">🧭 Coach · your next move</p>`
+    + `<p style="margin:0 0 12px;font-size:13px;color:#e2e8f0;line-height:1.55">${head}</p>`
+    + `<div style="display:flex;gap:8px;flex-wrap:wrap">${primary}${secondary}</div>`
+    + `</div>`;
+}
+function coachFocus(elId){ const el=document.getElementById(elId); if(!el) return; el.scrollIntoView({behavior:"smooth",block:"center"}); try{ el.focus({preventScroll:true}); }catch(e){ el.focus(); } el.style.outline="2px solid #f97316"; el.style.boxShadow="0 0 0 4px rgba(249,115,22,.25)"; setTimeout(()=>{ el.style.outline=""; el.style.boxShadow=""; },2200); }
+
 async function renderLeadDetailObj(lead){
 
   const colors = {new:"#64748b",contacted:"#3b82f6",interested:"#f59e0b",negotiation:"#8b5cf6",won:"#10b981",lost:"#ef4444"};
@@ -1207,6 +1246,8 @@ async function renderLeadDetailObj(lead){
         ${lead.email?`<div style="padding:8px 0;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between"><span style="font-size:13px;color:#64748b">Email</span><span style="font-size:13px">${lead.email}</span></div>`:""}
         ${lead.created_at?`<div style="padding:8px 0;display:flex;justify-content:space-between"><span style="font-size:13px;color:#64748b">Added</span><span style="font-size:13px">${new Date(lead.created_at).toLocaleDateString()}</span></div>`:""}
       </div>
+
+      ${coachStrip(lead)}
 
       <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:14px">
         <p style="margin:0 0 10px;font-size:13px;font-weight:bold">Update Status</p>
