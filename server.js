@@ -405,11 +405,12 @@ app.get("/api/search", authMiddleware, async (req, res) => {
       if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
       return null;
     };
+    const isJunk = (s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s) || /^[0-9a-f]{20,}$/i.test(s);
     const collect = (row) => {
       const out = [];
       const walk = (val, depth) => {
         if (depth > 1) return;
-        if (typeof val === "string") { if (val) out.push(val); return; }
+        if (typeof val === "string") { if (val && !isJunk(val)) out.push(val); return; }
         if (Array.isArray(val)) { val.forEach(function(x){ walk(x, depth+1); }); return; }
         if (val && typeof val === "object") { Object.keys(val).forEach(function(k){ walk(val[k], depth+1); }); }
       };

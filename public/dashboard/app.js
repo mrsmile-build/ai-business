@@ -745,86 +745,101 @@ function showMomentBanner(){
 
 function openSearch(){
   var old=document.getElementById("search_overlay"); if(old) old.remove();
+  var pad=function(n){return (n<10?'0':'')+n;};
+  var MON={jan:1,january:1,feb:2,february:2,mar:3,march:3,apr:4,april:4,may:5,jun:6,june:6,jul:7,july:7,aug:8,august:8,sep:9,sept:9,september:9,oct:10,october:10,nov:11,november:11,dec:12,december:12};
+  var mk=function(y,m,d){y=+y;m=+m;d=+d;if(m<1||m>12||d<1||d>31)return null;return y+'-'+pad(m)+'-'+pad(d);};
+  var PATS=[
+    [/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/,function(m){return mk(m[1],m[2],m[3]);}],
+    [/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/,function(m){return mk(m[3],m[1],m[2]);}],
+    [/\b(\d{1,2})\s+(?:of\s+)?([a-z]+)\.?\s+(\d{4})\b/i,function(m){var mo=MON[String(m[2]).toLowerCase()];return mo?mk(m[3],mo,m[1]):null;}],
+    [/\b([a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b/i,function(m){var mo=MON[String(m[1]).toLowerCase()];return mo?mk(m[3],mo,m[2]):null;}],
+    [/\b(\d{1,2})\s+(\d{1,2})\s+(\d{4})\b/,function(m){return mk(m[3],m[2],m[1]);}]
+  ];
+  var parseDate=function(str){for(var i=0;i<PATS.length;i++){var mm=PATS[i][0].exec(str);if(mm){var iso=PATS[i][1](mm);if(iso)return{iso:iso,matched:mm[0]};}}return null;};
+  var QWRE=/\b(what|when|where|who|how|why|did|do|does|didnt|i|me|my|show|list|tell|find|the|on|in|from|of|that|this|was|were|am|is|are|a|an|to|for|about|got|have|had|please|can|could|would)\b/gi;
+  var FEATURES=[
+    {label:"Dashboard",icon:"🏠",kw:["home","overview","start","dashboard"],run:function(){loadPage('dashboard');}},
+    {label:"Customers / Leads",icon:"👥",kw:["leads","customers","contacts","clients","people","enquiries"],run:function(){loadPage('leads');}},
+    {label:"Lead Finder",icon:"🎯",kw:["find leads","find customers","prospects","cold outreach","lead finder","search businesses","new customers"],run:function(){loadPage('leadFinder');}},
+    {label:"Follow-Ups",icon:"⏰",kw:["follow up","follow-up","followups","reminder","overdue","chase","went quiet"],run:function(){loadPage('followup');}},
+    {label:"Proposals",icon:"📄",kw:["proposal","quote","pitch","estimate","send proposal","client proposal"],run:function(){loadPage('proposal');}},
+    {label:"Appointments",icon:"📅",kw:["appointment","appointments","booking","bookings","schedule","calendar","book a client"],run:function(){loadPage('appointments');}},
+    {label:"My Business Page",icon:"🌐",kw:["business page","website","landing page","my page","page","storefront"],run:function(){loadPage('bizpage');}},
+    {label:"Promo Video",icon:"🎬",kw:["video","promo","reel","tiktok","advert","faceless"],run:function(){location.href='/promo';}},
+    {label:"Invoices",icon:"🧾",kw:["invoice","bill","receipt","payment request"],run:function(){loadPage('invoice');}},
+    {label:"Revenue",icon:"💰",kw:["revenue","money","earnings","sales total","income","profit"],run:function(){loadPage('revenue');}},
+    {label:"My Files",icon:"📁",kw:["files","documents","notes","dossier","saved","records"],run:function(){loadPage('files');}},
+    {label:"AI Tools",icon:"🧰",kw:["ai tools","caption","hashtag","generator","tools","content"],run:function(){loadPage('aiTools');}},
+    {label:"AI Agents",icon:"🤖",kw:["agent","chatbot","receptionist","auto reply","support bot","24/7"],run:function(){loadPage('agents');}},
+    {label:"Reminders / Automation",icon:"⚡",kw:["automation","reminder","auto","workflow"],run:function(){loadPage('automation');}},
+    {label:"Reports",icon:"📈",kw:["report","reports","analytics","stats","chart","summary"],run:function(){loadPage('analytics');}},
+    {label:"Settings",icon:"⚙️",kw:["settings","profile","account","password","currency","logout"],run:function(){loadPage('settings');}},
+    {label:"Earn / Referrals",icon:"💸",kw:["earn","referral","affiliate","commission","partner","make money"],run:function(){location.href='/earn';}},
+    {label:"Help / Support",icon:"❓",kw:["help","support","guide","faq","contact","tutorial"],run:function(){loadPage('support');}},
+    {label:"Manage Blog",icon:"📝",kw:["blog","post","article","manage blog","write"],run:function(){loadPage('blogadmin');}},
+    {label:"Testimonials",icon:"💬",kw:["testimonial","testimonials","review","reviews"],run:function(){loadPage('testimonials');}}
+  ];
   var shell='<div id="search_overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding-top:8px">'
     +'<div style="background:#0b1220;border:1px solid #1e293b;border-radius:14px;width:94%;max-width:560px;max-height:92vh;overflow:auto;padding:14px 14px 18px">'
     +'<div style="display:flex;align-items:center;gap:8px">'
-    +'<input id="sq" type="text" placeholder="Search leads, files, proposals, bookings…" autocomplete="off" style="flex:1;padding:11px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:14px">'
+    +'<input id="sq" type="text" placeholder="Search features, leads, files, proposals… or ask "what did I do on…"" autocomplete="off" style="flex:1;padding:11px 12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-size:14px">'
     +'<button id="sq_date" title="Filter by date" style="padding:10px 12px;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:10px;cursor:pointer;font-size:14px">📅</button>'
     +'<button id="sq_x" style="padding:10px 12px;background:transparent;border:0;color:#94a3b8;cursor:pointer;font-size:16px">✕</button>'
     +'</div>'
-    +'<div id="sq_daterow" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap">'
+    +'<div id="sq_daterow" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:flex-end">'
     +'<label style="font-size:11px;color:#64748b">from <input id="sf" type="date" style="display:block;margin-top:2px;padding:7px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:12px"></label>'
-    +'<label style="font-size:11px;color:#64748b">to <input id="st" type="date" style="display:block;margin-top:2px;padding:7px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:12px"></label>'
-    +'<button id="sq_today" style="align-self:flex-end;padding:8px 12px;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:12px">On this day…</button>'
+    +'<label style="font-size:11px;color:#64748b">to <input id="st" type="date" style="display:block;margin-top:2px;padding:7px;border-radius:8px;border:1px solid #0f172a;background:#0f172a;color:#e2e8f0;font-size:12px"></label>'
+    +'<button id="sq_today" style="padding:8px 12px;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:12px">On this day…</button>'
     +'</div>'
-    +'<div id="sq_results" style="margin-top:12px"></div>'
+    +'<div id="sq_note" style="margin-top:10px"></div>'
+    +'<div id="sq_results" style="margin-top:10px"></div>'
     +'</div></div>';
   var wrap=document.createElement("div"); wrap.innerHTML=shell; var ov=wrap.firstElementChild; document.body.appendChild(ov);
-  var input=document.getElementById("sq");
-  var resultsEl=document.getElementById("sq_results");
-  function close(){ var m=document.getElementById("search_overlay"); if(m) m.remove(); document.removeEventListener("keydown", onKey); }
-  function onKey(e){ if(e.key==="Escape") close(); }
-  document.addEventListener("keydown", onKey);
-  ov.addEventListener("click",function(ev){ if(ev.target===ov) close(); });
+  var input=document.getElementById("sq"), resultsEl=document.getElementById("sq_results"), noteEl=document.getElementById("sq_note");
+  function close(){var m=document.getElementById("search_overlay");if(m)m.remove();document.removeEventListener("keydown",onKey);}
+  function onKey(e){if(e.key==="Escape")close();}
+  document.addEventListener("keydown",onKey);
+  ov.addEventListener("click",function(ev){if(ev.target===ov)close();});
   document.getElementById("sq_x").onclick=close;
-  document.getElementById("sq_date").onclick=function(){ var dr=document.getElementById("sq_daterow"); dr.style.display = dr.style.display==="none" ? "flex" : "none"; };
-  document.getElementById("sq_today").onclick=function(){ var d=new Date().toISOString().slice(0,10); document.getElementById("sf").value=d; document.getElementById("st").value=d; runSearch(); };
-  var timer=null;
-  input.addEventListener("input",function(){ clearTimeout(timer); timer=setTimeout(runSearch, 250); });
-  document.getElementById("sf").addEventListener("change", runSearch);
-  document.getElementById("st").addEventListener("change", runSearch);
-  function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  document.getElementById("sq_date").onclick=function(){var dr=document.getElementById("sq_daterow");dr.style.display=dr.style.display==="none"?"flex":"none";};
+  document.getElementById("sq_today").onclick=function(){var d=new Date().toISOString().slice(0,10);document.getElementById("sf").value=d;document.getElementById("st").value=d;runSearch();};
+  function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function niceDate(iso){try{return new Date(iso+"T00:00:00").toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});}catch(e){return iso;}}
   var ICON={leads:"👥",files:"📁",proposals:"📄",bookings:"📅"};
   var GROUP={leads:"Leads",files:"Files",proposals:"Proposals",bookings:"Bookings"};
-  function renderRecent(){
-    var h=[]; try{ h=JSON.parse(localStorage.getItem("ab_lf_history")||"[]"); }catch(e){}
-    if(!h.length){ resultsEl.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:18px 0">Type to search your leads, files, proposals and bookings — or tap 📅 to search by date.</p>'; return; }
-    var s='<p style="margin:0 0 8px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">Recent lead-finder runs (on this device)</p>';
-    h.slice(0,6).forEach(function(x){ s+='<div class="sr-chip" data-q="'+esc(String(x.label||"").replace(/·/g," "))+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer"><p style="margin:0;font-size:12px;color:#cbd5e1">'+esc(x.label||"search")+'</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">'+esc(x.d||"")+' · '+(x.n||0)+' leads found</p></div>'; });
-    resultsEl.innerHTML=s;
-    var chips=resultsEl.querySelectorAll(".sr-chip");
-    for(var i=0;i<chips.length;i++){ (function(c){ c.onclick=function(){ input.value=c.getAttribute("data-q")||""; runSearch(); }; })(chips[i]); }
-  }
-  function renderResults(list){
-    if(!list.length){ resultsEl.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:18px 0">No matches. Try fewer words, or clear the date filter.</p>'; return; }
-    var groups={};
-    list.forEach(function(r){ (groups[r.type]=groups[r.type]||[]).push(r); });
-    var order=["leads","files","proposals","bookings"]; var s="";
-    order.forEach(function(t){
-      if(!groups[t]) return;
-      s+='<p style="margin:14px 0 6px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">'+(ICON[t]||"")+' '+GROUP[t]+' ('+groups[t].length+')</p>';
-      groups[t].forEach(function(r){
-        s+='<div class="sr-row" data-type="'+t+'" data-id="'+esc(r.id)+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer">'
-          +'<p style="margin:0;font-size:13px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.title)+'</p>'
-          +(r.snippet?'<p style="margin:3px 0 0;font-size:11px;color:#94a3b8;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+esc(r.snippet)+'</p>':'')
-          +(r.date?'<p style="margin:4px 0 0;font-size:10px;color:#475569">'+esc(r.date)+'</p>':'')
-          +'</div>';
-      });
-    });
-    resultsEl.innerHTML=s;
-    var rows=resultsEl.querySelectorAll(".sr-row");
-    for(var i=0;i<rows.length;i++){ (function(row){ row.onclick=function(){ go(row.getAttribute("data-type"), row.getAttribute("data-id")); }; })(rows[i]); }
-  }
-  function go(type,id){
-    close();
-    if(type==="files"){ if(typeof openFileView==="function"){ openFileView(id); return; } loadPage("files"); return; }
-    if(type==="leads"){ if(typeof openLead==="function"){ openLead(id); return; } loadPage("leads"); return; }
-    if(type==="proposals"){ loadPage("proposal"); return; }
-    if(type==="bookings"){ loadPage("appointments"); return; }
-    loadPage("dashboard");
-  }
+  function featureMatches(q){var t=q.toLowerCase().trim();if(t.length<2)return[];return FEATURES.filter(function(f){return f.kw.some(function(k){return k.indexOf(t)!==-1||t.indexOf(k)!==-1;});});}
+  function renderFeatures(feats){if(!feats.length)return"";var s='<p style="margin:0 0 6px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">⚡ Go to</p>';feats.forEach(function(f,i){s+='<div class="sf-row" data-fi="'+FEATURES.indexOf(f)+'" style="display:flex;align-items:center;gap:10px;background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer"><span style="font-size:18px">'+f.icon+'</span><span style="flex:1;font-size:13px;font-weight:600;color:#f8fafc">'+esc(f.label)+'</span><span style="font-size:11px;color:#3b82f6">open →</span></div>';});return s;}
+  function bindFeatures(){var rs=resultsEl.querySelectorAll(".sf-row");for(var i=0;i<rs.length;i++){(function(r){r.onclick=function(){var f=FEATURES[+r.getAttribute("data-fi")];close();try{f.run();}catch(e){}};})(rs[i]);}}
+  function renderRecent(){var h=[];try{h=JSON.parse(localStorage.getItem("ab_lf_history")||"[]");}catch(e){}noteEl.innerHTML="";if(!h.length){resultsEl.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:18px 0">Type a feature ("appointments", "invoice"), a name, or ask "what did I do on 20 09 2026".</p>';return;}var s='<p style="margin:0 0 8px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">Recent lead-finder runs (this device)</p>';h.slice(0,6).forEach(function(x){s+='<div class="sr-chip" data-q="'+esc(String(x.label||"").replace(/·/g," "))+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer"><p style="margin:0;font-size:12px;color:#cbd5e1">'+esc(x.label||"search")+'</p><p style="margin:2px 0 0;font-size:10px;color:#64748b">'+esc(x.d||"")+' · '+(x.n||0)+' leads found</p></div>';});resultsEl.innerHTML=s;var cs=resultsEl.querySelectorAll(".sr-chip");for(var i=0;i<cs.length;i++){(function(c){c.onclick=function(){input.value=c.getAttribute("data-q")||"";runSearch();};})(cs[i]);}}
+  function renderResults(list,note){var feats=featureMatches(currentKeyword);var s=renderFeatures(feats);if(note)s+='<p style="margin:'+(feats.length?'14px':'0')+' 0 10px;font-size:12px;color:#f59e0b;font-weight:600">'+esc(note)+'</p>';if(!list.length){s+='<p style="color:#64748b;font-size:13px;text-align:center;padding:14px 0">'+(feats.length?"No matching records — but the features above open directly.":"No matches. Try fewer words, or clear the date.")+'</p>';}else{var groups={};list.forEach(function(r){(groups[r.type]=groups[r.type]||[]).push(r);});["leads","files","proposals","bookings"].forEach(function(t){if(!groups[t])return;s+='<p style="margin:14px 0 6px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.08em;font-weight:700">'+(ICON[t]||"")+' '+GROUP[t]+' ('+groups[t].length+')</p>';groups[t].forEach(function(r){s+='<div class="sr-row" data-type="'+t+'" data-id="'+esc(r.id)+'" style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer"><p style="margin:0;font-size:13px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.title)+'</p>'+(r.snippet?'<p style="margin:3px 0 0;font-size:11px;color:#94a3b8;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+esc(r.snippet)+'</p>':'')+(r.date?'<p style="margin:4px 0 0;font-size:10px;color:#475569">'+esc(r.date)+'</p>':'')+'</div>';});});}resultsEl.innerHTML=s;bindFeatures();var rows=resultsEl.querySelectorAll(".sr-row");for(var i=0;i<rows.length;i++){(function(row){row.onclick=function(){go(row.getAttribute("data-type"),row.getAttribute("data-id"));};})(rows[i]);}}
+  function go(type,id){close();if(type==="files"){if(typeof openFileView==="function"){openFileView(id);return;}loadPage("files");return;}if(type==="leads"){if(typeof openLead==="function"){openLead(id);return;}loadPage("leads");return;}if(type==="proposals"){loadPage("proposal");return;}if(type==="bookings"){loadPage("appointments");return;}loadPage("dashboard");}
+  var currentKeyword="";
+  var timer=null;
+  input.addEventListener("input",function(){clearTimeout(timer);timer=setTimeout(runSearch,250);});
+  document.getElementById("sf").addEventListener("change",runSearch);
+  document.getElementById("st").addEventListener("change",runSearch);
   function runSearch(){
-    var q=input.value.trim(); var from=document.getElementById("sf").value; var to=document.getElementById("st").value;
-    if(!q && !from && !to){ renderRecent(); return; }
-    resultsEl.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:18px 0">Searching…</p>';
-    var url="/api/search?q="+encodeURIComponent(q)+(from?"&from="+from:"")+(to?"&to="+to:"");
-    apiFetch(url)
-      .then(function(r){return r.json();})
-      .then(function(d){ if(d && d.success){ renderResults(d.results||[]); } else { resultsEl.innerHTML='<p style="color:#ef4444;font-size:13px;text-align:center;padding:18px 0">Search failed: '+esc((d&&d.error)||"error")+'</p>'; } })
-      .catch(function(e){ resultsEl.innerHTML='<p style="color:#ef4444;font-size:13px;text-align:center;padding:18px 0">Search failed: '+esc((e&&e.message)||"network")+'</p>'; });
+    var raw=input.value;
+    var pd=parseDate(raw);
+    var natural=!!pd||/^\s*(what|when|where|who|how|why|show|list|tell|did|do|does)\b/i.test(raw)||raw.trim().split(/\s+/).length>4;
+    var keyword=raw, from="", to="", note="";
+    if(natural){
+      if(pd){keyword=keyword.replace(pd.matched," ");from=pd.iso;to=pd.iso;document.getElementById("sf").value=pd.iso;document.getElementById("st").value=pd.iso;note="Activity on "+niceDate(pd.iso);}
+      keyword=keyword.replace(QWRE," ").replace(/\s+/g," ").trim();
+    }
+    currentKeyword=keyword;
+    if(!keyword&&!from&&!to){renderRecent();return;}
+    resultsEl.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:18px 0">Searching…</p>';noteEl.innerHTML="";
+    var url="/api/search?q="+encodeURIComponent(keyword)+(from?"&from="+from:"")+(to?"&to="+to:"");
+    apiFetch(url).then(function(r){return r.json();}).then(function(d){
+      if(d&&d.success){
+        if(natural&&!pd){note="Plain-English answers (“how many…”, “summarize…”) arrive next — routed to your AI, never canned. Meanwhile, keyword matches:";}
+        renderResults(d.results||[],note);
+      }else{resultsEl.innerHTML='<p style="color:#ef4444;font-size:13px;text-align:center;padding:18px 0">Search failed: '+esc((d&&d.error)||"error")+'</p>';}
+    }).catch(function(e){resultsEl.innerHTML='<p style="color:#ef4444;font-size:13px;text-align:center;padding:18px 0">Search failed: '+esc((e&&e.message)||"network")+'</p>';});
   }
   renderRecent();
-  setTimeout(function(){ try{ input.focus(); }catch(e){} }, 60);
+  setTimeout(function(){try{input.focus();}catch(e){}},60);
 }
 
 function renderLauncher(){
