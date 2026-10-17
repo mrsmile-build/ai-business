@@ -391,6 +391,64 @@ app.get("/api/me", authMiddleware, async (req, res) => {
 
 /* ---------------- LEADS GET ---------------- */
 // ===== MY FILES (cloned from the leads CRUD idiom; every write scoped by user_id) =====
+// ===== GLOBAL SEARCH v1 (generic text scan; date cols enumerated; no schema guessing) =====
+app.get("/api/search", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const q = (req.query.q || "").toString().trim().toLowerCase();
+    const from = (req.query.from || "").toString().trim();
+    const to = (req.query.to || "").toString().trim();
+    const norm = (v) => {
+      if (v == null) return null;
+      if (typeof v === "number") { try { return new Date(v).toISOString().slice(0,10); } catch(e){ return null; } }
+      const s = String(v);
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+      return null;
+    };
+    const collect = (row) => {
+      const out = [];
+      const walk = (val, depth) => {
+        if (depth > 1) return;
+        if (typeof val === "string") { if (val) out.push(val); return; }
+        if (Array.isArray(val)) { val.forEach(function(x){ walk(x, depth+1); }); return; }
+        if (val && typeof val === "object") { Object.keys(val).forEach(function(k){ walk(val[k], depth+1); }); }
+      };
+      Object.keys(row).forEach(function(k){ walk(row[k], 0); });
+      return out;
+    };
+    const inRange = (ds) => { if (!ds) return false; if (from && ds < from) return false; if (to && ds > to) return false; return true; };
+    const searchTable = async (client, table, dateCols, type, joinSel) => {
+      const sel = joinSel || "*";
+      const { data, error } = await client.from(table).select(sel).eq("user_id", uid).order("created_at", { ascending: false }).limit(300);
+      if (error || !data) return [];
+      const hits = [];
+      data.forEach(function(row){
+        const strings = collect(row);
+        const textOk = !q || strings.some(function(s){ return s.toLowerCase().indexOf(q) !== -1; });
+        if (!textOk) return;
+        const hasDateFilter = !!(from || to);
+        let dateOk = !hasDateFilter;
+        if (hasDateFilter) { dateCols.forEach(function(dc){ if (inRange(norm(row[dc]))) dateOk = true; }); }
+        if (!dateOk) return;
+        let title = row.name || row.title || row.business || row.label || strings[0] || type;
+        let snip = "";
+        for (var i=0;i<strings.length;i++){ if (strings[i] && strings[i].length>2 && strings[i]!==title){ snip = strings[i]; break; } }
+        hits.push({ type: type, id: row.id, title: String(title).slice(0,80), snippet: String(snip||"").slice(0,140), date: norm(row.created_at) || norm(row.booking_date) || "" });
+      });
+      return hits;
+    };
+    const bc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const results = await Promise.all([
+      searchTable(supabase, "leads", ["created_at","updated_at","follow_up_date"], "leads"),
+      searchTable(supabase, "files", ["created_at","updated_at"], "files"),
+      searchTable(supabase, "proposals", ["created_at"], "proposals"),
+      searchTable(bc, "bookings", ["created_at","booking_date"], "bookings", "*, services(name)")
+    ]);
+    const flat = [].concat.apply([], results);
+    res.json({ success: true, count: flat.length, results: flat.slice(0, 60) });
+  } catch (err) { res.status(500).json({ success:false, error: err.message }); }
+});
+
 app.get("/api/files", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase.from("files").select("*").eq("user_id", req.user.id).order("updated_at", { ascending: false });
