@@ -743,11 +743,81 @@ function showMomentBanner(){
   } catch(e){}
 }
 
+function renderLauncher(){
+  var pinned = JSON.parse(localStorage.getItem('ab_pinned_actions') || '["leadFinder","followup","proposal","files","leads"]');
+  var allActions = {
+    leadFinder: {label:"Lead Finder", icon:"🎯", page:"leadFinder"},
+    followup: {label:"Follow-Ups", icon:"⏰", page:"followup"},
+    proposal: {label:"Proposals", icon:"📄", page:"proposal"},
+    files: {label:"My Files", icon:"📁", page:"files"},
+    leads: {label:"Customers", icon:"👥", page:"leads"},
+    appointments: {label:"Appointments", icon:"📅", page:"appointments"},
+    bizpage: {label:"My Business Page", icon:"🌐", page:"bizpage"},
+    invoice: {label:"Invoice", icon:"🧾", page:"invoice"},
+    analytics: {label:"Reports", icon:"📈", page:"analytics"}
+  };
+  var visible = pinned.slice(0,5);
+  var html = '<div id="launcher_strip" style="padding:0 14px 14px"><div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><p style="margin:0;font-size:12px;font-weight:700;color:#94a3b8">Quick Actions</p><button id="launcher_edit" style="background:transparent;border:0;color:#3b82f6;font-size:11px;cursor:pointer">Edit</button></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px">';
+  visible.forEach(function(id){
+    var a = allActions[id];
+    if(!a) return;
+    html += '<button onclick="loadPage(\''+a.page+'\')" style="padding:10px 8px;background:#1e293b;border:1px solid #334155;border-radius:10px;cursor:pointer;text-align:center"><div style="font-size:18px">'+a.icon+'</div><div style="font-size:10px;color:#cbd5e1;margin-top:4px">'+a.label+'</div></button>';
+  });
+  if(pinned.length < 5){
+    html += '<button id="launcher_add" style="padding:10px 8px;background:transparent;border:2px dashed #334155;border-radius:10px;cursor:pointer;text-align:center"><div style="font-size:18px;color:#64748b">+</div><div style="font-size:10px;color:#64748b;margin-top:4px">Add</div></button>';
+  }
+  html += '</div></div></div>';
+  
+  var anchor = document.getElementById('dashboard_pulse');
+  if(!anchor) return;
+  var old = document.getElementById('launcher_strip');
+  if(old) old.remove();
+  anchor.insertAdjacentHTML('afterend', html);
+  
+  document.getElementById('launcher_edit').onclick = function(){
+    var modal = '<div id="launcher_modal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center"><div style="background:#0b1220;border:1px solid #1e293b;border-radius:14px;padding:18px;width:90%;max-width:400px;max-height:80vh;overflow:auto">'
+      +'<p style="margin:0 0 14px;font-size:14px;font-weight:700;color:#f8fafc">Edit Quick Actions</p>'
+      +'<p style="margin:0 0 12px;font-size:11px;color:#94a3b8">Tap to pin/unpin. Max 5 visible.</p>';
+    Object.keys(allActions).forEach(function(id){
+      var a = allActions[id];
+      var isPinned = pinned.indexOf(id) !== -1;
+      modal += '<button data-id="'+id+'" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px;background:'+(isPinned?'#1e293b':'#0f172a')+';border:1px solid #334155;border-radius:8px;cursor:pointer;margin-bottom:6px;text-align:left">'
+        +'<span style="font-size:18px">'+a.icon+'</span>'
+        +'<span style="flex:1;font-size:12px;color:#cbd5e1">'+a.label+'</span>'
+        +'<span style="font-size:14px;color:'+(isPinned?'#10b981':'#64748b')+'">'+(isPinned?'✓':'○')+'</span>'
+        +'</button>';
+    });
+    modal += '<button id="launcher_modal_close" style="width:100%;margin-top:14px;padding:10px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">Done</button></div></div>';
+    var wrap = document.createElement('div');
+    wrap.innerHTML = modal;
+    document.body.appendChild(wrap.firstElementChild);
+    var m = document.getElementById('launcher_modal');
+    m.querySelectorAll('[data-id]').forEach(function(btn){
+      btn.onclick = function(){
+        var id = btn.getAttribute('data-id');
+        var idx = pinned.indexOf(id);
+        if(idx === -1 && pinned.length < 5) pinned.push(id);
+        else if(idx !== -1) pinned.splice(idx, 1);
+        localStorage.setItem('ab_pinned_actions', JSON.stringify(pinned));
+        btn.parentNode.remove();
+        renderLauncher();
+      };
+    });
+    document.getElementById('launcher_modal_close').onclick = function(){ m.remove(); };
+  };
+  
+  var addBtn = document.getElementById('launcher_add');
+  if(addBtn) addBtn.onclick = function(){ document.getElementById('launcher_edit').click(); };
+}
+
 function renderDashboard(){
   setTimeout(showMomentBanner, 900);
   setTimeout(checkWelcomeBack, 1400);
   setTimeout(checkOverdueNudge, 2000);
   setTimeout(updateRechargeFab, 1200);
+  setTimeout(renderLauncher, 800);
   setTimeout(loadFollowUps, 500);
   var plan = (currentSub && currentSub.plan) ? currentSub.plan : "free";
   var pc = {business:"#8b5cf6",pro:"#3b82f6",starter:"#10b981",free:"#64748b"};
@@ -1952,13 +2022,22 @@ window.addEventListener("online", function(){ hideNetBanner(); });
   var of = window.fetch;
   if (!of) return;
   window.fetch = function(){
-    return of.apply(this, arguments).catch(function(err){
-      if (!navigator.onLine) showNetBanner(null, true);
-      else if (err && err.name === "TypeError") showNetBanner('📡 Connection problem - check your internet and try again.');
-      throw err;
-    });
+    return of.apply(this, arguments)
+      .then(function(res){
+        hideNetBanner();
+        return res;
+      })
+      .catch(function(err){
+        var msg = (err && err.message) || "";
+        var isNetworkError = /Failed to fetch|NetworkError|Network request failed/i.test(msg);
+        if (!navigator.onLine || isNetworkError) {
+          showNetBanner(null, true);
+        }
+        throw err;
+      });
   };
 })();
+
 
 function breakActive(){
   try { var until = parseInt(localStorage.getItem("ab_break_until") || "0", 10); return until > Date.now(); } catch(e){ return false; }
