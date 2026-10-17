@@ -1318,27 +1318,71 @@ function renameFile(id, currentName){
   apiFetch("/api/files/"+id,{method:"PATCH",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({name:n})}).then(function(r){return r.json();}).then(function(d){ if(d.success){ fileToast("Renamed"); renderFiles(); } else { fileToast("Rename failed: "+(d.error||"server")); } }).catch(function(e){ fileToast("Rename failed: "+((e&&e.message)||"network")); });
 }
 function openFileView(id){
-  var f=(window._filesCache||[]).filter(function(x){return x.id===id;})[0];
-  function render(file){
-    var content=file.content||""; var lines=content.split("\n"); var out="";
-    var esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
-    var isRule=function(t){ if(t.length<4) return false; for(var k=0;k<t.length;k++){ if(t[k]!=="-") return false; } return true; };
+  var esc=function(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
+  var isRule=function(t){ if(t.length<4) return false; for(var k=0;k<t.length;k++){ if(t[k]!=="-") return false; } return true; };
+  function splitEntries(content){
+    var lines=String(content||"").split("\n"); var entries=[]; var cur={stamp:null,lines:[]};
+    for(var i=0;i<lines.length;i++){
+      var t=lines[i].trim();
+      if(isRule(t)){
+        var j=i+1; while(j<lines.length && !lines[j].trim()) j++;
+        if(j<lines.length && lines[j].trim().charAt(0)==="[" && lines[j].trim().slice(-1)==="]"){
+          entries.push(cur); cur={stamp:lines[j].trim(),lines:[]}; i=j; continue;
+        }
+      }
+      cur.lines.push(lines[i]);
+    }
+    entries.push(cur);
+    var clean=[];
+    for(var e=0;e<entries.length;e++){ var has=false; for(var q=0;q<entries[e].lines.length;q++){ if(entries[e].lines[q].trim()){ has=true; break; } } if(has) clean.push(entries[e]); }
+    return clean.length?clean:[{stamp:null,lines:[]}];
+  }
+  function titleOf(ent){
+    for(var i=0;i<ent.lines.length;i++){ var t=ent.lines[i].trim(); if(t.indexOf("# ")===0) return t.slice(2); }
+    for(var j=0;j<ent.lines.length;j++){ var u=ent.lines[j].trim(); if(u) return u.length>44? u.slice(0,44)+"..." : u; }
+    return "Entry";
+  }
+  function renderLines(lines){
+    var out="";
     for(var i=0;i<lines.length;i++){
       var ln=lines[i]; var t=ln.trim();
       if(!t){ out+='<div style="height:8px"></div>'; continue; }
-      if(isRule(t)){ out+='<hr style="border:none;border-top:1px solid #1e293b;margin:14px 0">'; continue; }
-      if(t.charAt(0)==="[" && t.charAt(t.length-1)==="]"){ out+='<p style="margin:0 0 6px;font-size:11px;color:#64748b;font-weight:700">'+esc(t)+'</p>'; continue; }
       if(t.indexOf("### ")===0){ out+='<h4 style="margin:14px 0 4px;font-size:13px;color:#f8fafc">'+esc(t.slice(4))+'</h4>'; continue; }
       if(t.indexOf("## ")===0){ out+='<h3 style="margin:16px 0 6px;font-size:15px;color:#f8fafc">'+esc(t.slice(3))+'</h3>'; continue; }
       if(t.indexOf("# ")===0){ out+='<h2 style="margin:6px 0 8px;font-size:18px;font-weight:800;color:#f8fafc">'+esc(t.slice(2))+'</h2>'; continue; }
       out+='<p style="margin:0 0 8px;font-size:13px;color:#cbd5e1;line-height:1.65">'+esc(ln)+'</p>';
     }
-    setView('<div class="card">'+header("📖 "+(file.name||"File"),"files")+'<div style="background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px;max-height:60vh;overflow:auto">'+(out||'<p style="color:#64748b;font-size:13px">This file is empty.</p>')+'</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button id="fv_edit" style="flex:1;min-width:120px;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">✏️ Edit content</button><button id="fv_rename" style="flex:1;min-width:120px;padding:11px;background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:13px">Rename</button><button id="fv_del" style="padding:11px 14px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete</button><button id="fv_back" style="padding:11px 14px;background:#0f172a;border:1px solid #1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px">← Files</button></div></div>');
+    return out;
+  }
+  function render(file){
+    var entries=splitEntries(file.content||"");
+    var idx="";
+    if(entries.length>1){
+      idx='<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin-bottom:14px"><p style="margin:0 0 8px;font-size:12px;font-weight:800;color:#f8fafc">📚 '+entries.length+' entries in this file</p>';
+      for(var i=0;i<entries.length;i++){
+        idx+='<button data-jump="'+i+'" style="display:block;width:100%;text-align:left;background:#0b1220;border:1px solid #1e293b;border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;color:#cbd5e1;font-size:12px">'
+          +(entries[i].stamp?('<span style="color:#64748b">'+esc(entries[i].stamp.replace(/[\[\]]/g,""))+'</span> · '):'<span style="color:#64748b">Entry '+(i+1)+'</span> · ')
+          +esc(titleOf(entries[i]))+'</button>';
+      }
+      idx+='</div>';
+    }
+    var cards="";
+    for(var c=0;c<entries.length;c++){
+      cards+='<div id="mfe_'+c+'" style="background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px">'
+        +(entries.length>1?('<p style="margin:0 0 10px;font-size:11px;color:#64748b;font-weight:700">'+(entries[c].stamp?esc(entries[c].stamp):('Entry '+(c+1)))+'</p>'):'')
+        +(renderLines(entries[c].lines)||'<p style="color:#64748b;font-size:13px">Empty entry.</p>')
+        +'</div>';
+    }
+    setView('<div class="card">'+header("📖 "+(file.name||"File"),"files")+idx+cards
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="fv_edit" style="flex:1;min-width:120px;padding:11px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">✏️ Edit content</button><button id="fv_rename" style="flex:1;min-width:120px;padding:11px;background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:13px">Rename</button><button id="fv_del" style="padding:11px 14px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:8px;cursor:pointer;font-size:13px">🗑 Delete</button><button id="fv_back" style="padding:11px 14px;background:#0f172a;border:1px solid #1e293b;color:#94a3b8;border-radius:8px;cursor:pointer;font-size:13px">← Files</button></div></div>');
+    var jumps=document.querySelectorAll("[data-jump]");
+    for(var k=0;k<jumps.length;k++){ (function(btn){ btn.onclick=function(){ var el=document.getElementById("mfe_"+btn.getAttribute("data-jump")); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }; })(jumps[k]); }
     document.getElementById("fv_edit").onclick=function(){ openFileEditor(file.id, file.name||"", file.content||""); };
     document.getElementById("fv_rename").onclick=function(){ renameFile(file.id, file.name||""); };
     document.getElementById("fv_del").onclick=function(){ deleteFile(file.id); };
     document.getElementById("fv_back").onclick=function(){ renderFiles(); };
   }
+  var f=(window._filesCache||[]).filter(function(x){return x.id===id;})[0];
   if(f){ render(f); return; }
   apiFetch("/api/files",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}).then(function(r){return r.json();}).then(function(d){ var arr=(d&&d.files)||[]; window._filesCache=arr; var g=arr.filter(function(x){return x.id===id;})[0]; if(g) render(g); else { fileToast("File not found"); renderFiles(); } }).catch(function(){ fileToast("Could not load file"); renderFiles(); });
 }
