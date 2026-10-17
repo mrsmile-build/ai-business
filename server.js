@@ -428,13 +428,12 @@ app.get("/api/search", authMiddleware, async (req, res) => {
         const textOk = !q || strings.some(function(s){ return s.toLowerCase().indexOf(q) !== -1; });
         if (!textOk) return;
         const hasDateFilter = !!(from || to);
-        let dateOk = !hasDateFilter;
-        if (hasDateFilter) { dateCols.forEach(function(dc){ if (inRange(norm(row[dc]))) dateOk = true; }); }
-        if (!dateOk) return;
+        let matchedField = null;
+        if (hasDateFilter) { for (var di=0; di<dateCols.length; di++){ if (inRange(norm(row[dateCols[di]]))) { matchedField = dateCols[di]; break; } } if (!matchedField) return; }
         let title = row.name || row.title || row.business || row.label || strings[0] || type;
         let snip = "";
         for (var i=0;i<strings.length;i++){ if (strings[i] && strings[i].length>2 && strings[i]!==title){ snip = strings[i]; break; } }
-        hits.push({ type: type, id: row.id, title: String(title).slice(0,80), snippet: String(snip||"").slice(0,140), date: norm(row.created_at) || norm(row.booking_date) || "" });
+        hits.push({ type: type, id: row.id, matched_field: matchedField, title: String(title).slice(0,80), snippet: String(snip||"").slice(0,140), date: norm(row.created_at) || norm(row.booking_date) || "" });
       });
       return hits;
     };
