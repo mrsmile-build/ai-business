@@ -41,6 +41,7 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.get("/article", (req, res) => res.redirect(301, "/resources/how-to-make-a-promo-video-for-any-nigerian-business.html"));
 app.use(express.static("public", { extensions: ['html'] }));    
 
 const supabase = createClient(
@@ -2626,7 +2627,6 @@ app.post("/api/biz/:userId/enquiry", rateLimit(5, 60000), async (req, res) => {
   } catch(err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-app.get("/article", (req, res) => res.redirect(301, "/resources/how-to-make-a-promo-video-for-any-nigerian-business.html"));
 app.get("/blog", async (req, res) => {
   try {
     const nowIso = new Date().toISOString();
