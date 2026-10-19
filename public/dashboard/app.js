@@ -2071,7 +2071,27 @@ async function upgradePlan(plan){
 /* =========================
    SETTINGS
 ========================= */
+function voiceProfileBox(){
+  var prof=currentProfile||{};
+  return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:16px">'
+    +'<h3 style="margin:0 0 10px;font-size:16px;font-weight:700;color:#f8fafc">🎙️ Your Voice Profile</h3>'
+    +'<p style="margin:0 0 12px;font-size:13px;color:#94a3b8;line-height:1.5">Tell AI Business how you talk. This is injected into every proposal, caption, reply and AI tool so outputs sound like <em>you</em>, not a template.</p>'
+    +'<textarea id="voice_profile_input" placeholder="e.g. I never say best regards, I say talk soon. I price in round numbers. I talk like a friend, not a consultant." style="width:100%;min-height:110px;padding:12px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e2e8f0;font-size:13px;line-height:1.5;box-sizing:border-box;resize:vertical;font-family:inherit">'+String(prof.voice_profile||'').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</textarea>'
+    +'<button id="voice_save" style="margin-top:10px;padding:10px 16px;background:#7c3aed;border:none;color:white;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600">💾 Save voice profile</button>'
+    +'</div>';
+}
+function saveVoiceProfile(){
+  var ta=document.getElementById('voice_profile_input'); if(!ta) return;
+  var btn=document.getElementById('voice_save'); if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  apiFetch('/api/voice-profile',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+localStorage.getItem('token')},body:JSON.stringify({voice_profile:ta.value})})
+    .then(function(r){return r.json();})
+    .then(function(d){ if(btn){btn.disabled=false;btn.textContent='💾 Save voice profile';}
+      if(d&&d.success){ if(currentProfile) currentProfile.voice_profile=ta.value; if(typeof fileToast==='function') fileToast('🎙️ Voice saved'); else alert('Voice profile saved.'); }
+      else alert('Save failed: '+((d&&d.error)||'error')); })
+    .catch(function(e){ if(btn){btn.disabled=false;btn.textContent='💾 Save voice profile';} alert('Save failed: '+((e&&e.message)||'network')); });
+}
 function renderSettings(){
+  setTimeout(function(){ try{ var host=document.querySelector('#app .card'); if(host && !document.getElementById('voice_box')){ var w=document.createElement('div'); w.id='voice_box'; w.innerHTML=voiceProfileBox(); host.parentNode.insertBefore(w, host); var vs=document.getElementById('voice_save'); if(vs) vs.onclick=saveVoiceProfile; } }catch(e){} },90);
 
   const currencyOptions = Object.entries(CURRENCY_MAP).map(([code, info]) => 
     `<option value="${code}" ${window.userCurrency === code ? "selected" : ""}>${info.symbol} ${code} - ${info.name}</option>`

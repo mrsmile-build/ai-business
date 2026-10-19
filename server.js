@@ -449,6 +449,16 @@ app.get("/api/search", authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ success:false, error: err.message }); }
 });
 
+app.post("/api/voice-profile", authMiddleware, async (req, res) => {
+  try {
+    const v = (req.body && req.body.voice_profile !== undefined) ? String(req.body.voice_profile).slice(0, 2000) : "";
+    let r = await supabase.from("profiles").update({ voice_profile: v }).eq("user_id", req.user.id);
+    if (r.error) r = await supabase.from("profiles").upsert({ user_id: req.user.id, voice_profile: v });
+    if (r.error) throw r.error;
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success:false, error: err.message }); }
+});
+
 app.get("/api/files", authMiddleware, async (req, res) => {
   try {
     const { data, error } = await supabase.from("files").select("*").eq("user_id", req.user.id).order("updated_at", { ascending: false });
@@ -608,8 +618,12 @@ app.post("/api/ai-reply", authMiddleware, async (req, res) => {
       email: "You are an email marketing expert for Nigerian businesses. Write professional emails that convert. Format multiple options as numbered items."
     };
     const systemMsg = systemPrompts[tool] || "You are a smart business assistant helping Nigerian entrepreneurs grow. Be practical and direct. Format lists as numbered items.";
+    // inject user voice profile if present (fetched per request; sandbox-safe, core untouched)
+    let voiceProfile = "";
+    try { const { data: vpRow } = await supabase.from("profiles").select("voice_profile").eq("user_id", req.user.id).single(); voiceProfile = (vpRow && vpRow.voice_profile) || ""; } catch(e){}
+    const finalSystemMsg = voiceProfile ? systemMsg + "\n\nUser voice/style preference: " + voiceProfile : systemMsg;
     const messages = [
-      { role: "system", content: systemMsg },
+      { role: "system", content: finalSystemMsg },
       ...((history || []).slice(-6)),
       { role: "user", content: message }
     ];
