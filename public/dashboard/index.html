@@ -211,7 +211,7 @@ window.shareBizPage=function(){
 };}
 </script>
 <script>(function(){
-var MAP=[["Promo Video","feat_promo"],["Your Assets","feat_assets"],["Earn with Us","feat_earn"],["Share My Business Page","feat_share"]];
+var MAP=[["My Files","feat_files"],["Promo Video","feat_promo"],["Your Assets","feat_assets"],["Earn with Us","feat_earn"],["Share My Business Page","feat_share"]];
 function run(){MAP.forEach(function(m){document.querySelectorAll("div[onclick]").forEach(function(d){if(d.textContent.indexOf(m[0])!==-1&&!d.querySelector(".newbadge")){if(localStorage.getItem(m[1]))return;var s=document.createElement("span");s.className="newbadge";s.textContent="NEW";d.appendChild(s);d.setAttribute("onclick","localStorage.setItem('"+m[1]+"','1');"+d.getAttribute("onclick"));}});});}
 if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",run);}else{run();}
 })();</script>

@@ -134,10 +134,10 @@ app.get("/api/config/pricing", (req, res) => {
 // ---------------------------------------
 
 const PLANS = {
-  free:     { leads: 10,       ai_per_month: 20,      label: "Free",     price: 0 },
-  starter:  { leads: 50,       ai_per_month: 40,      label: "Starter",  price: 6000 },
-  pro:      { leads: 500,      ai_per_month: 80,      label: "Pro",      price: 15000 },
-  business: { leads: Infinity, ai_per_month: 200,     label: "Business", price: 45000 }
+  free:     { leads: 10,       ai_per_month: 20,      files: 3,  label: "Free",     price: 0 },
+  starter:  { leads: 50,       ai_per_month: 40,      files: 3,  label: "Starter",  price: 6000 },
+  pro:      { leads: 500,      ai_per_month: 80,      files: 8,  label: "Pro",      price: 15000 },
+  business: { leads: Infinity, ai_per_month: 200,     files: 15, label: "Business", price: 45000 }
 };
 
 
@@ -471,6 +471,12 @@ app.post("/api/files", authMiddleware, async (req, res) => {
   try {
     const { name, content } = req.body;
     if (!name || !String(name).trim()) return res.json({ success: false, error: "File needs a name." });
+    const sub = await getSubscription(req.user);
+    const limits = PLANS[sub.plan] || PLANS.free;
+    const { count } = await supabase.from("files").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
+    if ((limits.files ?? Infinity) <= (count || 0)) {
+      return res.status(403).json({ success:false, error: "Your " + limits.label + " plan stores up to " + limits.files + " files. Upgrade your plan for more." });
+    }
     const { data, error } = await supabase.from("files").insert({ user_id: req.user.id, name: String(name).trim(), content: content || "" }).select().single();
     if (error) throw error;
     res.json({ success: true, file: data });
