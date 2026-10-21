@@ -4467,7 +4467,7 @@ app.get("/api/biz/promo-data", authMiddleware, async (req, res) => {
 /* ---------------- TTS PASSTHROUGH (server-side, defeats browser CORS) ---------------- */
 app.post("/api/tts-voicerss", async (req, res) => {
   try {
-    const hosts=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+    const hosts=(process.env.TTS_HOSTS||"https://groq-proxy-7f82.onrender.com,https://groq-proxy-0bfy.onrender.com").split(",").map(function(x){return x.trim();}).filter(Boolean);
     const body=JSON.stringify(req.body||{});
     let lastStatus=0;
     for(const h of hosts){
@@ -4484,7 +4484,7 @@ app.post("/api/tts-voicerss", async (req, res) => {
 /* ---------------- DYNAMIC VOICES FROM ELEVENLABS ---------------- */
 app.get("/api/voices", async (req, res) => {
   try {
-    const hosts=["https://groq-proxy-7f82.onrender.com","https://groq-proxy-0bfy.onrender.com"];
+    const hosts=(process.env.TTS_HOSTS||"https://groq-proxy-7f82.onrender.com,https://groq-proxy-0bfy.onrender.com").split(",").map(function(x){return x.trim();}).filter(Boolean);
     for(const h of hosts){
       try{
         const r=await fetch(h+"/voices");
