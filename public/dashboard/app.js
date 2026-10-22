@@ -514,6 +514,7 @@ function loadPage(page){
     editProfile: 'renderEditProfile',
     leadFinder: 'renderLeadFinder',
     proposal: 'renderProposal',
+    agreement: 'renderAgreement',
     revenue: 'renderRevenue',
     agents: 'renderAgents',
     referral: 'renderReferral',
@@ -3651,6 +3652,132 @@ function shareProposal(){
 /* =========================
    PROFILE
 ========================= */
+function renderAgreement(){
+  setView(`<div class="card">${header("✍️ Agreement","dashboard")}
+    <p style="font-size:13px;color:#94a3b8;margin:0 0 4px">Lock the yes. Turn a verbal deal into a signed, dated, verifiable record your client can check on the spot — so a "yes" can't quietly vanish.</p>
+    <p style="font-size:12px;color:#64748b;margin:0 0 14px">The funnel: send the offer → <b style="color:#cbd5e1">lock the yes</b> → get paid. This is the middle step.</p>
+    <button onclick="renderAgreementForm()" style="width:100%;padding:12px;background:#10b981;color:#04221a;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;margin-bottom:16px">＋ New agreement</button>
+    <div id="ag_list"><p style="color:#64748b;font-size:13px;text-align:center;padding:10px 0">Loading…</p></div>
+  </div>`);
+  loadAgreementList();
+}
+async function loadAgreementList(){
+  var box=document.getElementById("ag_list"); if(!box) return;
+  try{
+    var res=await apiFetch("/api/agreements",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var data=await res.json();
+    var list=(data&&data.agreements)||[];
+    if(!list.length){ box.innerHTML='<p style="color:#64748b;font-size:13px;text-align:center;padding:14px 0">No agreements yet. Draw up your first one above — a minute of work that protects the whole deal.</p>'; return; }
+    box.innerHTML=list.map(function(a){
+      var d=""; try{ d=new Date(a.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }catch(e){}
+      return '<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
+        +'<p style="margin:0;font-size:13px;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+agEsc(a.subject)+'</p>'
+        +'<span style="font-family:monospace;font-size:10px;color:#22c55e;background:#0b2e1f;padding:2px 7px;border-radius:8px;flex-shrink:0">'+agEsc(a.ref)+'</span></div>'
+        +'<p style="margin:4px 0 8px;font-size:11px;color:#94a3b8">with '+agEsc(a.receiver_name)+(a.amount?(' · '+agEsc(a.amount)):'')+' · '+d+'</p>'
+        +'<button onclick="agOpen(\''+agEsc(a.ref)+'\')" style="padding:7px 12px;background:#0b1220;border:1px solid #334155;color:#cbd5e1;border-radius:7px;cursor:pointer;font-size:12px">🖨️ Open printable copy</button>'
+        +'</div>';
+    }).join('');
+  }catch(e){ box.innerHTML='<p style="color:#ef4444;font-size:12px;text-align:center">Could not load agreements. Check connection.</p>'; }
+}
+function agOpen(ref){ window.open(location.origin+'/a/'+encodeURIComponent(ref),'_blank'); }
+function agEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function renderAgreementForm(){
+  var IN='style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box"';
+  var TA='style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box;height:64px;resize:none"';
+  setView('<div class="card">'+header("✍️ New agreement","agreement")
+    +'<p style="font-size:12px;color:#94a3b8;margin:0 0 12px">Fill the deal in plain words. Nothing is saved until you preview and confirm you have read it.</p>'
+    +'<div style="background:#0f172a;padding:15px;border-radius:10px;margin-bottom:12px">'
+    +'<input id="ag_sender" placeholder="Your name / business (provider) *" '+IN+'>'
+    +'<input id="ag_receiver" placeholder="Client name *" '+IN+'>'
+    +'<input id="ag_subject" placeholder="What is being agreed (e.g. Brand identity design) *" '+IN+'>'
+    +'<textarea id="ag_details" placeholder="Scope / description of the work (optional)" '+TA+'></textarea>'
+    +'<input id="ag_amount" placeholder="Agreed amount (e.g. ₦150,000)" '+IN+'>'
+    +'<select id="ag_payment" '+IN+'><option value="before">Pay in full before work starts</option><option value="half">Half upfront, half on delivery</option><option value="after">Pay on completion / delivery</option></select>'
+    +'<input id="ag_delivery" type="date" '+IN+'>'
+    +'<textarea id="ag_penalty" placeholder="Penalty for breach (blank = standard: written notice + cure period, then termination and remedies at law)" '+TA+'></textarea>'
+    +'<textarea id="ag_extra" placeholder="Any other terms (optional)" '+TA+'></textarea>'
+    +'</div>'
+    +'<button onclick="previewAgreement()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;margin-bottom:12px">👁️ Preview agreement</button>'
+    +'<div id="ag_preview" style="display:none"></div>'
+    +'<label id="ag_review_wrap" style="display:none;align-items:flex-start;gap:8px;margin:12px 0;cursor:pointer"><input type="checkbox" id="ag_reviewed" onchange="agToggleSave()" style="margin-top:3px;accent-color:#10b981"><span style="font-size:12px;color:#cbd5e1;line-height:1.5">I have read the preview above and it is correct.</span></label>'
+    +'<button id="ag_save_btn" disabled onclick="saveAgreement()" style="width:100%;padding:12px;background:#10b981;color:#04221a;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;opacity:0.5">🔒 Save & get verifiable copy</button>'
+    +'</div>');
+  setTimeout(function(){
+    var s=document.getElementById("ag_sender"); if(s && !s.value && typeof currentProfile!=="undefined" && currentProfile && currentProfile.display_name) s.value=currentProfile.display_name;
+    ["ag_sender","ag_receiver","ag_subject","ag_details","ag_amount","ag_payment","ag_delivery","ag_penalty","ag_extra"].forEach(function(id){var e=document.getElementById(id); if(e){ e.addEventListener("input",agInvalidate); e.addEventListener("change",agInvalidate); }});
+  },60);
+}
+function previewAgreement(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var sender=g('ag_sender'),receiver=g('ag_receiver'),subject=g('ag_subject');
+  if(!sender||!receiver||!subject){ alert('Your name, the client name, and what is being agreed are required.'); return; }
+  var amount=g('ag_amount')||'(to be agreed)';
+  var delivery=g('ag_delivery')||'(to be agreed)';
+  var payment=g('ag_payment')||'before';
+  var penalty=g('ag_penalty')||'Failure to perform by the agreed date entitles the affected party to written notice and a reasonable cure period; persistent breach may entitle the affected party to terminate and seek remedies available at law.';
+  var pay= payment==='after' ? 'The Client shall pay the full agreed amount upon completion and delivery of the Service.' : (payment==='half' ? 'The Client shall pay fifty percent (50%) before commencement and the remaining fifty percent (50%) upon completion and delivery.' : 'The Client shall pay the full agreed amount in advance, before commencement of the Service.');
+  var details=g('ag_details'), extra=g('ag_extra');
+  var html='<div style="background:#fff;color:#0f172a;border-radius:10px;padding:18px;font-family:Georgia,serif;line-height:1.6;margin-bottom:6px">'
+    +'<p style="margin:0 0 2px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;font-family:system-ui,sans-serif">Preview — this is what will be saved</p>'
+    +'<h3 style="margin:6px 0 2px;font-size:18px">Service Agreement</h3>'
+    +'<p style="margin:0 0 12px;font-size:12px;color:#475569;font-family:system-ui,sans-serif">Provider: <b>'+agEsc(sender)+'</b> · Client: <b>'+agEsc(receiver)+'</b></p>'
+    +'<p style="margin:8px 0"><b>Subject:</b> '+agEsc(subject)+'</p>'
+    +(details?('<p style="margin:6px 0;color:#334155">'+agEsc(details).replace(/\n/g,'<br>')+'</p>'):'')
+    +'<p style="margin:8px 0"><b>Amount:</b> '+agEsc(amount)+'</p>'
+    +'<p style="margin:6px 0"><b>Payment:</b> '+pay+'</p>'
+    +'<p style="margin:6px 0"><b>Delivery by:</b> '+agEsc(delivery)+'</p>'
+    +'<p style="margin:6px 0"><b>Breach:</b> '+agEsc(penalty)+'</p>'
+    +(extra?('<p style="margin:6px 0"><b>Other terms:</b> '+agEsc(extra).replace(/\n/g,'<br>')+'</p>'):'')
+    +'<p style="margin:12px 0 0;font-size:11px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:10px;font-family:system-ui,sans-serif">On save you get a unique reference + a public link anyone can check. Template for clarity, not legal advice — for large sums, see a lawyer.</p>'
+    +'</div>';
+  var pv=document.getElementById('ag_preview'); if(pv){ pv.innerHTML=html; pv.style.display='block'; pv.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  var rw=document.getElementById('ag_review_wrap'); if(rw){ rw.style.display='flex'; }
+  var lab=document.querySelector('#ag_review_wrap span'); if(lab){ lab.textContent='I have read the preview above and it is correct.'; }
+  var cb=document.getElementById('ag_reviewed'); if(cb){ cb.checked=false; }
+  var sb=document.getElementById('ag_save_btn'); if(sb){ sb.disabled=true; sb.style.opacity='0.5'; }
+}
+function agToggleSave(){
+  var cb=document.getElementById('ag_reviewed'), sb=document.getElementById('ag_save_btn');
+  if(cb&&sb){ sb.disabled=!cb.checked; sb.style.opacity=cb.checked?'1':'0.5'; }
+}
+function agInvalidate(){
+  var cb=document.getElementById('ag_reviewed'), sb=document.getElementById('ag_save_btn'), lab=document.querySelector('#ag_review_wrap span');
+  if(cb) cb.checked=false;
+  if(sb){ sb.disabled=true; sb.style.opacity='0.5'; }
+  if(lab) lab.textContent='You changed the details — preview again to confirm.';
+}
+async function saveAgreement(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value.trim():'';};
+  var sender=g('ag_sender'),receiver=g('ag_receiver'),subject=g('ag_subject');
+  if(!sender||!receiver||!subject){ alert('Your name, the client name, and what is being agreed are required.'); return; }
+  var cb=document.getElementById('ag_reviewed'); if(!cb||!cb.checked){ alert('Preview and confirm you have read the agreement first.'); return; }
+  var btn=document.getElementById('ag_save_btn'); if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  try{
+    var res=await apiFetch("/api/agreements",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({sender_name:sender,receiver_name:receiver,subject:subject,details:g('ag_details'),amount:g('ag_amount'),payment_terms:g('ag_payment')||'before',delivery_date:g('ag_delivery'),penalty:g('ag_penalty'),extra_terms:g('ag_extra')})});
+    var data=await res.json();
+    if(data&&data.success&&data.agreement){
+      window._lastAgreementUrl=data.verify_url||(location.origin+'/a/'+encodeURIComponent(data.agreement.ref));
+      setView('<div class="card">'+header("✍️ Agreement saved","agreement")
+        +'<div style="text-align:center;padding:18px 0 8px"><div style="font-size:40px">✅</div>'
+        +'<p style="margin:8px 0 2px;font-size:15px;font-weight:700;color:#f8fafc">Agreement locked</p>'
+        +'<p style="margin:0;font-size:12px;color:#94a3b8">Reference <span style="font-family:monospace;color:#22c55e">'+agEsc(data.agreement.ref)+'</span> — saved to your record and the bell notified.</p></div>'
+        +'<div style="background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:14px;margin:14px 0">'
+        +'<p style="margin:0 0 10px;font-size:12px;color:#cbd5e1;line-height:1.6">Open the official copy to <b>print or save as PDF</b> to your phone. It carries your reference, a watermark, and a public link — so your client (or anyone) can verify it is authentic on the spot.</p>'
+        +'<button onclick="window.open(window._lastAgreementUrl,\'_blank\')" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700">🖨️ Open printable & verifiable copy</button></div>'
+        +'<button onclick="renderAgreementForm()" style="width:100%;padding:11px;background:#0f172a;border:1px solid #334155;color:#cbd5e1;border-radius:8px;cursor:pointer;font-size:13px;margin-bottom:8px">＋ Make another agreement</button>'
+        +'<button onclick="renderAgreement()" style="width:100%;padding:11px;background:transparent;border:none;color:#64748b;cursor:pointer;font-size:13px">← Back to my agreements</button>'
+        +'</div>');
+    } else {
+      if(btn){ btn.disabled=false; btn.textContent='🔒 Save & get verifiable copy'; }
+      alert('Could not save: '+((data&&data.error)||'please try again.'));
+    }
+  }catch(e){
+    if(btn){ btn.disabled=false; btn.textContent='🔒 Save & get verifiable copy'; }
+    alert('Network problem. Check your connection and try again.');
+  }
+}
+
 function renderProfile(){
   const email = currentUser?.email || "";
   const name = currentProfile?.display_name || email.split("@")[0] || "";
