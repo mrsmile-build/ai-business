@@ -42,6 +42,72 @@ app.use((req, res, next) => {
   next();
 });
 app.get("/article", (req, res) => res.redirect(301, "/resources/how-to-make-a-promo-video-for-any-nigerian-business.html"));
+
+function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function makeAgreementRef(){var t=Date.now().toString(36).toUpperCase().slice(-6);var r=Math.random().toString(36).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,4);return 'AG-'+t+'-'+r;}
+function baseUrlOf(req){var b=process.env.BASE_URL||(req.protocol+'://'+req.get('host'));return String(b).replace(/\/+$/,'');}
+function fmtDate(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});}catch(e){return '';}}
+function paySentence(p){if(p==='after')return 'The Client shall pay the full agreed amount upon completion and delivery of the Service.';if(p==='half')return 'The Client shall pay fifty percent (50%) of the agreed amount before commencement of the Service, and the remaining fifty percent (50%) upon completion and delivery.';return 'The Client shall pay the full agreed amount in advance, before commencement of the Service.';}
+function renderAgreement(a,base){
+  var ref=escHtml(a.ref); var url=base+'/a/'+encodeURIComponent(a.ref);
+  var sender=escHtml(a.sender_name); var receiver=escHtml(a.receiver_name); var subject=escHtml(a.subject);
+  var detailsInner=a.details?escHtml(a.details).replace(/\n/g,'<br>'):'';
+  var extraInner=a.extra_terms?escHtml(a.extra_terms).replace(/\n/g,'<br>'):'';
+  var amount=a.amount?escHtml(a.amount):'(to be agreed)';
+  var delivery=a.delivery_date?escHtml(a.delivery_date):'(to be agreed)';
+  var penalty=a.penalty?escHtml(a.penalty):'Failure to perform by the agreed date entitles the affected party to written notice and a reasonable cure period; persistent breach may entitle the affected party to terminate and seek remedies available at law.';
+  var eff=fmtDate(a.created_at);
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agreement '+ref+' | AI Business</title><style>'
+  +'*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#0f172a;font-family:Georgia,"Times New Roman",serif;line-height:1.6}'
+  +'.sheet{max-width:760px;margin:24px auto;background:#fff;padding:40px 44px;border:1px solid #d7dee8;border-radius:6px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.08)}'
+  +'.wm{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(-32deg);font-family:system-ui,sans-serif;font-weight:800;font-size:54px;letter-spacing:4px;color:rgba(15,23,42,.045);white-space:nowrap;pointer-events:none;user-select:none}'
+  +'.topbar{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #0f172a;padding-bottom:14px;margin-bottom:24px;font-family:system-ui,sans-serif}'
+  +'.brand{font-weight:800;font-size:15px;letter-spacing:.3px}.chip{font-family:system-ui,sans-serif;font-size:12px;background:#0f172a;color:#fff;padding:5px 11px;border-radius:20px;font-weight:700;letter-spacing:.4px}'
+  +'h1{font-size:23px;margin:0 0 4px;font-weight:700}.sub{font-family:system-ui,sans-serif;font-size:12px;color:#475569;margin:0 0 22px}'
+  +'h2{font-family:system-ui,sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#334155;margin:26px 0 8px;border-bottom:1px solid #e2e8f0;padding-bottom:5px}'
+  +'p{margin:8px 0;font-size:15px}.parties{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:6px 0 2px}'
+  +'.pcard{border:1px solid #e2e8f0;border-radius:6px;padding:14px 16px;font-family:system-ui,sans-serif}.pcard .role{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:700}.pcard .nm{font-size:16px;font-weight:700;margin-top:3px;font-family:Georgia,serif}'
+  +'.amt{font-size:18px;font-weight:700}.sig{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:34px;font-family:system-ui,sans-serif}'
+  +'.sigline{border-bottom:1.5px solid #0f172a;height:42px;margin-bottom:6px}.siglab{font-size:12px;color:#475569}.signame{font-size:14px;font-weight:700;margin-top:2px;font-family:Georgia,serif}'
+  +'.verify{margin-top:30px;border:1px dashed #94a3b8;border-radius:6px;padding:14px 16px;font-family:system-ui,sans-serif;font-size:13px;background:#f8fafc}'
+  +'.verify b{font-family:monospace;letter-spacing:.5px}.verify a{color:#1d4ed8;word-break:break-all}'
+  +'.disc{margin-top:18px;font-family:system-ui,sans-serif;font-size:11.5px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:12px}'
+  +'.noprint{position:fixed;top:14px;right:14px;z-index:9;font-family:system-ui,sans-serif}'
+  +'.noprint button{background:#0f172a;color:#fff;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.2)}'
+  +'@media print{body{background:#fff}.sheet{box-shadow:none;border:none;margin:0;max-width:none;padding:0 6mm}.noprint{display:none!important}.wm{color:rgba(15,23,42,.06)}@page{margin:14mm}}'
+  +'</style></head><body>'
+  +'<div class="noprint"><button onclick="window.print()">Print / Save as PDF</button></div>'
+  +'<div class="sheet"><div class="wm">AI BUSINESS - VERIFIABLE RECORD</div>'
+  +'<div class="topbar"><div class="brand">AI Business</div><div class="chip">REF '+ref+'</div></div>'
+  +'<h1>Service Agreement</h1><p class="sub">Effective date: '+escHtml(eff)+' - Recorded in AI Business</p>'
+  +'<div class="parties"><div class="pcard"><div class="role">Service Provider</div><div class="nm">'+sender+'</div></div>'
+  +'<div class="pcard"><div class="role">Client</div><div class="nm">'+receiver+'</div></div></div>'
+  +'<h2>1. Subject of Agreement</h2><p><strong>'+subject+'</strong></p>'+(detailsInner?('<p style="color:#334155">'+detailsInner+'</p>'):'')
+  +'<h2>2. Agreed Amount</h2><p class="amt">'+amount+'</p>'
+  +'<h2>3. Payment Terms</h2><p>'+paySentence(a.payment_terms)+'</p>'
+  +'<h2>4. Delivery / Completion</h2><p>The Service shall be delivered or completed by: <strong>'+delivery+'</strong>.</p>'
+  +'<h2>5. Penalty for Breach</h2><p>'+penalty+'</p>'
+  +'<h2>6. Additional Terms</h2>'+(extraInner?('<p>'+extraInner+'</p>'):'<p style="color:#94a3b8">None recorded.</p>')
+  +'<div class="sig"><div><div class="sigline"></div><div class="siglab">Signature &amp; date</div><div class="signame">'+sender+'</div><div class="siglab">Service Provider</div></div>'
+  +'<div><div class="sigline"></div><div class="siglab">Signature &amp; date</div><div class="signame">'+receiver+'</div><div class="siglab">Client</div></div></div>'
+  +'<div class="verify"><strong>Authenticity check.</strong> This page is the canonical record of agreement <b>'+ref+'</b>. Compare any printed or screenshotted copy against this exact URL. If a document you hold does not match this record, it is not authentic.<br>Verify at: <a href="'+url+'">'+url+'</a></div>'
+  +'<div class="disc">This document is a plain-language template generated by AI Business for clarity and record-keeping. It is <strong>not legal advice</strong>. For agreements involving significant sums, risk, or regulatory matters, consult a qualified lawyer. Generated '+escHtml(fmtDate(new Date().toISOString()))+'.</div>'
+  +'</div></body></html>';
+}
+function renderNotFound(ref,base){
+  var r=escHtml(ref);
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Could not verify | AI Business</title><style>body{margin:0;background:#eef2f7;color:#0f172a;font-family:Georgia,serif;line-height:1.6;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px}.sheet{max-width:560px;background:#fff;border:1px solid #d7dee8;border-radius:8px;padding:36px 38px;box-shadow:0 1px 3px rgba(15,23,42,.08)}.x{font-size:40px}.brand{font-family:system-ui,sans-serif;font-weight:800;font-size:14px;letter-spacing:.3px;color:#475569;margin-bottom:14px}h1{font-size:22px;margin:0 0 10px}p{font-size:15px;color:#334155}.ref{font-family:monospace;background:#f1f5f9;padding:2px 8px;border-radius:5px;font-size:14px}a{color:#1d4ed8}</style></head><body><div class="sheet"><div class="brand">AI Business</div><div class="x">!</div><h1>Could not verify this reference</h1><p>No agreement with reference <span class="ref">'+r+'</span> is recorded in AI Business.</p><p>If someone presented you with a document bearing this reference, it is <strong>not an authentic AI Business record</strong>. Authentic agreements can always be verified at their exact reference URL.</p><p><a href="/">Back to AI Business</a></p></div></body></html>';
+}
+app.get("/a/:ref", async (req, res) => {
+  try {
+    var ref = String(req.params.ref || '').trim();
+    if (!/^[A-Za-z0-9-]{4,40}$/.test(ref)) { return res.status(400).type('html').send(renderNotFound('(invalid)', baseUrlOf(req))); }
+    var { data: a } = await supabase.from("agreements").select("*").eq("ref", ref).maybeSingle();
+    if (!a) { return res.status(404).type('html').send(renderNotFound(ref, baseUrlOf(req))); }
+    return res.type('html').send(renderAgreement(a, baseUrlOf(req)));
+  } catch (e) { return res.status(500).type('html').send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Verification error</title></head><body style="font-family:system-ui,sans-serif;padding:40px">Verification is temporarily unavailable. Please try again.</body></html>'); }
+});
+
 app.use(express.static("public", { extensions: ['html'] }));    
 
 const supabase = createClient(
@@ -1528,6 +1594,45 @@ app.get("/api/revenue", authMiddleware, async (req, res) => {
 });
 
 /* ---------------- PROPOSAL GENERATOR ---------------- */
+
+app.post("/api/agreements", authMiddleware, async (req, res) => {
+  try {
+    trackEvent(req.user.id, 'agreement_created');
+    var b = req.body || {};
+    var sender = String(b.sender_name||'').trim().slice(0,120);
+    var receiver = String(b.receiver_name||'').trim().slice(0,120);
+    var subject = String(b.subject||'').trim().slice(0,200);
+    var details = String(b.details||'').trim().slice(0,4000);
+    var amount = String(b.amount||'').trim().slice(0,120);
+    var payment = String(b.payment_terms||'before').trim().toLowerCase();
+    if (['before','after','half'].indexOf(payment) === -1) payment = 'before';
+    var delivery = String(b.delivery_date||'').trim().slice(0,120);
+    var penalty = String(b.penalty||'').trim().slice(0,2000);
+    var extra = String(b.extra_terms||'').trim().slice(0,4000);
+    if (!sender || !receiver || !subject) { return res.status(400).json({ success:false, error:'Sender, receiver and subject are required.' }); }
+    var inserted = null;
+    for (var i=0;i<3;i++) {
+      var ref = makeAgreementRef();
+      var { data, error } = await supabase.from("agreements").insert({ user_id:req.user.id, ref:ref, sender_name:sender, receiver_name:receiver, subject:subject, details:details, amount:amount, payment_terms:payment, delivery_date:delivery, penalty:penalty, extra_terms:extra }).select().single();
+      if (error) { if (error.code === '23505') { continue; } return res.status(500).json({ success:false, error:error.message }); }
+      inserted = data; break;
+    }
+    if (!inserted) { return res.status(500).json({ success:false, error:'Could not allocate a unique reference. Try again.' }); }
+    try {
+      var nc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+      await nc.from("notifications").insert({ user_id:req.user.id, type:'agreement', message:'Agreement '+inserted.ref+' saved - ready to print and verify.' });
+    } catch(e){}
+    res.json({ success:true, agreement:inserted, verify_url: baseUrlOf(req)+"/a/"+inserted.ref });
+  } catch (e) { res.status(500).json({ success:false, error:e.message }); }
+});
+app.get("/api/agreements", authMiddleware, async (req, res) => {
+  try {
+    var { data, error } = await supabase.from("agreements").select("*").eq("user_id", req.user.id).order("created_at", { ascending:false }).limit(100);
+    if (error) return res.status(500).json({ success:false, error:error.message });
+    res.json({ success:true, agreements: data || [] });
+  } catch (e) { res.status(500).json({ success:false, error:e.message }); }
+});
+
 app.post("/api/generate-proposal", authMiddleware, async (req, res) => {
   trackEvent(req.user.id, 'proposal_created'); checkAndTriggerActivation(req.user.id, 'generate_proposal');
   const { count: propCount } = await supabase.from("proposals").select("*", { count: "exact", head: true }).eq("user_id", req.user.id);
