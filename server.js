@@ -3554,7 +3554,7 @@ app.post("/api/early-access", rateLimit(10, 60000), async (req, res) => {
     if (userId) { const { data } = await supabase.from("early_access_interests").select("id").eq("user_id", userId).eq("capability", capability).limit(1); dup = data && data[0]; }
     else if (email) { const { data } = await supabase.from("early_access_interests").select("id").eq("email", email).eq("capability", capability).limit(1); dup = data && data[0]; }
     if (dup) return res.json({ success: true, duplicate: true });
-    const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public", team_size: team_size || null });
+    const { error } = await supabase.from("early_access_interests").insert({ user_id: userId, name: name || null, email: email || null, phone: phone || null, business_type: business_type || null, capability, source: source || "public", team_size: team_size || null, skills: String((req.body&&req.body.skills)||"").slice(0,500) || null, hours_available: String((req.body&&req.body.hours_available)||"").slice(0,40) || null, social_handles: String((req.body&&req.body.social_handles)||"").slice(0,300) || null });
     if (error) return res.json({ success: false, error: error.message });
     res.json({ success: true });
   } catch (e) { res.json({ success: false, error: e.message }); }

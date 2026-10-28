@@ -12,7 +12,7 @@
 </div>
 <p class="muted" id="status">Loading...</p>
 <div class="cards" id="cards"></div>
-<p style="margin:10px 0;font-size:14px;color:#94a3b8">🏢 Enterprise waitlist: <b id="entcount" style="color:#34d399">0</b> voter(s) with team 11+</p><table><thead><tr><th>When</th><th>Capability</th><th>Name</th><th>Email</th><th>WhatsApp</th><th>Business</th><th>Source</th><th>Team</th></tr></thead><tbody id="rows"></tbody></table>
+<p style="margin:10px 0;font-size:14px;color:#94a3b8">🏢 Enterprise waitlist: <b id="entcount" style="color:#34d399">0</b> voter(s) with team 11+</p><table><thead><tr><th>When</th><th>Capability</th><th>Name</th><th>Email</th><th>WhatsApp</th><th>Business</th><th>Source</th><th>Team</th><th>Skills</th><th>Hours</th><th>Socials</th></tr></thead><tbody id="rows"></tbody></table>
 </div>
 <script>
 var PUB = location.origin + "/early-access";
@@ -37,8 +37,11 @@ if(!localStorage.getItem("token")){document.getElementById("status").innerHTML='
   Object.keys(LABELS).forEach(function(k){ch+='<div class="card"><b>'+(d.counts[k]||0)+'</b><span>'+LABELS[k]+'</span></div>';});
   document.getElementById("cards").innerHTML=ch;
   var rb="";
-  d.rows.forEach(function(r){
-    rb+="<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td><span class='tag'>"+(LABELS[r.capability]||r.capability)+"</span></td><td>"+(r.name||"-")+"</td><td>"+(r.email||"-")+"</td><td>"+(r.phone||"-")+"</td><td>"+(r.business_type||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td>"+(r.team_size||"-")+"</td></tr>";
+  window.EA_FILTER=(location.hash||"#all").slice(1);
+    d.rows=(d.rows||[]).filter(function(r){var f=window.EA_FILTER;return f==="all"||(f==="earn"?r.capability==="earn_from_home":r.capability!=="earn_from_home");});
+    if(!document.getElementById("ea_filters")){var fc=document.createElement("div");fc.id="ea_filters";fc.style.cssText="margin:8px 0";fc.innerHTML=["all","vote","earn"].map(function(f){var lab={all:"All",vote:"Feature votes",earn:"Earn waitlist"}[f];var on=(location.hash||"#all").slice(1)===f;return '<a href="#'+f+'" onclick="setTimeout(function(){location.reload()},60)" style="display:inline-block;margin-right:6px;padding:6px 10px;border-radius:8px;border:1px solid '+(on?"#2563eb":"#334155")+'";background:'+(on?"#16233c":"#131d2e")+'";color:#f1f5f9;font-size:12px;text-decoration:none">'+lab+'</a>';}).join("");var tbl=document.querySelector("table");if(tbl&&tbl.parentNode)tbl.parentNode.insertBefore(fc,tbl);}
+    d.rows.forEach(function(r){
+    rb+="<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td><span class='tag'>"+(LABELS[r.capability]||(r.capability==="earn_from_home"?"💰 Earn waitlist":r.capability))+"</span></td><td>"+(r.name||"-")+"</td><td>"+(r.email||"-")+"</td><td>"+(r.phone||"-")+"</td><td>"+(r.business_type||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td>"+(r.team_size||"-")+"</td><td class='muted'>"+(r.skills||"-")+"</td><td class='muted'>"+(r.hours_available||"-")+"</td><td class='muted'>"+(r.social_handles||"-")+"</td></tr>";
   });
   document.getElementById("rows").innerHTML=rb||"<tr><td colspan=8 class='muted'>No votes yet. Share the link!</td></tr>";var ent=d.rows.filter(function(r){return r.team_size==="11-50"||r.team_size==="50+";}).length;document.getElementById("entcount").textContent=ent;
 })

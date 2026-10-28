@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",sans-serif;margin:0;padding:24px}h1{font-family:"Syne",sans-serif;font-size:28px}.wrap{max-width:560px;margin:30px auto}.cap{display:block;width:100%;text-align:left;margin-bottom:8px;padding:12px 14px;background:#131d2e;border:1px solid #1e2d42;border-radius:10px;color:#f1f5f9;cursor:pointer;font-size:14px}.cap.sel{border-color:#2563eb;background:#16233c}input,select{width:100%;padding:11px;margin-bottom:10px;border-radius:8px;border:1px solid #1e2d42;background:#0f1623;color:#f1f5f9;font-size:14px;box-sizing:border-box}button.go{width:100%;padding:13px;background:#2563eb;border:none;border-radius:10px;color:white;font-size:15px;font-weight:700;cursor:pointer}.muted{color:#64748b;font-size:13px}</style></head>
 <body><div class="wrap">
-<h1>Get early access to what's coming</h1>
+<h1 id="ea_h1">Get early access to what's coming</h1>
 <p class="muted">We're building new tools to help small businesses find customers, follow up, get booked and get paid. Pick the one that would help your business most - early voters get first access and founder pricing.</p>
 <div id="caps"></div>
 <input id="ea_name" placeholder="Your name">
@@ -12,6 +12,7 @@
 <select id="ea_biz"><option>Restaurant / Food</option><option>Salon / Beauty</option><option>Real Estate</option><option>Fashion / Retail</option><option>Tech / Services</option><option>School / Education</option><option>Other</option></select>
 <select id="ea_team"><option value="">Team size (optional)</option><option value="solo">Just me</option><option value="2-10">2-10 people</option><option value="11-50">11-50 people</option><option value="50+">50+ people</option></select>
 <input id="ea_phone" placeholder="WhatsApp number (optional)">
+<div id="ea_earn_fields" style="display:none"><input id="ea_skills" placeholder="What can you do? (writing, design, data entry, calling people...)"><select id="ea_hours"><option value="">Hours you can give daily (optional)</option><option value="1">About 1 hour</option><option value="2-3">2-3 hours</option><option value="4+">4+ hours</option></select><input id="ea_social" placeholder="Any social handle / link (optional)"></div>
 <button class="go" onclick="eaSubmit()">Join Early Access</button>
 <p class="muted" id="ea_msg"></p>
 <p class="muted">Already use AI Business? Vote from your dashboard too.</p>
@@ -19,6 +20,8 @@
 <script>
 var CAPS=[{k:"agent",l:"AI Business Agent",d:"Answers WhatsApp enquiries 24/7, qualifies customers, books appointments"},{k:"templates",l:"Proposal Templates",d:"Ready-made proposals you can personalise and send in 2 minutes"},{k:"reviews",l:"Auto Review Collector",d:"Happy customers get asked for a Google review automatically"},{k:"paystack",l:"Paystack Payment Links",d:"Collect payment inside your proposal"},{k:"broadcast",l:"WhatsApp Broadcast Campaigns",d:"Send one offer to every past customer in two taps"},{k:"theme_mode",l:"🌙 Light and Dark Mode Switch",d:"Dark, light or system default - you choose how the dashboard looks to your eyes"},{k:"support_bot",l:"🤖 Support-Bot (WhatsApp Chatbot)",d:"AI answers customer questions 24/7 on WhatsApp, escalates to you when needed"},{k:"review_manager",l:"⭐ Auto Review Collector",d:"After a sale, automatically ask happy customers for Google reviews"},{k:"cashflow",l:"💰 Cash-Flow Forecast",d:"See your next 30/60/90 days of cash, spot shortfalls before they hit"},{k:"creative",l:"🎨 Social Media Generator",d:"AI writes your Instagram captions, LinkedIn posts, and ad copy in seconds"}];
 var sel=null;
+var EA_EARN=new URLSearchParams(location.search).get("intent")==="earn";
+if(EA_EARN){sel="earn_from_home";document.getElementById("caps").style.display="none";document.getElementById("ea_earn_fields").style.display="block";document.getElementById("ea_h1").textContent="Earn from home with AI Business (waitlist)";document.querySelectorAll("p.muted")[0].textContent="We are validating a paid-tasks programme: real micro-tasks (verifying leads, sending follow-ups, reviewing drafts) for real paying clients, paid per task delivered. No income is promised and the first cohort is hand-picked. Join the waitlist - we contact you when it opens.";document.querySelector("button.go").textContent="Join the Earn Waitlist";}
 var box=document.getElementById("caps");
 CAPS.forEach(function(c){var b=document.createElement("button");b.type="button";b.className="cap";b.innerHTML="<strong>"+c.l+"</strong><span class='muted' style='display:block;font-size:12px;margin-top:2px'>"+c.d+"</span>";b.onclick=function(){sel=c.k;var all=document.querySelectorAll(".cap");for(var i=0;i<all.length;i++)all[i].classList.remove("sel");b.classList.add("sel");};box.appendChild(b);});
 function msg(t){document.getElementById("ea_msg").textContent=t;}
@@ -26,8 +29,8 @@ function eaSubmit(){
   var email=document.getElementById("ea_email").value.trim();
   if(!sel) return msg("Pick a capability first.");
   if(!email) return msg("Email is required.");
-  fetch("/api/early-access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({capability:sel,name:document.getElementById("ea_name").value.trim(),email:email,phone:document.getElementById("ea_phone").value.trim(),business_type:document.getElementById("ea_biz").value,team_size:document.getElementById("ea_team").value||null,source:"public"})})
-  .then(function(r){return r.json()}).then(function(d){ if(d.success){ msg("You're on the list! We'll email you when early access opens."); } else { msg(d.error||"Could not join."); } })
+  fetch("/api/early-access",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({capability:sel,name:document.getElementById("ea_name").value.trim(),email:email,phone:document.getElementById("ea_phone").value.trim(),business_type:document.getElementById("ea_biz").value,team_size:document.getElementById("ea_team").value||null,skills:((document.getElementById("ea_skills")||{}).value||"").trim()||null,hours_available:((document.getElementById("ea_hours")||{}).value||"").trim()||null,social_handles:((document.getElementById("ea_social")||{}).value||"").trim()||null,source:(new URLSearchParams(location.search).get("src")||"public")})})
+  .then(function(r){return r.json()}).then(function(d){ if(d.success){ msg(EA_EARN?"You're on the earn waitlist! We'll contact you when the first cohort opens.":"You're on the list! We'll email you when early access opens."); } else { msg(d.error||"Could not join."); } })
   .catch(function(){msg("Network error.");});
 }
 </script><script src="/movebar.js"></script></body></html>
