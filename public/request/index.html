@@ -1,0 +1,27 @@
+<!DOCTYPE html><html lang="en"><head>
+<link rel="canonical" href="https://www.ai-business.com.ng/request">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Request a Service - AI Business</title>
+<style>body{background:#080c14;color:#f1f5f9;font-family:"DM Sans",system-ui,sans-serif;margin:0;padding:24px}h1{font-size:26px}.wrap{max-width:560px;margin:30px auto}input,select,textarea{width:100%;padding:11px;margin-bottom:10px;border-radius:8px;border:1px solid #1e2d42;background:#0f1623;color:#f1f5f9;font-size:14px;box-sizing:border-box}button.go{width:100%;padding:13px;background:#10b981;border:none;border-radius:10px;color:#04221a;font-size:15px;font-weight:700;cursor:pointer}.muted{color:#64748b;font-size:13px;line-height:1.6}</style></head>
+<body><div class="wrap">
+<h1>📥 Need work done? Tell us what you'll pay.</h1>
+<p class="muted">Post the task you need completed and your budget. We quote within 24 hours. Work is delivered by vetted contributors under AI Business quality control. If we can't do it well, we'll say so honestly - and point you to the tool that can.</p>
+<input id="sr_biz" placeholder="Business name">
+<input id="sr_email" type="email" placeholder="Email *">
+<input id="sr_wa" placeholder="WhatsApp number (optional)">
+<select id="sr_task"><option value="">What do you need done?</option><option>Lead verification (check which businesses/numbers are real)</option><option>Prospect research list (businesses matching my target market)</option><option>Website & presence audit (what's broken, what to fix)</option><option>Follow-up sending on my quiet leads</option><option>Content drafting (status posts, captions, proposals)</option><option>Data entry & cleanup</option><option>Other (describe below)</option></select>
+<select id="sr_budget"><option value="">Budget range (optional)</option><option>Under ₦10,000</option><option>₦10,000 - ₦30,000</option><option>₦30,000 - ₦75,000</option><option>₦75,000+</option><option>Not sure yet</option></select>
+<input id="sr_deadline" placeholder="Deadline (optional)">
+<textarea id="sr_details" placeholder="Details: what exactly do you need, and what does success look like?" style="height:90px;resize:none"></textarea>
+<button class="go" onclick="srSubmit()">Send my request</button>
+<p class="muted" id="sr_msg"></p>
+<p class="muted">Want to <em>do</em> paid tasks instead? <a href="/early-access?intent=earn" style="color:#3b82f6">Join the earn waitlist →</a></p>
+</div>
+<script>
+function srSubmit(){
+  var email=document.getElementById("sr_email").value.trim();
+  if(!email){document.getElementById("sr_msg").textContent="Email is required.";return;}
+  fetch("/api/service-requests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({biz_name:document.getElementById("sr_biz").value.trim(),contact_email:email,contact_whatsapp:document.getElementById("sr_wa").value.trim(),task_type:document.getElementById("sr_task").value,budget:document.getElementById("sr_budget").value,deadline:document.getElementById("sr_deadline").value.trim(),details:document.getElementById("sr_details").value.trim(),source:(new URLSearchParams(location.search).get("src")||"public")})})
+  .then(function(r){return r.json()}).then(function(d){document.getElementById("sr_msg").textContent=d.success?"Request received. We'll quote within 24 hours.":(d.error||"Could not send.");})
+  .catch(function(){document.getElementById("sr_msg").textContent="Network error.";});
+}
+</script></body></html>

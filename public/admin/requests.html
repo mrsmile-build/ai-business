@@ -1,0 +1,17 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Service Requests - Admin</title>
+<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui,sans-serif;margin:0;padding:20px}h1{font-size:20px}table{border-collapse:collapse;width:100%;font-size:12px}th,td{border:1px solid #1e293b;padding:7px;text-align:left;vertical-align:top}.muted{color:#64748b}select{background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px;font-size:11px}</style></head>
+<body><h1>📥 Service Requests <span class="muted" id="count"></span></h1>
+<p class="muted">Work waiting for people. Quote within 24h; fund it before assigning contributors.</p>
+<table><thead><tr><th>When</th><th>Business</th><th>Contact</th><th>Task</th><th>Budget</th><th>Deadline</th><th>Details</th><th>Source</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>
+<script>
+var token=localStorage.getItem("token");
+fetch("/api/admin/service-requests",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json()}).then(function(d){
+  if(!d.success){document.getElementById("count").textContent="("+ (d.error||"error") +")";return;}
+  document.getElementById("count").textContent="("+d.rows.length+")";
+  document.getElementById("rows").innerHTML=d.rows.map(function(r){
+    var opts=["new","quoted","funded","delivered","closed"].map(function(s){return '<option value="'+s+'"'+(r.status===s?" selected":"")+'>'+s+'</option>';}).join("");
+    return "<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td>"+(r.biz_name||"-")+"</td><td>"+(r.contact_email||"-")+"<br class='muted'>"+(r.contact_whatsapp||"")+"</td><td>"+(r.task_type||"-")+"</td><td>"+(r.budget||"-")+"</td><td class='muted'>"+(r.deadline||"-")+"</td><td class='muted'>"+(r.details||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td><select onchange='setStatus(""+r.id+"",this.value)'>"+opts+"</select></td></tr>";
+  }).join("")||"<tr><td colspan='9' class='muted'>No requests yet. The door is open; the feed is empty.</td></tr>";
+});
+function setStatus(id,st){fetch("/api/admin/service-requests/status",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({id:id,status:st})}).then(function(r){return r.json()}).then(function(d){if(!d.success)alert(d.error||"failed");});}
+</script></body></html>

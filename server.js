@@ -3511,6 +3511,37 @@ app.get("/api/booking-analytics", authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+app.post("/api/service-requests", rateLimit(10, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const email = String(b.contact_email || "").trim();
+    if (!email) return res.json({ success: false, error: "Email is required." });
+    const { error } = await supabase.from("service_requests").insert({
+      biz_name: String(b.biz_name || "").slice(0,200) || null,
+      contact_email: email.slice(0,200),
+      contact_whatsapp: String(b.contact_whatsapp || "").slice(0,40) || null,
+      task_type: String(b.task_type || "").slice(0,120) || null,
+      budget: String(b.budget || "").slice(0,60) || null,
+      deadline: String(b.deadline || "").slice(0,60) || null,
+      details: String(b.details || "").slice(0,3000) || null,
+      source: String(b.source || "public").slice(0,60)
+    });
+    if (error) return res.json({ success: false, error: error.message });
+    res.json({ success: true });
+  } catch (e) { res.json({ success: false, error: "Server error." }); }
+});
+app.get("/api/admin/service-requests", authMiddleware, async (req, res) => {
+  const { data, error } = await supabase.from("service_requests").select("*").order("created_at", { ascending: false }).limit(300);
+  if (error) return res.json({ success: false, error: error.message });
+  res.json({ success: true, rows: data || [] });
+});
+app.post("/api/admin/service-requests/status", authMiddleware, async (req, res) => {
+  const { id, status } = req.body || {};
+  if (!id || !["new","quoted","funded","delivered","closed"].includes(status)) return res.json({ success: false, error: "Bad input." });
+  const { error } = await supabase.from("service_requests").update({ status }).eq("id", id);
+  if (error) return res.json({ success: false, error: error.message });
+  res.json({ success: true });
+});
 app.get("/api/admin/early-access", authMiddleware, async (req, res) => {
   try {
     const OWNER_EMAIL = "mrsmile4569@gmail.com";

@@ -3281,7 +3281,7 @@ async function searchLeads(){
 
   const plan = currentSub?.plan || "free";
   const isPro = plan === "pro" || plan === "business";
-  window._lfBrand = isPro ? "" : "\n\n— AI Business";
+  window._lfBrand = isPro ? "" : "\n\n— AI Business · need work done? ai-business.com.ng/request";
 
   try{
     const res = await apiFetch("/api/lead-finder",{
@@ -3637,13 +3637,13 @@ async function generateProposal(){
 
 function copyProposal(){
   const plan = currentSub?.plan || "free";
-  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business";
+  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business · need work done? ai-business.com.ng/request";
   const text = (document.getElementById("proposal_text")?.value||"") + brand;
   navigator.clipboard.writeText(text).then(()=>alert("Proposal copied!"));
 }
 function shareProposal(){
   const plan = currentSub?.plan || "free";
-  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business";
+  const brand = (plan === "pro" || plan === "business") ? "" : "\n\n— AI Business · need work done? ai-business.com.ng/request";
   const text = (document.getElementById("proposal_text")?.value||"") + brand;
   if(navigator.share){ navigator.share({title:"Business Proposal", text}).catch(()=>{}); }
   else { navigator.clipboard.writeText(text).then(()=>alert("Proposal copied!")); }
@@ -7221,6 +7221,19 @@ async function moveLead(id, status){
     tpl.parentNode.insertBefore(a2, tpl.nextSibling);
   }
   setInterval(injectMenu, 1500);
+})();
+/* ---- Admin menu: Service Requests link ---- */
+(function(){
+  function injectSR(){
+    if(document.getElementById("sr_menu")) return;
+    var base=document.getElementById("ea_menu"); if(!base||!base.parentNode) return;
+    var a3=base.cloneNode(true); a3.removeAttribute("onclick"); a3.id="sr_menu";
+    a3.textContent="📥 Service Requests"; a3.style.cursor="pointer";
+    if(a3.setAttribute) a3.setAttribute("href","/admin/requests.html");
+    a3.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); window.location.href="/admin/requests.html"; }, true);
+    base.parentNode.insertBefore(a3, base.nextSibling);
+  }
+  setInterval(injectSR, 1500);
 })();
 
 /* =========================
