@@ -5,13 +5,17 @@
 <table><thead><tr><th>When</th><th>Business</th><th>Contact</th><th>Task</th><th>Budget</th><th>Deadline</th><th>Details</th><th>Source</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>
 <script>
 var token=localStorage.getItem("token");
-fetch("/api/admin/service-requests",{headers:{Authorization:"Bearer "+token}}).then(function(r){return r.json()}).then(function(d){
+if(!token){document.getElementById("count").textContent="(not logged in)";document.getElementById("rows").innerHTML="<tr><td colspan='9' class='muted'>Not logged in on this browser. Open <a href='/dashboard' style='color:#3b82f6'>/dashboard<\/a>, log in, reload. The door still stores - this is only the window.<\/td><\/tr>";throw new Error("EA_CATCH_V1_no_token");}
+fetch("/api/admin/service-requests",{headers:{Authorization:"Bearer "+token}}).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(d){
   if(!d.success){document.getElementById("count").textContent="("+ (d.error||"error") +")";return;}
   document.getElementById("count").textContent="("+d.rows.length+")";
   document.getElementById("rows").innerHTML=d.rows.map(function(r){
     var opts=["new","quoted","funded","delivered","closed"].map(function(s){return '<option value="'+s+'"'+(r.status===s?" selected":"")+'>'+s+'</option>';}).join("");
     return "<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td>"+(r.biz_name||"-")+"</td><td>"+(r.contact_email||"-")+"<br class='muted'>"+(r.contact_whatsapp||"")+"</td><td>"+(r.task_type||"-")+"</td><td>"+(r.budget||"-")+"</td><td class='muted'>"+(r.deadline||"-")+"</td><td class='muted'>"+(r.details||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td><select onchange='setStatus(""+r.id+"",this.value)'>"+opts+"</select></td></tr>";
   }).join("")||"<tr><td colspan='9' class='muted'>No requests yet. The door is open; the feed is empty.</td></tr>";
+}).catch(function(e){ /* EA_CATCH_V1 */
+  var c=document.getElementById("count"); if(c) c.textContent="(load failed)";
+  var rb=document.getElementById("rows"); if(rb) rb.innerHTML="<tr><td colspan='9' class='muted'>Could not load: "+e.message+". HTTP 502/504 = free server asleep, wait ~60s + refresh. HTTP 401 = re-login at /dashboard. Requests are SAFE in the DB either way.<\/td><\/tr>";
 });
 function setStatus(id,st){fetch("/api/admin/service-requests/status",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({id:id,status:st})}).then(function(r){return r.json()}).then(function(d){if(!d.success)alert(d.error||"failed");});}
 </script></body></html>
