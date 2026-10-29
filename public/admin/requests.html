@@ -11,11 +11,12 @@ fetch("/api/admin/service-requests",{headers:{Authorization:"Bearer "+token}}).t
   document.getElementById("count").textContent="("+d.rows.length+")";
   document.getElementById("rows").innerHTML=d.rows.map(function(r){
     var opts=["new","quoted","funded","delivered","closed"].map(function(s){return '<option value="'+s+'"'+(r.status===s?" selected":"")+'>'+s+'</option>';}).join("");
-    return "<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td>"+(r.biz_name||"-")+"</td><td>"+(r.contact_email||"-")+"<br class='muted'>"+(r.contact_whatsapp||"")+"</td><td>"+(r.task_type||"-")+"</td><td>"+(r.budget||"-")+"</td><td class='muted'>"+(r.deadline||"-")+"</td><td class='muted'>"+(r.details||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td><select onchange='setStatus(""+r.id+"",this.value)'>"+opts+"</select></td></tr>";
+    return "<tr><td class='muted'>"+(r.created_at||"").slice(0,10)+"</td><td>"+(r.biz_name||"-")+"</td><td>"+(r.contact_email||"-")+"<br><span class='muted'>"+(r.contact_whatsapp||"")+"</span></td><td>"+(r.task_type||"-")+"</td><td>"+(r.budget||"-")+"</td><td class='muted'>"+(r.deadline||"-")+"</td><td class='muted'>"+(r.details||"-")+"</td><td class='muted'>"+(r.source||"-")+"</td><td><select data-id='"+r.id+"'>"+opts+"</select></td></tr>";
   }).join("")||"<tr><td colspan='9' class='muted'>No requests yet. The door is open; the feed is empty.</td></tr>";
 }).catch(function(e){ /* EA_CATCH_V1 */
   var c=document.getElementById("count"); if(c) c.textContent="(load failed)";
   var rb=document.getElementById("rows"); if(rb) rb.innerHTML="<tr><td colspan='9' class='muted'>Could not load: "+e.message+". HTTP 502/504 = free server asleep, wait ~60s + refresh. HTTP 401 = re-login at /dashboard. Requests are SAFE in the DB either way.<\/td><\/tr>";
 });
 function setStatus(id,st){fetch("/api/admin/service-requests/status",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({id:id,status:st})}).then(function(r){return r.json()}).then(function(d){if(!d.success)alert(d.error||"failed");});}
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.tagName==="SELECT"&&t.getAttribute("data-id")){setStatus(t.getAttribute("data-id"),t.value);}});
 </script></body></html>
