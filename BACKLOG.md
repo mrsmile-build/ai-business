@@ -52,7 +52,8 @@
 - Google-advisor translator (Search Console → plain-English actions) — **gate: 20 paying users with connected Search Console + real data**
 - Per-feature / per-request pricing — **gate: 10 full-price subscribers + real usage data**
 - Nigerian business verification database (CAC + verified addresses/phones) — **gate: contributor network running at scale**
-- Opportunity engine (automated discovery of funded work) — **gate: repeatable paid-work source validated**
+- Opportunity engine (automated discovery of funded work)
+- New resource articles (the "how many should we post" urge) — **gate: earn campaign has run 7 days AND the waitlist `skills` column + the search queries that actually brought strangers to the 167 existing guides name the real questions. The NUMBER is dictated by that data, not by the calendar turning. A new day is not an article day. Until then: the room fills from posts and messages, not from a bigger library built into an empty hall.** — **gate: repeatable paid-work source validated**
 - Own Hasdata replacement — **gate: a paying user hits cap mid-week and complains, OR 50+ active users**
 - NEXUS agents / autonomous automation — **gate: 50 paying customers**
 - Global expansion (Stripe, currency routing, timezone follow-ups) — **gate: first non-NG paying customer**
