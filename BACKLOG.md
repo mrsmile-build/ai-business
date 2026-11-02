@@ -61,6 +61,15 @@
 
 ---
 
+## 🔍 AUDIT VERDICT — the 5-engine "independent search" plan (Nov 2)
+> Direction AGREED (HasData→fallback, our DB→primary). But the code audit shows ~80% ALREADY SHIPPED: lead_pool + lead_pool_served + poolUpsert(normalized_key, times_seen, last_seen_at) + OSM dedup + phone dedup + quality filter + lib/searchApi.js orchestrator + YouTube signal engine. DO NOT rebuild the 5 engines — that duplicates shipped code.
+> REAL DELTA (3 bounded items, each gated behind a real pinch, NOT today):
+> 1. Confirm/flip call-order so pool fires BEFORE HasData (verify; one-line flip if inverted).
+> 2. Add freshness/TTL to pool READS (name 30d, phone 14d, reviews 3–7d) — the plan's expiration table is the missing piece.
+> 3. Promote OSM/directories from dedup-helper to primary discovery WHERE they cover our ICP (sparse for WhatsApp-first SMEs — "where it helps," not "replace Google").
+> GATE: build the delta only when real Lead Finder traffic spends credits AND the cache is proven carrying load. The credit problem doesn't exist until the users do.
+> MOCKSHOT CONTENT-CARD MODE + multi-ratio export (1:1/9:16/16:9/4:5): separate bounded build, gated behind FEELING the hand-crop friction while posting daily. Skip the cartoon/generative format — not our lane.
+
 ## 🅿️ PARKED with reason (decisions, not dropped balls — re-open only if the reason changes)
 - [ ] Auto-scheduler to FB/IG/TikTok/YT — COMPLIANCE TRAP (OAuth + Meta app-review + anti-automation war). Use ASSIST-not-AUTOMATE instead: AI drafts, human taps post. (Human-posted outperforms bot anyway.)
 - [ ] "Follow us on FB/IG/YT/LinkedIn" — NO CHANNELS TO POINT AT. An empty/dead profile is worse than none. Add when a channel is real & staffed (5-min add then).
