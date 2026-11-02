@@ -69,6 +69,7 @@
 > 3. Promote OSM/directories from dedup-helper to primary discovery WHERE they cover our ICP (sparse for WhatsApp-first SMEs — "where it helps," not "replace Google").
 > GATE: build the delta only when real Lead Finder traffic spends credits AND the cache is proven carrying load. The credit problem doesn't exist until the users do.
 > MOCKSHOT CONTENT-CARD MODE + multi-ratio export (1:1/9:16/16:9/4:5): separate bounded build, gated behind FEELING the hand-crop friction while posting daily. Skip the cartoon/generative format — not our lane.
+> **CONTENT-CARD MODE: GATE FIRED (Nov 2, evidence = founder attempted a lesson card, tool returned "no panels matched / feature-UI only").** The mode does not exist; the need is proven and immediate. Scheduled this week: a "Content Card" scene (solid/gradient bg + bold headline + optional subtext + optional brand mark) + multi-ratio export (1:1/9:16/16:9/4:5). Until shipped, lesson cards are made in Canva/notes and posted same-day — the missing mode must never block a post.
 
 ## 🅿️ PARKED with reason (decisions, not dropped balls — re-open only if the reason changes)
 - [ ] Auto-scheduler to FB/IG/TikTok/YT — COMPLIANCE TRAP (OAuth + Meta app-review + anti-automation war). Use ASSIST-not-AUTOMATE instead: AI drafts, human taps post. (Human-posted outperforms bot anyway.)
