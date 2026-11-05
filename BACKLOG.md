@@ -75,6 +75,11 @@
 > FUMBLE #1 (Daniel Etim Ekung, live tester): "do i connect it to my whatsapp?" — first-timers assume a WhatsApp pairing must be set up. Truth: no pairing; it drafts, you send (wa.me hand-off or copy-paste). ACTION when #2 or #3 arrives: add one plain line to the Follow-Up FAQ and the tester welcome message: "Nothing connects to your WhatsApp. It drafts; you send." One fumble is a question; three is a design flaw.
 > FUMBLE #2 (Daniel, same tester, ~30 min later): repeated "how do i connect it to my whatsapp on my phone" after being told no connection exists. Truth: long polite replies get skimmed; users keep hunting for the button they expect. ACTION at #3: add ONE line to the Follow-Up FAQ and the new-user welcome screen: "There is no 'connect to WhatsApp' button. The site drafts; you switch to WhatsApp and paste." Also — this is real demand for a WhatsApp hand-off feature. GATE: build when 3+ users independently ask for it, with the "your WhatsApp account stays yours alone" privacy principle intact.
 
+## 🌍 RESELLER PIPELINE (the ChatGPT-20 list) — NOT a customer blast
+> 20 international agencies (AU/UK/CA/ZA/IN/MA/ZM) found via ChatGPT+LinkedIn plugin. WRONG pond as customers (cold, international, unverified decision-makers); RIGHT pond as RESELLERS/PARTNERS who run AI Business for their own SME clients.
+> RULE: max 1-2 tuned practitioner/partner touches per week, never a blast. Sent: Thomas Lendzian (Zambia, SME finance coach), Jack Lomax (First Touch Marketing, UK). Parked: the other 18.
+> STRATEGIC NOTE (from the same experiment): Lead Finder alone is now commodity (ChatGPT does discovery free). All positioning leads with memory + follow-up + approval + local truth, never with discovery.
+
 ## 🅿️ PARKED with reason (decisions, not dropped balls — re-open only if the reason changes)
 - [ ] Auto-scheduler to FB/IG/TikTok/YT — COMPLIANCE TRAP (OAuth + Meta app-review + anti-automation war). Use ASSIST-not-AUTOMATE instead: AI drafts, human taps post. (Human-posted outperforms bot anyway.)
 - [ ] "Follow us on FB/IG/YT/LinkedIn" — NO CHANNELS TO POINT AT. An empty/dead profile is worse than none. Add when a channel is real & staffed (5-min add then).
