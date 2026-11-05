@@ -104,10 +104,12 @@ var d=window.__cardData||{head:"",list:[]};
 var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
 var li="";
 for(var i=0;i<d.list.length;i++){li+='<div style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start"><span style="color:#ff7a1a;font-weight:800;font-size:15px;min-width:16px">'+(i+1)+'</span><span style="color:#e2e8f0;font-size:14px;line-height:1.45;flex:1">'+esc(d.list[i])+'</span></div>';}
-var lg=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="height:30px;border-radius:6px;object-fit:contain;display:block;margin:0 auto 12px">':'';
-var lgB=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="height:30px;border-radius:6px;object-fit:contain;display:block;margin:14px auto 0">':'';
+var lg=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;display:block;margin:0 auto 12px;border:2px solid #1e293b">':'';
+var lgB=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="width:46px;height:46px;border-radius:50%;object-fit:cover;display:block;margin:14px auto 0;border:2px solid #1e293b">':'';
+var lgH=window.__cardLogo?'<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><img src="'+window.__cardLogo+'" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #1e293b"><div><div style="font-size:14px;font-weight:800;color:#f8fafc">'+esc(window.__cardName||'')+'</div><div style="font-size:11px;color:#64748b">'+esc(window.__cardHandle||'')+'</div></div></div>':'';
 var pos=window.__cardLogoPos||'bottom';
 var hd='<div style="font-size:21px;font-weight:800;color:#f8fafc;line-height:1.25;margin-bottom:16px">'+esc(d.head)+'</div>';
+if(pos==='header')return '<div class="m-body" style="padding:22px 20px 18px">'+lgH+hd+li+'</div>';
 if(pos==='top')return '<div class="m-body" style="padding:22px 20px 18px">'+lg+hd+li+'</div>';
 if(pos==='middle')return '<div class="m-body" style="padding:22px 20px 18px">'+hd+lg+li+'</div>';
 return '<div class="m-body" style="padding:22px 20px 18px">'+hd+li+lgB+'</div>';
