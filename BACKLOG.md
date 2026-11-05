@@ -73,6 +73,7 @@
 
 ## 🧭 ONBOARDING FUMBLE LOG (real-user data; feeds the UX/voice-first gate)
 > FUMBLE #1 (Daniel Etim Ekung, live tester): "do i connect it to my whatsapp?" — first-timers assume a WhatsApp pairing must be set up. Truth: no pairing; it drafts, you send (wa.me hand-off or copy-paste). ACTION when #2 or #3 arrives: add one plain line to the Follow-Up FAQ and the tester welcome message: "Nothing connects to your WhatsApp. It drafts; you send." One fumble is a question; three is a design flaw.
+> FUMBLE #2 (Daniel, same tester, ~30 min later): repeated "how do i connect it to my whatsapp on my phone" after being told no connection exists. Truth: long polite replies get skimmed; users keep hunting for the button they expect. ACTION at #3: add ONE line to the Follow-Up FAQ and the new-user welcome screen: "There is no 'connect to WhatsApp' button. The site drafts; you switch to WhatsApp and paste." Also — this is real demand for a WhatsApp hand-off feature. GATE: build when 3+ users independently ask for it, with the "your WhatsApp account stays yours alone" privacy principle intact.
 
 ## 🅿️ PARKED with reason (decisions, not dropped balls — re-open only if the reason changes)
 - [ ] Auto-scheduler to FB/IG/TikTok/YT — COMPLIANCE TRAP (OAuth + Meta app-review + anti-automation war). Use ASSIST-not-AUTOMATE instead: AI drafts, human taps post. (Human-posted outperforms bot anyway.)
