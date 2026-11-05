@@ -104,7 +104,13 @@ var d=window.__cardData||{head:"",list:[]};
 var esc=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");};
 var li="";
 for(var i=0;i<d.list.length;i++){li+='<div style="display:flex;gap:10px;margin-bottom:11px;align-items:flex-start"><span style="color:#ff7a1a;font-weight:800;font-size:15px;min-width:16px">'+(i+1)+'</span><span style="color:#e2e8f0;font-size:14px;line-height:1.45;flex:1">'+esc(d.list[i])+'</span></div>';}
-return '<div class="m-body" style="padding:22px 20px 18px"><div style="font-size:21px;font-weight:800;color:#f8fafc;line-height:1.25;margin-bottom:16px">'+esc(d.head)+'</div>'+li+'</div>';
+var lg=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="height:30px;border-radius:6px;object-fit:contain;display:block;margin:0 auto 12px">':'';
+var lgB=window.__cardLogo?'<img src="'+window.__cardLogo+'" style="height:30px;border-radius:6px;object-fit:contain;display:block;margin:14px auto 0">':'';
+var pos=window.__cardLogoPos||'bottom';
+var hd='<div style="font-size:21px;font-weight:800;color:#f8fafc;line-height:1.25;margin-bottom:16px">'+esc(d.head)+'</div>';
+if(pos==='top')return '<div class="m-body" style="padding:22px 20px 18px">'+lg+hd+li+'</div>';
+if(pos==='middle')return '<div class="m-body" style="padding:22px 20px 18px">'+hd+lg+li+'</div>';
+return '<div class="m-body" style="padding:22px 20px 18px">'+hd+li+lgB+'</div>';
 }},
  reviews:{l:"Review collector",render:function(b){return '<div class="m-body"><div class="card"><h4>Review request sent</h4><p class="meta">'+b.name+' \u00b7 after last sale</p><div style="font-size:20px;letter-spacing:3px;color:#fbbf24;margin:6px 0">\u2605\u2605\u2605\u2605\u2605</div><p style="font-size:12px;color:#cbd5e1;margin:0 0 8px">\u201c'+b.svc[0][0]+' was excellent \u2014 fast and friendly.\u201d</p><span class="pill green">posted to Google</span></div></div>';}}
 };
