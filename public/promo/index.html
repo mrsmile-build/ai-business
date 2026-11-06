@@ -115,6 +115,7 @@ var sarah=dyn.filter(function(x){return /sarah/i.test(x.l);})[0];
 VOICE=sarah?sarah.v:dyn[0].v;sel.value=VOICE;
 lb.textContent="✓ Voices loaded ("+dyn.length+" available)";lb.disabled=false;
 }).catch(function(e){fillGeneric(document.getElementById("voiceSel"));lb.textContent="⚠ Load failed, using device fallback";lb.disabled=false;});};
+loadVoices();
 
 function ttsFetch(text){return window.tryBackends("/api/tts-voicerss",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,voice:VOICE})}).then(function(r){if(!r.ok)throw new Error("voice upstream "+r.status);return r.blob();}).then(function(bl){if(!bl||bl.size<1000)throw new Error("empty audio");return bl;});}
 function sanitize(t){return t.replace(/₦\s?([0-9][0-9,]*)/g,"$1 naira").replace(/₦/g,"naira ").replace(/[^A-Za-z0-9 .,!?&'-]/g," ").replace(/\s+/g," ").trim().slice(0,400);}
