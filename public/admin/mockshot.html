@@ -207,7 +207,7 @@ function render(){
    if(note)note.textContent="List mode \u00b7 "+arr.length+" businesses ("+(mix==="mixed"?"mixed niches":"same niche")+"). Name/location/services fields apply to single views.";
  } else {
    var b=currentBiz();
-   document.getElementById("mock").innerHTML=(s==='card'?'':top)+SCENES[s].render(b)+(s==='card'?'<div style="border-top:1px solid #1e293b;margin-top:14px;padding-top:10px;text-align:center;font-size:11px;color:#64748b;letter-spacing:.04em">AI Business · ai-business.com.ng</div>':cap);
+   document.getElementById("mock").innerHTML=(s==='card'?'':top)+SCENES[s].render(b)+(s==='card'?(window.__cardFootOn===false?'':'<div style="border-top:1px solid #1e293b;margin-top:14px;padding-top:10px;text-align:center;font-size:11px;color:#64748b;letter-spacing:.04em">AI Business · ai-business.com.ng</div>'):cap);
    if(note)note.textContent=MULTI[s]?"":"Single-document view \u00b7 switch scene to Lead Finder / WhatsApp / Social / Reviews for multi-business lists.";
  }
 }
