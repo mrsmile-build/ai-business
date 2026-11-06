@@ -108,15 +108,6 @@ app.get("/a/:ref", async (req, res) => {
   } catch (e) { return res.status(500).type('html').send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Verification error</title></head><body style="font-family:system-ui,sans-serif;padding:40px">Verification is temporarily unavailable. Please try again.</body></html>'); }
 });
 
-// Force https://www host (splits impressions across 3 variants → 1 canonical)
-app.use((req, res, next) => {
-  const host = req.headers.host || '';
-  const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-  if (host !== 'www.ai-business.com.ng' || proto !== 'https') {
-    return res.redirect(301, 'https://www.ai-business.com.ng' + req.originalUrl);
-  }
-  next();
-});
 app.use(express.static("public", { extensions: ['html'] }));    
 
 const supabase = createClient(
