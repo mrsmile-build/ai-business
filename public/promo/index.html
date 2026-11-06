@@ -107,7 +107,7 @@ function hearVoice(){
   function done(){b.disabled=false;b.textContent="🔊 Hear voice";}
   ttsFetch("Hello! This is how I will sound in your promo video.").then(function(bl){
     var a=new Audio(URL.createObjectURL(bl));a.onended=done;a.onerror=done;a.play().catch(done);
-  }).catch(function(e){done();alert("Voice sample failed: "+e.message);});
+  }).catch(function(e){done();if(window.speechSynthesis){var u=new SpeechSynthesisUtterance("Hello! This is how I will sound in your promo video.");u.lang="en-US";window.speechSynthesis.speak(u);}else{alert("Voice sample failed: "+e.message);}});
 }
 
 function scenesFrom(name,tag,svcList,url,wa,color){
