@@ -97,7 +97,24 @@ function loadVoices(){
     VOICE=sarah?sarah.v:dyn[0].v; sel.value=VOICE;
   }).catch(function(){ fillGeneric(sel); });   /* ElevenLabs fails -> standard voices automatically */
 }
-loadVoices();
+var lb=document.createElement("button");lb.id="loadVoicesBtn";lb.textContent="⏳ Load voices (may take 50s if server is waking)";lb.style.cssText="margin:10px 0;padding:8px 12px;font-size:12px;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;cursor:pointer";
+document.getElementById("voiceSel").parentNode.insertBefore(lb,document.getElementById("voiceSel"));
+lb.onclick=function(){lb.disabled=true;lb.textContent="⏳ Loading voices... (up to 60s)";
+var c=new AbortController();setTimeout(function(){c.abort();},60000);
+window.tryBackends("/api/voices",{signal:c.signal}).then(function(r){if(!r.ok)throw new Error("voices "+r.status);return r.json();}).then(function(d){
+var dyn=(d.voices||[]).map(function(v){var L=v.labels||{};var bits=[L.gender,L.accent,L.description].filter(Boolean).join(", ");return {v:v.id,l:v.name+(bits?" · "+bits:"")};});
+if(!dyn.length){fillGeneric(document.getElementById("voiceSel"));lb.textContent="⚠ No voices found, using device fallback";return;}
+var sel=document.getElementById("voiceSel");
+var h2='<option value="">Off (silent video)</option><optgroup label="⭐ ElevenLabs voices">';
+dyn.forEach(function(x){h2+='<option value="'+x.v+'">'+x.l+'</option>';});
+h2+='</optgroup><optgroup label="Standard voices (fallback)">';
+GENERIC_VOICES.forEach(function(x){h2+='<option value="'+x.v+'">'+x.l+'</option>';});
+h2+='</optgroup>';
+sel.innerHTML=h2;
+var sarah=dyn.filter(function(x){return /sarah/i.test(x.l);})[0];
+VOICE=sarah?sarah.v:dyn[0].v;sel.value=VOICE;
+lb.textContent="✓ Voices loaded ("+dyn.length+" available)";lb.disabled=false;
+}).catch(function(e){fillGeneric(document.getElementById("voiceSel"));lb.textContent="⚠ Load failed, using device fallback";lb.disabled=false;});};
 
 function ttsFetch(text){return window.tryBackends("/api/tts-voicerss",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:text,voice:VOICE})}).then(function(r){if(!r.ok)throw new Error("voice upstream "+r.status);return r.blob();}).then(function(bl){if(!bl||bl.size<1000)throw new Error("empty audio");return bl;});}
 function sanitize(t){return t.replace(/₦\s?([0-9][0-9,]*)/g,"$1 naira").replace(/₦/g,"naira ").replace(/[^A-Za-z0-9 .,!?&'-]/g," ").replace(/\s+/g," ").trim().slice(0,400);}
