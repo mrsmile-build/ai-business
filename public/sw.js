@@ -1,4 +1,4 @@
-const CACHE = "aibusiness-v1.8.3";
+const CACHE = "aibusiness-v1.8.4";
 self.addEventListener("install", function (e) { self.skipWaiting(); });
 self.addEventListener("activate", function (e) {
   e.waitUntil(
