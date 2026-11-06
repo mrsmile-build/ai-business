@@ -107,7 +107,17 @@ function hearVoice(){
   function done(){b.disabled=false;b.textContent="🔊 Hear voice";}
   ttsFetch("Hello! This is how I will sound in your promo video.").then(function(bl){
     var a=new Audio(URL.createObjectURL(bl));a.onended=done;a.onerror=done;a.play().catch(done);
-  }).catch(function(e){done();if(window.speechSynthesis){var u=new SpeechSynthesisUtterance("Hello! This is how I will sound in your promo video.");u.lang="en-US";window.speechSynthesis.speak(u);}else{alert("Voice sample failed: "+e.message);}});
+  }).catch(function(e){done();if(window.speechSynthesis){var lab="";try{var ss=document.querySelectorAll("select");for(var i=0;i<ss.length;i++){if(ss[i].value===VOICE&&ss[i].selectedOptions&&ss[i].selectedOptions[0])lab=ss[i].selectedOptions[0].text;}}catch(_){}
+var wantM=/-(m|male)\b/i.test(VOICE)||/male|matthew|david|james|brian/i.test(lab);
+var wantF=/-(f|female)\b/i.test(VOICE)||/female|sarah|emma|amy|kate/i.test(lab);
+var vs=(window.speechSynthesis.getVoices()||[]).filter(function(v){return /^en/i.test(v.lang);});
+function sc(v){var n=v.name.toLowerCase();var m=/male|david|james|guy|brian|daniel/i.test(n);var f=/female|zira|samantha|victoria|karen|moira|tessa|fiona|serena/i.test(n);if(wantM&&m)return 2;if(wantF&&f)return 2;if(wantM&&f)return 0;if(wantF&&m)return 0;return 1;}
+vs.sort(function(a,b){return sc(b)-sc(a);});
+var u=new SpeechSynthesisUtterance("Hello! This is how I will sound in your promo video.");
+if(vs[0]){u.voice=vs[0];u.lang=vs[0].lang;}else{u.lang="en-US";}
+var b2=document.getElementById("prevBtn");if(b2)b2.textContent="🔊 device voice (closest match)";
+window.speechSynthesis.speak(u);u.onend=function(){if(b2)b2.textContent="🔊 Hear voice";};
+}else{alert("Voice sample failed: "+e.message);}});
 }
 
 function scenesFrom(name,tag,svcList,url,wa,color){
