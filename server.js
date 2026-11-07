@@ -1434,6 +1434,7 @@ Rules:
 
 Example if the offer is CRM:
 "Hi Majik Spa, a simple CRM can help you keep track of enquiries and follow up with clients before they forget to book. Can I show you a quick example?"
+"Hi Majik Spa, quick question — are you losing bookings to silence, or just too busy to follow up? A simple CRM keeps your enquiries and nudges clients before they forget. Can I show you a quick example?"
 
 Example if the offer is website design:
 "Hi Majik Spa, a professional booking website could make it easier for clients to discover your treatments and book without WhatsApp back-and-forth. Can I show you an example?"
@@ -1544,7 +1545,7 @@ ${allLeads.map((l,i) => {
             ? "manage enquiries, clients and follow-ups in one place"
             : `attract more customers with ${userOffer}`;
 
-        return `Hi ${l.name}, I noticed you run a ${businessType}. I can help you ${benefit}, so fewer potential customers slip away. Can I show you a quick example?`;
+        return `Hi ${l.name}, quick question — are you losing customers to silence, or just too busy to follow up? I help ${businessType}s ${benefit}. Can I show you a quick example?`;
       });
     }
 
