@@ -7637,14 +7637,12 @@ function targetMount() {
 
 // Wire: call targetMount() after dashboard loads (alongside checkCelebrations)
 if (typeof window !== "undefined") {
-  var _origLoadPage = typeof loadPage === "function" ? loadPage : null;
-  // Hook into dashboard load via a one-time observer
-  var _targetInterval = setInterval(function(){
-    if (document.getElementById("summary_card_anchor")) {
-      clearInterval(_targetInterval);
-      setTimeout(targetMount, 150);
-    }
-  }, 200);
+  setInterval(function(){
+    try {
+      var _a = document.getElementById("summary_card_anchor");
+      if (_a && !document.getElementById("target-card-root")) targetMount();
+    } catch(e){}
+  }, 1500);
   // Also try again on page visibility change (user switches back to tab)
   document.addEventListener("visibilitychange", function(){
     if (!document.hidden) setTimeout(targetMount, 100);
