@@ -43,7 +43,45 @@
       border-radius:6px;
       font-weight:bold;
     }
-  </style>
+  <style>
+/* ===== TARGET — daily-return card (phases 1-4, client-side only) ===== */
+.target-card{background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #2563eb;border-radius:14px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.target-card::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at top right,rgba(37,99,235,.12) 0%,transparent 60%);pointer-events:none}
+.target-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(37,99,235,.2);border:1px solid rgba(37,99,235,.4);border-radius:12px;font-size:11px;color:#93c5fd;font-weight:600;margin-bottom:10px}
+.target-h{font-size:16px;font-weight:800;color:#f8fafc;margin:0 0 4px;letter-spacing:-.01em}
+.target-sub{font-size:12px;color:#94a3b8;margin:0 0 14px}
+.target-priority{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;cursor:pointer;transition:all .15s}
+.target-priority:hover{border-color:#3b82f6;transform:translateY(-1px)}
+.target-priority.done{opacity:.55}
+.target-priority.done .target-pt{color:#10b981;text-decoration:line-through}
+.target-pn{width:22px;height:22px;border-radius:50%;background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
+.target-pn.done{background:#10b981}
+.target-pt{font-size:13px;font-weight:700;color:#e2e8f0;margin:0 0 2px}
+.target-pd{font-size:11px;color:#94a3b8;margin:0;line-height:1.4}
+.target-pv{font-size:10px;color:#60a5fa;margin-top:3px;font-weight:600}
+.target-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #1e293b}
+.target-progress{font-size:11px;color:#94a3b8}
+.target-progress b{color:#3b82f6}
+.target-dismiss{background:transparent;border:1px solid #334155;color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer}
+.target-dismiss:hover{border-color:#64748b;color:#e2e8f0}
+.target-intake{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:16px;margin-bottom:14px}
+.target-intake-h{font-size:14px;font-weight:700;color:#f8fafc;margin:0 0 4px}
+.target-intake-d{font-size:12px;color:#94a3b8;margin:0 0 10px}
+.target-intake input{background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;width:100%;margin-bottom:8px}
+.target-intake button{background:#3b82f6;color:white;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;width:100%}
+.target-intake button:hover{background:#2563eb}
+.target-evening{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}
+.target-evening-box{background:#0f172a;border:1px solid #2563eb;border-radius:14px;padding:24px;max-width:380px;width:100%}
+.target-evening-h{font-size:16px;font-weight:800;color:#f8fafc;margin:0 0 4px}
+.target-evening-d{font-size:12px;color:#94a3b8;margin:0 0 14px}
+.target-evening-btn{display:block;width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left}
+.target-evening-btn:hover{border-color:#3b82f6;background:#0f172a}
+.target-evening-btn.life{border-color:rgba(245,158,11,.3)}
+.target-playbook{font-size:11px;color:#60a5fa;margin-top:10px;padding:9px 11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.25);border-radius:8px;line-height:1.5}
+.target-playbook b{color:#93c5fd}
+.target-kill{position:absolute;top:10px;right:10px;font-size:9px;color:#475569;letter-spacing:.06em}
+</style>
+</style>
 </head>
 
 <body>
