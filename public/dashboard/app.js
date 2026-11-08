@@ -7600,7 +7600,7 @@ function targetMount() {
       '<div style="flex:1">' +
       '<p class="target-pt">'+p.t+'</p>' +
       '<p class="target-pd">'+p.d+'</p>' +
-      (p.v?"<p class="target-pv">tap to open</p>":"") +
+      (p.v?"<p class=\"target-pv\">tap to open</p>":"") +
       '</div></div>';
   });
   html += '<div class="target-playbook"><b>What works for '+v.label+' now:</b> '+v.works_now+'. <b>Might work later:</b> '+v.might_later+'.</div>';
