@@ -2695,7 +2695,7 @@ async function refreshAttention(){
   try{
     var res = await apiFetch("/api/attention",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
     var d = await res.json();
-    if(d && d.success){ ATTENTION = d; decorateHamburger(); if(menuOpen()) decorateMenu(); }
+    if(d && d.success){ ATTENTION = d; window.__ATTENTION_LOADED=true; decorateHamburger(); if(menuOpen()) decorateMenu(); }
   }catch(e){}
 }
 
@@ -7322,16 +7322,16 @@ function renderFeedbackAdmin(){
     .catch(function(e){setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#ef4444">'+e.message+'</p></div>');});
 }
 
-/* ===== TARGET v2 — collapsible, customer-facing, single-quote-attr safe ===== */
+/* ===== TARGET v3 — inline-styled (cascade-proof), grounded to live ATTENTION, surfaces platform+post ===== */
 var TARGET_PLAYBOOK = {
   updated: "2026-11-07",
   verticals: {
-    salon:   { label:"Salon / Beauty",     quiet_verb:"the ones who asked a price and vanished", daily_content:"post one before/after plus a booking nudge", followup_phrase:"still thinking about the style you asked about?", tip:"a before/after photo plus one booking nudge tends to bring quiet clients back." },
-    saas:    { label:"SaaS / Software",    quiet_verb:"the signups who never activated",        daily_content:"share one honest build-in-public update",      followup_phrase:"what were you actually trying to solve?",   tip:"one honest update outperforms a polished feature announcement." },
-    caterer: { label:"Caterer / Food",     quiet_verb:"the ones who said I will think about it", daily_content:"post today's menu with a weekend reminder",   followup_phrase:"the date you asked about is filling fast",  tip:"a today's-menu photo with a weekend-order reminder turns lookers into bookings." },
-    tailor:  { label:"Fashion / Tailor",   quiet_verb:"the ones who asked for a quote and ghosted", daily_content:"show one finished piece and its fabric story", followup_phrase:"the style you liked is still open this week", tip:"people buy the process, not just the result — show the making." },
-    coach:   { label:"Coach / Consultant", quiet_verb:"the discovery calls that went quiet",    daily_content:"share one small lesson from a real client",   followup_phrase:"the question you asked still sits with me",  tip:"one real client lesson earns trust a pitch never will." },
-    other:   { label:"Your business",      quiet_verb:"the enquiries that went quiet",          daily_content:"post one thing you solved for a customer",    followup_phrase:"still thinking about what you asked?",       tip:"receipts build trust faster than claims — show one win." }
+    salon:   { label:"Salon / Beauty",     quiet_verb:"the ones who asked a price and vanished", platform:"Instagram + WhatsApp status", post_draft:"Fresh out the chair — [style] today. DM to book your slot, weekend fills fast.", tip:"a before/after photo plus one booking nudge brings quiet clients back." },
+    saas:    { label:"SaaS / Software",    quiet_verb:"the signups who never activated",        platform:"LinkedIn + X",                  post_draft:"Shipped [feature] this week. The one thing it fixes: [problem]. Try it free.", tip:"one honest update outperforms a polished feature announcement." },
+    caterer: { label:"Caterer / Food",     quiet_verb:"the ones who said I will think about it", platform:"Instagram + WhatsApp groups",  post_draft:"Today's menu — [dish]. Taking weekend orders now, DM to reserve.", tip:"a today's-menu photo with a weekend reminder turns lookers into bookings." },
+    tailor:  { label:"Fashion / Tailor",   quiet_verb:"the ones who asked for a quote and ghosted", platform:"Instagram",                 post_draft:"Finished piece — [garment] in [fabric]. Custom orders open this week.", tip:"people buy the process, not just the result — show the making." },
+    coach:   { label:"Coach / Consultant", quiet_verb:"the discovery calls that went quiet",    platform:"LinkedIn",                      post_draft:"One lesson from a client this week: [insight]. If that resonates, my door is open.", tip:"one real client lesson earns trust a pitch never will." },
+    other:   { label:"Your business",      quiet_verb:"the enquiries that went quiet",          platform:"Where your customers already are", post_draft:"Solved [problem] for a customer today. Here is what it took: [one line].", tip:"receipts build trust faster than claims — show one win." }
   }
 };
 function escT(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -7347,17 +7347,13 @@ function targetGetVertical(){
 function targetTodayKey(){return new Date().toISOString().slice(0,10);}
 function targetRead(){try{return{goal:localStorage.getItem('ab_target_goal')||'',today:JSON.parse(localStorage.getItem('ab_target_today')||'null'),closing:parseInt(localStorage.getItem('ab_target_closing_hour')||'20',10),firstShown:localStorage.getItem('ab_target_first_shown')||'',engage:parseInt(localStorage.getItem('ab_target_engage_count')||'0',10),thesis:localStorage.getItem('ab_target_thesis')||''};}catch(e){return{goal:'',today:null,closing:20,firstShown:'',engage:0,thesis:''};}}
 function targetSave(p){var s=targetRead();for(var k in p)s[k]=p[k];if(p.goal!==undefined)localStorage.setItem('ab_target_goal',p.goal||'');if(p.today!==undefined)localStorage.setItem('ab_target_today',JSON.stringify(p.today));if(p.closing!==undefined)localStorage.setItem('ab_target_closing_hour',String(p.closing));if(p.firstShown!==undefined)localStorage.setItem('ab_target_first_shown',p.firstShown);if(p.engage!==undefined)localStorage.setItem('ab_target_engage_count',String(p.engage));if(p.thesis!==undefined)localStorage.setItem('ab_target_thesis',p.thesis);}
-function targetCountAttention(){try{if(typeof window.__aib_attention_count!=='undefined')return window.__aib_attention_count||0;var c=localStorage.getItem('ab_leads_cache');if(c){var ls=JSON.parse(c),t=targetTodayKey();return ls.filter(function(l){return l.follow_up_date&&l.follow_up_date<=t;}).length;}}catch(e){}return 0;}
-function targetCountDrafts(){try{var d=localStorage.getItem('ab_drafts_count');if(d)return parseInt(d,10)||0;}catch(e){}return 0;}
-function targetCountLeads(){try{var c=localStorage.getItem('ab_leads_cache');if(c)return JSON.parse(c).length||0;}catch(e){}return 0;}
-function targetBuildPriorities(attn,drafts,leads,vk){
+function targetQuietCount(){try{if(typeof ATTENTION!=='undefined'&&ATTENTION&&(typeof ATTENTION.followup==='number'))return ATTENTION.followup||0;}catch(e){}return null;}
+function targetBuildPriorities(quiet,vk){
   var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other,p=[];
-  if(attn>0)p.push({t:'Follow up your '+attn+' quiet lead'+(attn>1?'s':''),d:v.quiet_verb+'. Open the follow-up inbox and send one nudge in your own voice.',page:'followup',done:false});
-  else if(leads===0)p.push({t:'Add your first lead',d:'Save one person who asked you something. The bell only bites once there is a lead to catch.',page:'leads',done:false});
-  else p.push({t:'Log one new enquiry',d:'Every enquiry you save becomes a quiet lead the bell can catch tomorrow.',page:'leads',done:false});
-  if(drafts>0)p.push({t:'Approve '+drafts+' draft'+(drafts>1?'s':'')+' waiting',d:'AI wrote them in your voice. Read one and tap send. Nothing goes out without you.',page:'followup',done:false});
-  else p.push({t:v.daily_content,d:'One small post today for your '+v.label+'. No polish needed — done beats perfect.',page:null,done:false});
-  if(leads>0)p.push({t:'Send one short check-in',d:'Pick one saved lead and send a two-line still-thinking-about-it in your voice.',page:'leads',done:false});
+  if(quiet>0)p.push({t:'Follow up your '+quiet+' quiet lead'+(quiet>1?'s':''),d:v.quiet_verb+'. Open the follow-up inbox and send one nudge in your own voice.',page:'followup',done:false});
+  else p.push({t:'Log one new enquiry',d:'Save one person who asked you something today. Every enquiry you log becomes a quiet lead the bell can catch tomorrow.',page:'leads',done:false});
+  p.push({t:v.post_draft.split('.')[0].slice(0,42),d:'One small post today on '+v.platform+'. Fill the bracket, copy the draft below, no polish needed.',page:null,done:false});
+  if(quiet>0)p.push({t:'Send one short check-in',d:'Pick one saved lead and send a two-line still-thinking-about-it in your voice.',page:'leads',done:false});
   else p.push({t:'Run one Lead Finder search',d:'Find fresh names in your area so tomorrow has something to catch.',page:'leadFinder',done:false});
   return p;
 }
@@ -7367,17 +7363,18 @@ function targetSynthesis(goal,vk){
   return 'Three small steps for your '+v.label+' today.';
 }
 function insertTarget(root,card){var an=document.getElementById('summary_card_anchor');if(an&&an.parentNode===root)root.insertBefore(card,an);else root.insertBefore(card,root.firstChild);}
-function showTargetEvening(key){
-  var box=document.createElement('div');box.className='target-modal';
-  box.innerHTML="<div class='target-modal-box'><p class='target-modal-h'>How did today go?</p><p class='target-modal-d'>No guilt, no streaks — just an honest check.</p><button class='target-modal-btn' onclick='targetEvening(\"all\",this)'>Completed everything</button><button class='target-modal-btn' onclick='targetEvening(\"some\",this)'>Completed some</button><button class='target-modal-btn life' onclick='targetEvening(\"life\",this)'>Life happened</button><button class='target-modal-btn' onclick='targetEvening(\"skip\",this)'>Skip today</button></div>";
+function targetCopyPost(){var el=document.getElementById('target-post-draft');if(!el)return;var txt=(el.textContent||'').trim();try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}var b=document.getElementById('target-copy-btn');if(b){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy post';},1500);}}catch(e){}}
+function showTargetEvening(){
+  var box=document.createElement('div');box.setAttribute('style','position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px');
+  box.innerHTML="<div style='background:#0f172a;border:1px solid #2563eb;border-radius:14px;padding:24px;max-width:380px;width:100%'><p style='font-size:16px;font-weight:800;color:#f8fafc;margin:0 0 4px'>How did today go?</p><p style='font-size:12px;color:#94a3b8;margin:0 0 14px'>No guilt, no streaks — just an honest check.</p><button type='button' onclick='targetEvening(\"all\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed everything</button><button type='button' onclick='targetEvening(\"some\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed some</button><button type='button' onclick='targetEvening(\"life\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid rgba(245,158,11,.35);border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Life happened</button><button type='button' onclick='targetEvening(\"skip\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer;text-align:left'>Skip today</button></div>";
   document.body.appendChild(box);
 }
-function targetEvening(r,btn){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('.target-modal');if(m)m.parentNode.removeChild(m);targetMount();}
+function targetEvening(r){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('[data-target-modal]');if(!m){var all=document.body.children;for(var i=0;i<all.length;i++){if(all[i].style&&all[i].style.position==='fixed'&&all[i].firstChild&&all[i].firstChild.textContent&&all[i].firstChild.textContent.indexOf('How did today go')>-1){m=all[i];break;}}}if(m&&m.parentNode)m.parentNode.removeChild(m);var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetToggleBar(btn){
   var body=btn.nextElementSibling;if(!body)return;
   var open=body.style.display==='none';
   body.style.display=open?'block':'none';
-  var ch=btn.querySelector('.target-chev');if(ch)ch.textContent=open?'▴':'▾';
+  var ch=btn.querySelector('[data-chev]');if(ch)ch.textContent=open?'▴':'▾';
   if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}
 }
 function targetSetDone(i){var s=targetRead();if(s.today&&s.today.priorities[i]){s.today.priorities[i].done=!s.today.priorities[i].done;targetSave({today:s.today});}var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
@@ -7387,43 +7384,47 @@ function targetDismiss(){localStorage.setItem('ab_target_dismissed_'+targetToday
 function targetMount(){
   try{
     if(typeof currentProfile==='undefined'||currentProfile===null)return;
+    if(!window.__ATTENTION_LOADED)return;
+    var quiet=targetQuietCount();if(quiet===null)return;
     var root=document.getElementById('app');if(!root)return;
     if(document.getElementById('target-card-root'))return;
     var s=targetRead(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
     if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
-      if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(targetCountAttention(),targetCountDrafts(),targetCountLeads(),vk)};targetSave({today:s.today});}
-      showTargetEvening(key);return;
+      if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(quiet,vk)};targetSave({today:s.today});}
+      showTargetEvening();return;
     }
     if(localStorage.getItem('ab_target_dismissed_'+key))return;
-    if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(targetCountAttention(),targetCountDrafts(),targetCountLeads(),vk)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
+    if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(quiet,vk)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
     var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
     var goal=s.goal||(currentProfile&&currentProfile.primary_goal)||'';
     var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
-    var card=document.createElement('div');card.id='target-card-root';card.className='target-card';
-    var h="<button class='target-bar' onclick='targetToggleBar(this)'><span class='target-bar-l'>🎯 Target · "+doneN+" of "+total+" today</span><span class='target-chev'>▾</span></button>";
-    h+="<div class='target-body' style='display:none'>";
-    h+="<p class='target-syn'>"+escT(targetSynthesis(goal,vk))+"</p>";
-    h+="<p class='target-h'>Today's three steps</p>";
+    var card=document.createElement('div');card.id='target-card-root';card.setAttribute('style','margin-bottom:12px');
+    var h="";
+    h+="<button type='button' onclick='targetToggleBar(this)' style='width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:linear-gradient(135deg,#16213a,#0f172a);border:1px solid #2563eb;border-radius:12px;color:#f8fafc;font-size:14px;font-weight:600;cursor:pointer;text-align:left'><span style='display:flex;align-items:center;gap:6px'>🎯 Target · "+doneN+" of "+total+" today</span><span data-chev style='color:#60a5fa;font-size:13px'>▾</span></button>";
+    h+="<div style='display:none;background:#0f172a;border:1px solid #1e293b;border-top:none;border-radius:0 0 12px 12px;padding:14px 16px 16px;margin-top:-4px'>";
+    h+="<p style='font-size:12px;color:#93c5fd;margin:0 0 12px;line-height:1.5'>"+escT(targetSynthesis(goal,vk))+"</p>";
+    h+="<p style='font-size:13px;font-weight:700;color:#f8fafc;margin:0 0 10px'>Today's three steps</p>";
     s.today.priorities.forEach(function(p,i){
-      h+="<div class='target-prio"+(p.done?' done':'')+"'>";
-      h+="<button class='target-check' onclick='targetSetDone("+i+")'>"+(p.done?'✓':'○')+"</button>";
-      h+="<div class='target-prio-main' onclick='targetOpenPage("+i+")'><p class='target-pt'>"+escT(p.t)+"</p><p class='target-pd'>"+escT(p.d)+"</p></div>";
-      if(p.page)h+="<span class='target-open'>Open →</span>";
+      h+="<div style='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e293b'>";
+      h+="<button type='button' onclick='targetSetDone("+i+")' style='width:24px;height:24px;border-radius:50%;background:"+(p.done?'#10b981':'#1e293b')+";border:1px solid "+(p.done?'#10b981':'#334155')+";color:"+(p.done?'#fff':'#3b82f6')+";font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0'>"+(p.done?'✓':'○')+"</button>";
+      h+="<div onclick='targetOpenPage("+i+")' style='flex:1;cursor:pointer'><p style='font-size:13px;font-weight:600;color:"+(p.done?'#64748b':'#e2e8f0')+";margin:0 0 2px;text-decoration:"+(p.done?'line-through':'none')+"'>"+escT(p.t)+"</p><p style='font-size:11px;color:#94a3b8;margin:0;line-height:1.45'>"+escT(p.d)+"</p></div>";
+      if(p.page)h+="<span style='font-size:11px;color:#60a5fa;font-weight:600;flex-shrink:0;align-self:center'>Open →</span>";
       h+="</div>";
     });
-    h+="<div class='target-focus'><label>This week's focus (optional)</label><input id='target-focus-input' value='"+escT(s.goal||"")+"' placeholder='e.g. close 3 quiet leads, launch my booking page' maxlength='140'><button onclick='targetSaveFocus()'>Save focus</button></div>";
-    h+="<p class='target-tip'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
-    h+="<div class='target-foot'><span class='target-prog'><b>"+doneN+"/"+total+"</b> done today</span><button class='target-dismiss' onclick='targetDismiss()'>Dismiss for today</button></div>";
+    h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><p style='font-size:11px;color:#64748b;margin:0 0 6px'>Suggested post today · best platform: <span style='color:#60a5fa;font-weight:600'>"+escT(v.platform)+"</span></p><div id='target-post-draft' style='font-size:12px;color:#cbd5e1;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 12px;line-height:1.5;margin-bottom:8px'>"+escT(v.post_draft)+"</div><button type='button' id='target-copy-btn' onclick='targetCopyPost()' style='display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Copy post</button></div>";
+    h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><label style='display:block;font-size:11px;color:#64748b;margin-bottom:6px'>This week's focus (optional)</label><input id='target-focus-input' type='text' value='"+escT(s.goal||"")+"' placeholder='e.g. close 3 quiet leads, launch my booking page' maxlength='140' style='display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;margin-bottom:8px'><button type='button' onclick='targetSaveFocus()' style='display:block;width:100%;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Save focus</button></div>";
+    h+="<p style='font-size:11px;color:#60a5fa;margin:12px 0 0;padding:9px 11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.22);border-radius:8px;line-height:1.5'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
+    h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #1e293b'><span style='font-size:11px;color:#94a3b8'><b style='color:#3b82f6'>"+doneN+"/"+total+"</b> done today</span><button type='button' onclick='targetDismiss()' style='background:transparent;border:1px solid #334155;color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer'>Dismiss for today</button></div>";
     h+="</div>";
     card.innerHTML=h;
     insertTarget(root,card);
   }catch(e){}
 }
 if(typeof window!=='undefined'){
-  setInterval(function(){try{if(document.getElementById('app')&&typeof currentProfile!=='undefined'&&currentProfile!==null&&!document.getElementById('target-card-root'))targetMount();}catch(e){}},1200);
+  setInterval(function(){try{if(document.getElementById('app')&&typeof currentProfile!=='undefined'&&currentProfile!==null&&window.__ATTENTION_LOADED&&!document.getElementById('target-card-root'))targetMount();}catch(e){}},1200);
   document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(targetMount,100);});
 }
-/* ===== /TARGET v2 ===== */
+/* ===== /TARGET v3 ===== */
 
 /* ===== TARGET-WATCHER-V2: persistent mount, survives a broken loadSummaryCard ===== */
 if (typeof window !== "undefined") {
