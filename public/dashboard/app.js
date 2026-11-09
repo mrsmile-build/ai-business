@@ -7499,9 +7499,11 @@ function targetCountLeads() {
 
 function targetMount() {
   if (!targetShouldShow()) return;
-  var anchor = document.getElementById("summary_card_anchor");
-  if (!anchor) return;
+  var root = document.getElementById("app");
+  if (!root) return;
   if (document.getElementById("target-card-root")) return; // already mounted
+  var anchor = document.getElementById("summary_card_anchor");
+  function insertTarget(card){ if (anchor && anchor.parentNode === root) root.insertBefore(card, anchor); else root.insertBefore(card, root.firstChild); }
 
   var s = targetRead();
   var key = targetTodayKey();
@@ -7552,7 +7554,7 @@ function targetMount() {
       '<input id="target-goal-input" placeholder="e.g. close 3 quiet leads, launch my booking page, land my first paying client" maxlength="140">' +
       '<button id="target-goal-save">Save my week</button>' +
       '</div>';
-    anchor.parentNode.insertBefore(card, anchor);
+    insertTarget(card);
     var btn = card.querySelector("#target-goal-save");
     var inp = card.querySelector("#target-goal-input");
     btn.onclick = function(){
@@ -7610,7 +7612,7 @@ function targetMount() {
     '<button class="target-dismiss" id="target-dismiss-today">Dismiss today</button>' +
     '</div>';
   card.innerHTML = html;
-  anchor.parentNode.insertBefore(card, anchor);
+  insertTarget(card);
 
   // Wire priority clicks
   var rows = card.querySelectorAll(".target-priority");
@@ -7650,3 +7652,16 @@ if (typeof window !== "undefined") {
   });
 }
 /* ===== /TARGET ===== */
+
+/* ===== TARGET-WATCHER-V2: persistent mount, survives a broken loadSummaryCard ===== */
+if (typeof window !== "undefined") {
+  setInterval(function(){
+    try {
+      if (document.getElementById("app") && !document.getElementById("target-card-root")) targetMount();
+    } catch(e){}
+  }, 1200);
+  document.addEventListener("visibilitychange", function(){
+    if (!document.hidden) setTimeout(targetMount, 100);
+  });
+}
+/* ===== /TARGET-WATCHER-V2 ===== */
