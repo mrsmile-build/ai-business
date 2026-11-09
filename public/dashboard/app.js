@@ -331,6 +331,7 @@ async function loadSummaryCard(){
       '<p style="margin:10px 0 8px;font-size:12px;color:#94a3b8">Week: '+(w.proposals||0)+' proposals · '+(w.bookings||0)+' bookings · '+(w.won||0)+' won. Month: '+(m.won||0)+' won, revenue '+(m.revenue||0)+'.</p>' +
       '<button onclick="emailSummary()" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:white;font-size:12px;cursor:pointer">📧 Email me this summary</button>' +
       '</div>';
+    setTimeout(function(){ try { if (typeof targetMount === "function") targetMount(); } catch(e){} }, 100);
   } catch(e){}
 }
 async function emailSummary(){
