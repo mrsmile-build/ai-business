@@ -7322,17 +7322,26 @@ function renderFeedbackAdmin(){
     .catch(function(e){setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#ef4444">'+e.message+'</p></div>');});
 }
 
-/* ===== TARGET v3 — inline-styled (cascade-proof), grounded to live ATTENTION, surfaces platform+post ===== */
+/* ===== TARGET v4 — dream-driven plan + multiple clickable dreams, inline-styled, ATTENTION-grounded ===== */
 var TARGET_PLAYBOOK = {
   updated: "2026-11-07",
   verticals: {
-    salon:   { label:"Salon / Beauty",     quiet_verb:"the ones who asked a price and vanished", platform:"Instagram + WhatsApp status", post_draft:"Fresh out the chair — [style] today. DM to book your slot, weekend fills fast.", tip:"a before/after photo plus one booking nudge brings quiet clients back." },
-    saas:    { label:"SaaS / Software",    quiet_verb:"the signups who never activated",        platform:"LinkedIn + X",                  post_draft:"Shipped [feature] this week. The one thing it fixes: [problem]. Try it free.", tip:"one honest update outperforms a polished feature announcement." },
-    caterer: { label:"Caterer / Food",     quiet_verb:"the ones who said I will think about it", platform:"Instagram + WhatsApp groups",  post_draft:"Today's menu — [dish]. Taking weekend orders now, DM to reserve.", tip:"a today's-menu photo with a weekend reminder turns lookers into bookings." },
-    tailor:  { label:"Fashion / Tailor",   quiet_verb:"the ones who asked for a quote and ghosted", platform:"Instagram",                 post_draft:"Finished piece — [garment] in [fabric]. Custom orders open this week.", tip:"people buy the process, not just the result — show the making." },
-    coach:   { label:"Coach / Consultant", quiet_verb:"the discovery calls that went quiet",    platform:"LinkedIn",                      post_draft:"One lesson from a client this week: [insight]. If that resonates, my door is open.", tip:"one real client lesson earns trust a pitch never will." },
-    other:   { label:"Your business",      quiet_verb:"the enquiries that went quiet",          platform:"Where your customers already are", post_draft:"Solved [problem] for a customer today. Here is what it took: [one line].", tip:"receipts build trust faster than claims — show one win." }
+    salon:   { label:"Salon / Beauty",     quiet_verb:"the ones who asked a price and vanished", daily_content:"post one before/after plus a booking nudge", platform:"Instagram + WhatsApp status", post_draft:"Fresh out the chair — [style] today. DM to book your slot, weekend fills fast.", tip:"a before/after photo plus one booking nudge brings quiet clients back." },
+    saas:    { label:"SaaS / Software",    quiet_verb:"the signups who never activated",        daily_content:"share one honest build-in-public update",      platform:"LinkedIn + X",                  post_draft:"Shipped [feature] this week. The one thing it fixes: [problem]. Try it free.", tip:"one honest update outperforms a polished feature announcement." },
+    caterer: { label:"Caterer / Food",     quiet_verb:"the ones who said I will think about it", daily_content:"post today's menu with a weekend reminder",   platform:"Instagram + WhatsApp groups",  post_draft:"Today's menu — [dish]. Taking weekend orders now, DM to reserve.", tip:"a today's-menu photo with a weekend reminder turns lookers into bookings." },
+    tailor:  { label:"Fashion / Tailor",   quiet_verb:"the ones who asked for a quote and ghosted", platform:"Instagram",                 daily_content:"show one finished piece and its fabric story", post_draft:"Finished piece — [garment] in [fabric]. Custom orders open this week.", tip:"people buy the process, not just the result — show the making." },
+    coach:   { label:"Coach / Consultant", quiet_verb:"the discovery calls that went quiet",    daily_content:"share one small lesson from a real client",   platform:"LinkedIn",                      post_draft:"One lesson from a client this week: [insight]. If that resonates, my door is open.", tip:"one real client lesson earns trust a pitch never will." },
+    other:   { label:"Your business",      quiet_verb:"the enquiries that went quiet",          daily_content:"post one thing you solved for a customer",    platform:"Where your customers already are", post_draft:"Solved [problem] for a customer today. Here is what it took: [one line].", tip:"receipts build trust faster than claims — show one win." }
   }
+};
+var INTENT_PLAN = {
+  booking:   { platform:"Your booking page + WhatsApp", post:"Booking slots are open — [service]. Pick a time in one tap, no back-and-forth." },
+  sales:     { platform:"WhatsApp + where your customers already are", post:"This week only — [offer]. Reserve with the link, done in seconds." },
+  followup:  { platform:"WhatsApp", post:"Still thinking about [thing] you asked about? I kept your spot — here is a gentle nudge." },
+  customers: { platform:"Lead Finder + LinkedIn", post:"Now serving [area] — [service]. DM to start." },
+  promote:   { platform:"Instagram / Facebook", post:"[before/after or story] — here is what it took." },
+  grow:      { platform:"LinkedIn (build in public)", post:"One honest update: [what shipped or broke this week]." },
+  general:   { platform:"Where your customers already are", post:"Solved [problem] for a customer today. Here is what it took: [one line]." }
 };
 function escT(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function targetGetVertical(){
@@ -7344,87 +7353,81 @@ function targetGetVertical(){
   if(/coach|consult|mentor|trainer|advisor/.test(bt))return 'coach';
   return 'other';
 }
+function targetDreamIntent(t){
+  t=String(t||'').toLowerCase();
+  if(/book|appoint|schedule|slot|reservation|date/.test(t))return 'booking';
+  if(/sale|sell|revenue|money|pay|invoice|cash|close|convert/.test(t))return 'sales';
+  if(/follow|quiet|return|back|reactivat|win.?back|chase|nudge/.test(t))return 'followup';
+  if(/lead|customer|new|find|discover|prospect|acquire|first client/.test(t))return 'customers';
+  if(/promot|visib|aware|brand|post|content|reach|instagram|facebook/.test(t))return 'promote';
+  if(/grow|scal|build|expand|million|billion|users|scale/.test(t))return 'grow';
+  return 'general';
+}
 function targetTodayKey(){return new Date().toISOString().slice(0,10);}
-function targetRead(){try{return{goal:localStorage.getItem('ab_target_goal')||'',today:JSON.parse(localStorage.getItem('ab_target_today')||'null'),closing:parseInt(localStorage.getItem('ab_target_closing_hour')||'20',10),firstShown:localStorage.getItem('ab_target_first_shown')||'',engage:parseInt(localStorage.getItem('ab_target_engage_count')||'0',10),thesis:localStorage.getItem('ab_target_thesis')||''};}catch(e){return{goal:'',today:null,closing:20,firstShown:'',engage:0,thesis:''};}}
-function targetSave(p){var s=targetRead();for(var k in p)s[k]=p[k];if(p.goal!==undefined)localStorage.setItem('ab_target_goal',p.goal||'');if(p.today!==undefined)localStorage.setItem('ab_target_today',JSON.stringify(p.today));if(p.closing!==undefined)localStorage.setItem('ab_target_closing_hour',String(p.closing));if(p.firstShown!==undefined)localStorage.setItem('ab_target_first_shown',p.firstShown);if(p.engage!==undefined)localStorage.setItem('ab_target_engage_count',String(p.engage));if(p.thesis!==undefined)localStorage.setItem('ab_target_thesis',p.thesis);}
+function targetRead(){try{return{goal:localStorage.getItem('ab_target_goal')||'',dreams:JSON.parse(localStorage.getItem('ab_target_dreams')||'[]'),active:localStorage.getItem('ab_target_active_dream')||'',today:JSON.parse(localStorage.getItem('ab_target_today')||'null'),closing:parseInt(localStorage.getItem('ab_target_closing_hour')||'20',10),firstShown:localStorage.getItem('ab_target_first_shown')||'',engage:parseInt(localStorage.getItem('ab_target_engage_count')||'0',10),thesis:localStorage.getItem('ab_target_thesis')||''};}catch(e){return{goal:'',dreams:[],active:'',today:null,closing:20,firstShown:'',engage:0,thesis:''};}}
+function targetSave(p){var s=targetRead();for(var k in p)s[k]=p[k];if(p.goal!==undefined)localStorage.setItem('ab_target_goal',p.goal||'');if(p.dreams!==undefined)localStorage.setItem('ab_target_dreams',JSON.stringify(p.dreams));if(p.active!==undefined)localStorage.setItem('ab_target_active_dream',String(p.active||''));if(p.today!==undefined)localStorage.setItem('ab_target_today',JSON.stringify(p.today));if(p.closing!==undefined)localStorage.setItem('ab_target_closing_hour',String(p.closing));if(p.firstShown!==undefined)localStorage.setItem('ab_target_first_shown',p.firstShown);if(p.engage!==undefined)localStorage.setItem('ab_target_engage_count',String(p.engage));if(p.thesis!==undefined)localStorage.setItem('ab_target_thesis',p.thesis);}
+function targetEnsureDreams(){var s=targetRead();if(s.dreams&&s.dreams.length)return s;var seed=s.goal||(typeof currentProfile!=='undefined'&&currentProfile&&currentProfile.primary_goal)||'';var dreams=seed?[{id:Date.now(),text:seed}]:[];targetSave({dreams:dreams,active:dreams.length?dreams[0].id:'',goal:seed});return targetRead();}
+function targetActiveText(s){if(!s.dreams||!s.dreams.length)return '';var id=String(s.active);for(var i=0;i<s.dreams.length;i++){if(String(s.dreams[i].id)===id)return s.dreams[i].text||'';}return s.dreams[0].text||'';}
 function targetQuietCount(){try{if(typeof ATTENTION!=='undefined'&&ATTENTION&&(typeof ATTENTION.followup==='number'))return ATTENTION.followup||0;}catch(e){}return null;}
-function targetBuildPriorities(quiet,vk){
-  var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other,p=[];
-  if(quiet>0)p.push({t:'Follow up your '+quiet+' quiet lead'+(quiet>1?'s':''),d:v.quiet_verb+'. Open the follow-up inbox and send one nudge in your own voice.',page:'followup',done:false});
-  else p.push({t:'Log one new enquiry',d:'Save one person who asked you something today. Every enquiry you log becomes a quiet lead the bell can catch tomorrow.',page:'leads',done:false});
-  p.push({t:v.post_draft.split('.')[0].slice(0,42),d:'One small post today on '+v.platform+'. Fill the bracket, copy the draft below, no polish needed.',page:null,done:false});
-  if(quiet>0)p.push({t:'Send one short check-in',d:'Pick one saved lead and send a two-line still-thinking-about-it in your voice.',page:'leads',done:false});
-  else p.push({t:'Run one Lead Finder search',d:'Find fresh names in your area so tomorrow has something to catch.',page:'leadFinder',done:false});
-  return p;
-}
-function targetSynthesis(goal,vk){
-  var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
-  if(goal)return 'Three small steps that move you toward '+(String(goal).length>60?String(goal).slice(0,60)+'…':goal)+'.';
-  return 'Three small steps for your '+v.label+' today.';
-}
+function targetStepsVertical(vk,quiet){var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other,p=[];if(quiet>0)p.push({t:'Follow up your '+quiet+' quiet lead'+(quiet>1?'s':''),d:v.quiet_verb+'. Open the follow-up inbox and send one nudge in your own voice.',page:'followup',done:false});else p.push({t:'Log one new enquiry',d:'Save one person who asked you something today. Every enquiry you log becomes a quiet lead the bell can catch tomorrow.',page:'leads',done:false});p.push({t:v.daily_content.slice(0,42),d:'One small post today on '+v.platform+'. Fill the bracket, copy the draft below, no polish needed.',page:null,done:false});if(quiet>0)p.push({t:'Send one short check-in',d:'Pick one saved lead and send a two-line still-thinking-about-it in your voice.',page:'leads',done:false});else p.push({t:'Run one Lead Finder search',d:'Find fresh names in your area so tomorrow has something to catch.',page:'leadFinder',done:false});return p;}
+function targetStepsIntent(intent,quiet,vk){var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other,q=quiet>0?(quiet+' quiet lead'+(quiet>1?'s':'')):null,p=[];
+  if(intent==='booking'){p.push(q?{t:'Nudge your '+q+' to book',d:v.quiet_verb+'. A booking nudge turns the silent ones into a date.',page:'followup',done:false}:{t:'Log one enquiry, then share your booking link',d:'Save one person who asked, then send them the booking page.',page:'leads',done:false});p.push({t:'Share your booking page with 2 recent enquirers',d:'One tap, no back-and-forth — that is the whole point of the booking page.',page:'appointments',done:false});p.push({t:'Post one slot-open reminder today',d:'On '+INTENT_PLAN.booking.platform+'. Fill the bracket, copy below.',page:null,done:false});}
+  else if(intent==='sales'){p.push(q?{t:'Follow up your '+q+' with the offer',d:v.quiet_verb+'. A priced nudge converts the silent ones.',page:'followup',done:false}:{t:'Log one enquiry today',d:'Save one person who asked something — that is a sale waiting.',page:'leads',done:false});p.push({t:'Send one invoice or payment reminder',d:'Money you did not chase quietly evaporates. Draft the reminder in your voice.',page:null,done:false});p.push({t:'Post one this-week-only offer',d:'On '+INTENT_PLAN.sales.platform+'. Scarcity moves fence-sitters.',page:null,done:false});}
+  else if(intent==='followup'){p.push({t:'Follow up every quiet lead today',d:(q?q:v.quiet_verb)+'. The bell already flagged them — just approve the drafts.',page:'followup',done:false});p.push({t:'Log what each one was deciding on',d:'So the next message sounds like you were listening, not broadcasting.',page:'leads',done:false});p.push({t:'Send one two-line check-in',d:'Pick the warmest quiet lead and nudge them personally.',page:null,done:false});}
+  else if(intent==='customers'){p.push({t:'Run one Lead Finder search in your area',d:'Fresh names so tomorrow has something to catch.',page:'leadFinder',done:false});p.push({t:'Log one new enquiry',d:'Save the first real one you find — that starts the memory.',page:'leads',done:false});p.push({t:'Send one intro message to a fresh lead',d:'Ask what they are trying to solve before you pitch.',page:null,done:false});}
+  else if(intent==='promote'){p.push({t:'Post one before/after or story today',d:'On '+INTENT_PLAN.promote.platform+'. Show the making, not just the result.',page:null,done:false});p.push({t:'Reply to every comment with a question',d:'A reply turns a viewer into a conversation.',page:null,done:false});p.push({t:'Share the post to your WhatsApp status',d:'Same content, second room, zero extra work.',page:null,done:false});}
+  else if(intent==='grow'){p.push({t:'Ship one small thing today',d:'One honest improvement beats one grand plan.',page:null,done:false});p.push({t:'Post one build-in-public update',d:'On '+INTENT_PLAN.grow.platform+'. Receipts compound trust.',page:null,done:false});p.push({t:'Review last week: what worked, what to stop',d:'The plan learns from your real results, not from a guess.',page:null,done:false});}
+  else{p.push(q?{t:'Follow up your '+q+' with a win',d:v.quiet_verb+'. Show one receipt, nudge in your voice.',page:'followup',done:false}:{t:'Log one new enquiry',d:'Save one person who asked something today.',page:'leads',done:false});p.push({t:'Post one small win today',d:'On '+INTENT_PLAN.general.platform+'. Fill the bracket, copy below.',page:null,done:false});p.push({t:'Send one short check-in',d:'Pick one saved lead and nudge them personally.',page:'leads',done:false});}
+  return p;}
+function targetSynthesis(activeText,vk){var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;if(activeText)return 'Three small steps that move you toward '+(String(activeText).length>60?String(activeText).slice(0,60)+'…':activeText)+'.';return 'Three small steps for your '+v.label+' today.';}
 function insertTarget(root,card){var an=document.getElementById('summary_card_anchor');if(an&&an.parentNode===root)root.insertBefore(card,an);else root.insertBefore(card,root.firstChild);}
 function targetCopyPost(){var el=document.getElementById('target-post-draft');if(!el)return;var txt=(el.textContent||'').trim();try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}var b=document.getElementById('target-copy-btn');if(b){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy post';},1500);}}catch(e){}}
-function showTargetEvening(){
-  var box=document.createElement('div');box.setAttribute('style','position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px');
-  box.innerHTML="<div style='background:#0f172a;border:1px solid #2563eb;border-radius:14px;padding:24px;max-width:380px;width:100%'><p style='font-size:16px;font-weight:800;color:#f8fafc;margin:0 0 4px'>How did today go?</p><p style='font-size:12px;color:#94a3b8;margin:0 0 14px'>No guilt, no streaks — just an honest check.</p><button type='button' onclick='targetEvening(\"all\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed everything</button><button type='button' onclick='targetEvening(\"some\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed some</button><button type='button' onclick='targetEvening(\"life\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid rgba(245,158,11,.35);border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Life happened</button><button type='button' onclick='targetEvening(\"skip\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer;text-align:left'>Skip today</button></div>";
-  document.body.appendChild(box);
-}
-function targetEvening(r){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('[data-target-modal]');if(!m){var all=document.body.children;for(var i=0;i<all.length;i++){if(all[i].style&&all[i].style.position==='fixed'&&all[i].firstChild&&all[i].firstChild.textContent&&all[i].firstChild.textContent.indexOf('How did today go')>-1){m=all[i];break;}}}if(m&&m.parentNode)m.parentNode.removeChild(m);var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
-function targetToggleBar(btn){
-  var body=btn.nextElementSibling;if(!body)return;
-  var open=body.style.display==='none';
-  body.style.display=open?'block':'none';
-  var ch=btn.querySelector('[data-chev]');if(ch)ch.textContent=open?'▴':'▾';
-  if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}
-}
+function showTargetEvening(){var box=document.createElement('div');box.setAttribute('data-target-modal','1');box.setAttribute('style','position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px');box.innerHTML="<div style='background:#0f172a;border:1px solid #2563eb;border-radius:14px;padding:24px;max-width:380px;width:100%'><p style='font-size:16px;font-weight:800;color:#f8fafc;margin:0 0 4px'>How did today go?</p><p style='font-size:12px;color:#94a3b8;margin:0 0 14px'>No guilt, no streaks — just an honest check.</p><button type='button' onclick='targetEvening(\"all\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed everything</button><button type='button' onclick='targetEvening(\"some\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Completed some</button><button type='button' onclick='targetEvening(\"life\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid rgba(245,158,11,.35);border-radius:8px;color:#e2e8f0;font-size:13px;margin-bottom:6px;cursor:pointer;text-align:left'>Life happened</button><button type='button' onclick='targetEvening(\"skip\")' style='display:block;width:100%;padding:11px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:13px;cursor:pointer;text-align:left'>Skip today</button></div>";document.body.appendChild(box);}
+function targetEvening(r){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('[data-target-modal]');if(m&&m.parentNode)m.parentNode.removeChild(m);var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetToggleBar(btn){var body=btn.nextElementSibling;if(!body)return;var open=body.style.display==='none';body.style.display=open?'block':'none';var ch=btn.querySelector('[data-chev]');if(ch)ch.textContent=open?'▴':'▾';if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}}
 function targetSetDone(i){var s=targetRead();if(s.today&&s.today.priorities[i]){s.today.priorities[i].done=!s.today.priorities[i].done;targetSave({today:s.today});}var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetOpenPage(i){var s=targetRead();var p=s.today&&s.today.priorities[i];if(p&&p.page&&typeof loadPage==='function')loadPage(p.page);}
-function targetSaveFocus(){var inp=document.getElementById('target-focus-input');var g=(inp&&inp.value||'').trim();targetSave({goal:g});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetAddDream(){var inp=document.getElementById('target-dream-input');var t=(inp&&inp.value||'').trim();if(!t)return;var s=targetRead();var id=Date.now()+Math.floor(Math.random()*1000);var dreams=(s.dreams||[]).concat([{id:id,text:t}]);targetSave({dreams:dreams,active:id,goal:t});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetSetActiveDream(id){var s=targetRead();var txt='';for(var i=0;i<s.dreams.length;i++){if(s.dreams[i].id===id)txt=s.dreams[i].text||'';}targetSave({active:id,goal:txt});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetRemoveDream(id){var s=targetRead();var dreams=(s.dreams||[]).filter(function(d){return d.id!==id;});var active=s.active;if(String(active)===String(id))active=dreams.length?dreams[0].id:'';targetSave({dreams:dreams,active:active,goal:active?targetActiveText({dreams:dreams,active:active}):''});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetDismiss(){localStorage.setItem('ab_target_dismissed_'+targetTodayKey(),'1');var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);}
-function targetMount(){
-  try{
-    if(typeof currentProfile==='undefined'||currentProfile===null)return;
-    if(!window.__ATTENTION_LOADED)return;
-    var quiet=targetQuietCount();if(quiet===null)return;
-    var root=document.getElementById('app');if(!root)return;
-    if(document.getElementById('target-card-root'))return;
-    var s=targetRead(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
-    if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
-      if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(quiet,vk)};targetSave({today:s.today});}
-      showTargetEvening();return;
-    }
-    if(localStorage.getItem('ab_target_dismissed_'+key))return;
-    if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(quiet,vk)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
-    var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
-    var goal=s.goal||(currentProfile&&currentProfile.primary_goal)||'';
-    var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
-    var card=document.createElement('div');card.id='target-card-root';card.setAttribute('style','margin-bottom:12px');
-    var h="";
-    h+="<button type='button' onclick='targetToggleBar(this)' style='width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:linear-gradient(135deg,#16213a,#0f172a);border:1px solid #2563eb;border-radius:12px;color:#f8fafc;font-size:14px;font-weight:600;cursor:pointer;text-align:left'><span style='display:flex;align-items:center;gap:6px'>🎯 Target · "+doneN+" of "+total+" today</span><span data-chev style='color:#60a5fa;font-size:13px'>▾</span></button>";
-    h+="<div style='display:none;background:#0f172a;border:1px solid #1e293b;border-top:none;border-radius:0 0 12px 12px;padding:14px 16px 16px;margin-top:-4px'>";
-    h+="<p style='font-size:12px;color:#93c5fd;margin:0 0 12px;line-height:1.5'>"+escT(targetSynthesis(goal,vk))+"</p>";
-    h+="<p style='font-size:13px;font-weight:700;color:#f8fafc;margin:0 0 10px'>Today's three steps</p>";
-    s.today.priorities.forEach(function(p,i){
-      h+="<div style='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e293b'>";
-      h+="<button type='button' onclick='targetSetDone("+i+")' style='width:24px;height:24px;border-radius:50%;background:"+(p.done?'#10b981':'#1e293b')+";border:1px solid "+(p.done?'#10b981':'#334155')+";color:"+(p.done?'#fff':'#3b82f6')+";font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0'>"+(p.done?'✓':'○')+"</button>";
-      h+="<div onclick='targetOpenPage("+i+")' style='flex:1;cursor:pointer'><p style='font-size:13px;font-weight:600;color:"+(p.done?'#64748b':'#e2e8f0')+";margin:0 0 2px;text-decoration:"+(p.done?'line-through':'none')+"'>"+escT(p.t)+"</p><p style='font-size:11px;color:#94a3b8;margin:0;line-height:1.45'>"+escT(p.d)+"</p></div>";
-      if(p.page)h+="<span style='font-size:11px;color:#60a5fa;font-weight:600;flex-shrink:0;align-self:center'>Open →</span>";
-      h+="</div>";
-    });
-    h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><p style='font-size:11px;color:#64748b;margin:0 0 6px'>Suggested post today · best platform: <span style='color:#60a5fa;font-weight:600'>"+escT(v.platform)+"</span></p><div id='target-post-draft' style='font-size:12px;color:#cbd5e1;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 12px;line-height:1.5;margin-bottom:8px'>"+escT(v.post_draft)+"</div><button type='button' id='target-copy-btn' onclick='targetCopyPost()' style='display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Copy post</button></div>";
-    h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><label style='display:block;font-size:11px;color:#64748b;margin-bottom:6px'>This week's focus (optional)</label><input id='target-focus-input' type='text' value='"+escT(s.goal||"")+"' placeholder='e.g. close 3 quiet leads, launch my booking page' maxlength='140' style='display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;margin-bottom:8px'><button type='button' onclick='targetSaveFocus()' style='display:block;width:100%;background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Save focus</button></div>";
-    h+="<p style='font-size:11px;color:#60a5fa;margin:12px 0 0;padding:9px 11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.22);border-radius:8px;line-height:1.5'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
-    h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #1e293b'><span style='font-size:11px;color:#94a3b8'><b style='color:#3b82f6'>"+doneN+"/"+total+"</b> done today</span><button type='button' onclick='targetDismiss()' style='background:transparent;border:1px solid #334155;color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer'>Dismiss for today</button></div>";
-    h+="</div>";
-    card.innerHTML=h;
-    insertTarget(root,card);
-  }catch(e){}
-}
-if(typeof window!=='undefined'){
-  setInterval(function(){try{if(document.getElementById('app')&&typeof currentProfile!=='undefined'&&currentProfile!==null&&window.__ATTENTION_LOADED&&!document.getElementById('target-card-root'))targetMount();}catch(e){}},1200);
-  document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(targetMount,100);});
-}
-/* ===== /TARGET v3 ===== */
+function targetMount(){try{
+  if(typeof currentProfile==='undefined'||currentProfile===null)return;
+  if(!window.__ATTENTION_LOADED)return;
+  var quiet=targetQuietCount();if(quiet===null)return;
+  var root=document.getElementById('app');if(!root)return;
+  if(document.getElementById('target-card-root'))return;
+  var s=targetEnsureDreams(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
+  if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
+    var at0=targetActiveText(s);var it0=targetDreamIntent(at0);var hasDream=!!at0;
+    if(!s.today||s.today.date!==key){s.today={date:key,priorities:hasDream?targetStepsIntent(it0,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});}
+    showTargetEvening();return;
+  }
+  if(localStorage.getItem('ab_target_dismissed_'+key))return;
+  var activeText=targetActiveText(s);var intent=targetDreamIntent(activeText);var hasDream=!!activeText;var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+  var plan=hasDream?INTENT_PLAN[intent]:{platform:v.platform,post:v.post_draft};
+  if(!s.today||s.today.date!==key){s.today={date:key,priorities:hasDream?targetStepsIntent(intent,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
+  var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
+  var card=document.createElement('div');card.id='target-card-root';card.setAttribute('style','margin-bottom:12px');
+  var h="";
+  h+="<button type='button' onclick='targetToggleBar(this)' style='width:100%;display:flex;justify-content:space-between;align-items:center;padding:13px 16px;background:linear-gradient(135deg,#16213a,#0f172a);border:1px solid #2563eb;border-radius:12px;color:#f8fafc;font-size:14px;font-weight:600;cursor:pointer;text-align:left'><span style='display:flex;align-items:center;gap:6px'>🎯 Target · "+doneN+" of "+total+" today</span><span data-chev style='color:#60a5fa;font-size:13px'>▾</span></button>";
+  h+="<div style='display:none;background:#0f172a;border:1px solid #1e293b;border-top:none;border-radius:0 0 12px 12px;padding:14px 16px 16px;margin-top:-4px'>";
+  h+="<p style='font-size:11px;color:#64748b;margin:0 0 8px'>Your dreams — tap one to see its plan</p>";
+  h+="<div style='display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px'>";
+  (s.dreams||[]).forEach(function(d){var on=String(d.id)===String(s.active);h+="<span onclick='targetSetActiveDream("+d.id+")' style='display:inline-flex;align-items:center;gap:6px;padding:6px 8px 6px 10px;border-radius:999px;font-size:12px;cursor:pointer;border:1px solid "+(on?'#3b82f6':'#334155')+";background:"+(on?'rgba(59,130,246,.16)':'#0b1220')+";color:"+(on?'#dbeafe':'#94a3b8')+"'>"+escT(String(d.text).length>26?String(d.text).slice(0,26)+'…':d.text)+"<button type='button' onclick='event.stopPropagation();targetRemoveDream("+d.id+")' style='background:transparent;border:none;color:"+(on?'#93c5fd':'#64748b')+"';cursor:pointer;font-size:13px;line-height:1;padding:0 2px'>×</button></span>";});
+  h+="</div>";
+  h+="<div style='display:flex;gap:6px;margin-bottom:12px'><input id='target-dream-input' type='text' placeholder='Add a dream, e.g. fill 10 booking slots this month' maxlength='120' style='flex:1;min-width:0;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:12px'><button type='button' onclick='targetAddDream()' style='flex-shrink:0;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:12px;font-weight:600;cursor:pointer'>Add</button></div>";
+  h+="<p style='font-size:12px;color:#93c5fd;margin:0 0 12px;line-height:1.5'>"+escT(targetSynthesis(activeText,vk))+"</p>";
+  h+="<p style='font-size:13px;font-weight:700;color:#f8fafc;margin:0 0 10px'>Today's three steps</p>";
+  s.today.priorities.forEach(function(p,i){h+="<div style='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e293b'>";h+="<button type='button' onclick='targetSetDone("+i+")' style='width:24px;height:24px;border-radius:50%;background:"+(p.done?'#10b981':'#1e293b')+";border:1px solid "+(p.done?'#10b981':'#334155')+";color:"+(p.done?'#fff':'#3b82f6')+";font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0'>"+(p.done?'✓':'○')+"</button>";h+="<div onclick='targetOpenPage("+i+")' style='flex:1;cursor:pointer'><p style='font-size:13px;font-weight:600;color:"+(p.done?'#64748b':'#e2e8f0')+";margin:0 0 2px;text-decoration:"+(p.done?'line-through':'none')+"'>"+escT(p.t)+"</p><p style='font-size:11px;color:#94a3b8;margin:0;line-height:1.45'>"+escT(p.d)+"</p></div>";if(p.page)h+="<span style='font-size:11px;color:#60a5fa;font-weight:600;flex-shrink:0;align-self:center'>Open →</span>";h+="</div>";});
+  h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><p style='font-size:11px;color:#64748b;margin:0 0 6px'>Suggested post today · best platform: <span style='color:#60a5fa;font-weight:600'>"+escT(plan.platform)+"</span></p><div id='target-post-draft' style='font-size:12px;color:#cbd5e1;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 12px;line-height:1.5;margin-bottom:8px'>"+escT(plan.post)+"</div><button type='button' id='target-copy-btn' onclick='targetCopyPost()' style='display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Copy post</button></div>";
+  h+="<p style='font-size:11px;color:#60a5fa;margin:12px 0 0;padding:9px 11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.22);border-radius:8px;line-height:1.5'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
+  h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #1e293b'><span style='font-size:11px;color:#94a3b8'><b style='color:#3b82f6'>"+doneN+"/"+total+"</b> done today</span><button type='button' onclick='targetDismiss()' style='background:transparent;border:1px solid #334155;color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer'>Dismiss for today</button></div>";
+  h+="</div>";
+  card.innerHTML=h;insertTarget(root,card);
+}catch(e){}}
+if(typeof window!=='undefined'){setInterval(function(){try{if(document.getElementById('app')&&typeof currentProfile!=='undefined'&&currentProfile!==null&&window.__ATTENTION_LOADED&&!document.getElementById('target-card-root'))targetMount();}catch(e){}},1200);document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(targetMount,100);});}
+/* ===== /TARGET v4 ===== */
 
 /* ===== TARGET-WATCHER-V2: persistent mount, survives a broken loadSummaryCard ===== */
 if (typeof window !== "undefined") {
