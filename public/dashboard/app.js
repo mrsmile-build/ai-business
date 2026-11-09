@@ -7323,6 +7323,48 @@ function renderFeedbackAdmin(){
 }
 
 /* ===== TARGET v4 — dream-driven plan + multiple clickable dreams, inline-styled, ATTENTION-grounded ===== */
+var TARGET_GOALS = {
+  customers: { title:"💰 Let's get you more customers", text:"We'll help you find potential customers, create a message, track your conversations and follow up.", steps:[
+    {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+    {label:"Create your outreach message", page:"aiTools", icon:"💬"},
+    {label:"Track your prospects", page:"leads", icon:"📩"},
+    {label:"Follow up", page:"automation", icon:"⚡"} ] },
+  bookings: { title:"📅 Let's get you more bookings", text:"We'll help you turn interested customers into scheduled appointments.", steps:[
+    {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+    {label:"Manage your customers", page:"leads", icon:"📩"},
+    {label:"Set up bookings", page:"appointments", icon:"📅"} ] },
+  sales: { title:"💵 Let's help you make more sales", text:"We'll help you move prospects from interest to payment.", steps:[
+    {label:"Find opportunities", page:"leadFinder", icon:"🎯"},
+    {label:"Create a proposal", page:"proposal", icon:"📄"},
+    {label:"Follow up with prospects", page:"automation", icon:"⚡"},
+    {label:"Create an invoice", page:"invoice", icon:"🧾"} ] },
+  followup: { title:"🔄 Let's stop customers from slipping away", text:"We'll help you keep track of conversations and follow up at the right time.", steps:[
+    {label:"View your customers", page:"leads", icon:"📩"},
+    {label:"Set up follow-ups", page:"automation", icon:"⚡"} ] },
+  promotion: { title:"📣 Let's promote your business", text:"Create useful marketing content and get it in front of the right people.", steps:[
+    {label:"Create marketing content", page:"aiTools", icon:"🧠"},
+    {label:"Find potential customers", page:"leadFinder", icon:"🎯"},
+    {label:"Create your business page", page:"bizpage", icon:"🌐"} ] },
+  growth: { title:"📈 Let's grow your business", text:"We'll help you find opportunities, win customers and organize your business.", steps:[
+    {label:"Find new opportunities", page:"leadFinder", icon:"🎯"},
+    {label:"Manage customers", page:"leads", icon:"📩"},
+    {label:"Follow up", page:"automation", icon:"⚡"},
+    {label:"See your performance", page:"analytics", icon:"📊"} ] },
+  guide: { title:"✨ Let's figure it out together", text:"You don't need to know which tool you need. Start by telling us what you want your business to achieve.", steps:[
+    {label:"Find customers", page:"leadFinder", icon:"🎯"},
+    {label:"Manage customers", page:"leads", icon:"📩"},
+    {label:"Create proposals", page:"proposal", icon:"📄"},
+    {label:"Follow up", page:"automation", icon:"⚡"} ] }
+};
+function targetGoalKey(intent){var m={booking:"bookings",sales:"sales",followup:"followup",customers:"customers",promote:"promotion",grow:"growth",general:"guide"};return m[intent]||"guide";}
+function targetStepsCanonical(intent,quiet,vk){
+  var key=targetGoalKey(intent);var g=TARGET_GOALS[key]||TARGET_GOALS.guide;
+  var steps=g.steps.map(function(s){return {t:s.label,d:"",page:s.page,icon:s.icon,done:false};});
+  if(quiet>0){var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+    steps[0]={t:"Follow up your "+quiet+" quiet lead"+(quiet>1?"s":""),d:v.quiet_verb+". Open the follow-up inbox and send one nudge in your own voice.",page:"followup",done:false};}
+  return steps.slice(0,3);
+}
+function targetPersistGoal(key){try{if(typeof currentProfile!=="undefined"&&currentProfile)currentProfile.primary_goal=key;apiFetch("/api/profile",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+localStorage.getItem("token")},body:JSON.stringify({primary_goal:key})}).catch(function(){});}catch(e){}}
 var TARGET_PLAYBOOK = {
   updated: "2026-11-07",
   verticals: {
@@ -7409,8 +7451,8 @@ function targetEvening(r){var key=targetTodayKey();localStorage.setItem('ab_targ
 function targetToggleBar(btn){var body=btn.nextElementSibling;if(!body)return;var open=body.style.display==='none';body.style.display=open?'block':'none';var ch=btn.querySelector('[data-chev]');if(ch)ch.textContent=open?'▴':'▾';if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}}
 function targetSetDone(i){var s=targetRead();if(s.today&&s.today.priorities[i]){s.today.priorities[i].done=!s.today.priorities[i].done;targetSave({today:s.today});}var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetOpenPage(i){var s=targetRead();var p=s.today&&s.today.priorities[i];if(p&&p.page&&typeof loadPage==='function')loadPage(p.page);}
-function targetAddDream(){var inp=document.getElementById('target-dream-input');var t=(inp&&inp.value||'').trim();if(!t)return;var s=targetRead();var id=Date.now()+Math.floor(Math.random()*1000);var dreams=(s.dreams||[]).concat([{id:id,text:t}]);targetSave({dreams:dreams,active:id,goal:t});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
-function targetSetActiveDream(id){var s=targetRead();var txt='';for(var i=0;i<s.dreams.length;i++){if(s.dreams[i].id===id)txt=s.dreams[i].text||'';}targetSave({active:id,goal:txt});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetAddDream(){var inp=document.getElementById('target-dream-input');var t=(inp&&inp.value||'').trim();if(!t)return;var s=targetRead();var id=Date.now()+Math.floor(Math.random()*1000);var dreams=(s.dreams||[]).concat([{id:id,text:t}]);targetSave({dreams:dreams,active:id,goal:t});targetPersistGoal(targetGoalKey(targetDreamIntent(t)));var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetSetActiveDream(id){var s=targetRead();var txt='';for(var i=0;i<s.dreams.length;i++){if(s.dreams[i].id===id)txt=s.dreams[i].text||'';}targetSave({active:id,goal:txt});targetPersistGoal(targetGoalKey(targetDreamIntent(txt)));var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetRemoveDream(id){var s=targetRead();var dreams=(s.dreams||[]).filter(function(d){return d.id!==id;});var active=s.active;if(String(active)===String(id))active=dreams.length?dreams[0].id:'';targetSave({dreams:dreams,active:active,goal:active?targetActiveText({dreams:dreams,active:active}):''});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetDismiss(){localStorage.setItem('ab_target_dismissed_'+targetTodayKey(),'1');var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);}
 function targetMount(){try{
@@ -7422,13 +7464,13 @@ function targetMount(){try{
   var s=targetEnsureDreams(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
   if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
     var at0=targetActiveText(s);var it0=targetDreamIntent(at0);var hasDream=!!at0;
-    if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:hasDream?targetStepsIntent(it0,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});}
+    if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:targetStepsCanonical(it0,quiet,vk)};targetSave({today:s.today});}
     showTargetEvening();return;
   }
   if(localStorage.getItem('ab_target_dismissed_'+key))return;
   var activeText=targetActiveText(s);var intent=targetDreamIntent(activeText);var hasDream=!!activeText;var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
   var plan=hasDream?INTENT_PLAN[intent]:{platform:v.platform,post:v.post_draft};
-  if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:hasDream?targetStepsIntent(intent,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
+  if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:targetStepsCanonical(intent,quiet,vk)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
   var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
   var card=document.createElement('div');card.id='target-card-root';card.setAttribute('style','margin-bottom:12px');
   var h="";
