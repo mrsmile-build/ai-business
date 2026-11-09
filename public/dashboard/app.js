@@ -7322,336 +7322,108 @@ function renderFeedbackAdmin(){
     .catch(function(e){setView('<div class="card">'+header("\ud83d\udcac Feedback Inbox","dashboard")+'<p style="color:#ef4444">'+e.message+'</p></div>');});
 }
 
-/* ===== TARGET — daily-return engine (phases 1-4, client-side only) =====
- * Foundation for Goal-to-Growth. Static playbook, vertical-aware, grace-first.
- * Phases 5-7 (adaptive/forecasting/opportunity) GATED — need real usage data first.
- * Kill criterion: 3 of next 10 new users open Target on day 2+ = thesis alive.
- * Storage keys (all prefixed ab_target_):
- *   _goal (string) — "what I am trying to achieve this week"
- *   _today (object) — { date, priorities:[{t,d,v,done,postponed}] }
- *   _closing_hour (int, default 20) — when evening check fires
- *   _evening_done_{YYYY-MM-DD} (flag) — evening check completed today
- *   _open_count (int) — days 2+ where Target was shown (kill criterion)
- *   _first_shown (YYYY-MM-DD) — first day Target mounted (for day-2 calc)
- *   _thesis (string) — "alive" if kill criterion hit
- */
+/* ===== TARGET v2 — collapsible, customer-facing, single-quote-attr safe ===== */
 var TARGET_PLAYBOOK = {
   updated: "2026-11-07",
-  default: "salon",
   verticals: {
-    salon: {
-      label: "Salon / Beauty",
-      quiet_verb: "the ones who asked price and vanished",
-      daily_content: "post one before/after + a booking nudge",
-      followup_phrase: "still thinking about the [style] you asked about?",
-      works_now: "carousels + IG status reels (save-rate high)",
-      might_later: "booking-in-story, review-to-status"
-    },
-    saas: {
-      label: "SaaS / Software",
-      quiet_verb: "the signups who didn't activate",
-      daily_content: "one honest build-in-public update",
-      followup_phrase: "what were you actually trying to solve?",
-      works_now: "honest founder voice + docs (anti-hype wins)",
-      might_later: "AI-as-co-pilot framing (your spine ages well)"
-    },
-    caterer: {
-      label: "Caterer / Food",
-      quiet_verb: "the ones who said 'I'll think about it'",
-      daily_content: "today's menu photo + a weekend-order reminder",
-      followup_phrase: "the [date] slot is filling fast",
-      works_now: "menu photos + local group drops (trust is local)",
-      might_later: "WhatsApp catalog + payment link in draft"
-    },
-    tailor: {
-      label: "Fashion / Tailor",
-      quiet_verb: "the ones who asked for a quote and ghosted",
-      daily_content: "one finished piece + the fabric story behind it",
-      followup_phrase: "the [style] you liked is still open this week",
-      works_now: "fitting-process reels + customer-wearing-it photos",
-      might_later: "custom-order catalog + deposit link"
-    },
-    coach: {
-      label: "Coach / Consultant",
-      quiet_verb: "the discovery calls that went quiet",
-      daily_content: "one small lesson from a real client moment",
-      followup_phrase: "the question you asked me still sits with me — here's my honest take",
-      works_now: "client-story posts + LinkedIn carousels",
-      might_later: "short-form video teaching clips"
-    },
-    other: {
-      label: "Other business",
-      quiet_verb: "the enquiries that went quiet",
-      daily_content: "one thing you built or solved for a customer today",
-      followup_phrase: "still thinking about [their question]?",
-      works_now: "receipt posts + customer stories",
-      might_later: "niche-specific content"
-    }
+    salon:   { label:"Salon / Beauty",     quiet_verb:"the ones who asked a price and vanished", daily_content:"post one before/after plus a booking nudge", followup_phrase:"still thinking about the style you asked about?", tip:"a before/after photo plus one booking nudge tends to bring quiet clients back." },
+    saas:    { label:"SaaS / Software",    quiet_verb:"the signups who never activated",        daily_content:"share one honest build-in-public update",      followup_phrase:"what were you actually trying to solve?",   tip:"one honest update outperforms a polished feature announcement." },
+    caterer: { label:"Caterer / Food",     quiet_verb:"the ones who said I will think about it", daily_content:"post today's menu with a weekend reminder",   followup_phrase:"the date you asked about is filling fast",  tip:"a today's-menu photo with a weekend-order reminder turns lookers into bookings." },
+    tailor:  { label:"Fashion / Tailor",   quiet_verb:"the ones who asked for a quote and ghosted", daily_content:"show one finished piece and its fabric story", followup_phrase:"the style you liked is still open this week", tip:"people buy the process, not just the result — show the making." },
+    coach:   { label:"Coach / Consultant", quiet_verb:"the discovery calls that went quiet",    daily_content:"share one small lesson from a real client",   followup_phrase:"the question you asked still sits with me",  tip:"one real client lesson earns trust a pitch never will." },
+    other:   { label:"Your business",      quiet_verb:"the enquiries that went quiet",          daily_content:"post one thing you solved for a customer",    followup_phrase:"still thinking about what you asked?",       tip:"receipts build trust faster than claims — show one win." }
   }
 };
-
-function targetGetVertical() {
-  var bt = (currentProfile && currentProfile.business_type) || localStorage.getItem("aib_niche") || "";
-  bt = String(bt).toLowerCase();
-  if (/salon|beauty|hair|nail|spa|barber/.test(bt)) return "salon";
-  if (/saas|software|tech|app|platform|startup/.test(bt)) return "saas";
-  if (/cater|food|restaurant|chef|bakery|kitchen/.test(bt)) return "caterer";
-  if (/tailor|fashion|cloth|design|sew/.test(bt)) return "tailor";
-  if (/coach|consult|mentor|trainer|advisor/.test(bt)) return "coach";
-  return "other";
+function escT(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function targetGetVertical(){
+  var bt=((currentProfile&&currentProfile.business_type)||localStorage.getItem('aib_niche')||'').toLowerCase();
+  if(/salon|beauty|hair|nail|spa|barber/.test(bt))return 'salon';
+  if(/saas|software|tech|app|platform|startup/.test(bt))return 'saas';
+  if(/cater|food|restaurant|chef|bakery|kitchen/.test(bt))return 'caterer';
+  if(/tailor|fashion|cloth|design|sew/.test(bt))return 'tailor';
+  if(/coach|consult|mentor|trainer|advisor/.test(bt))return 'coach';
+  return 'other';
 }
-
-function targetTodayKey() { return new Date().toISOString().slice(0,10); }
-
-function targetRead() {
-  try {
-    return {
-      goal: localStorage.getItem("ab_target_goal") || "",
-      today: JSON.parse(localStorage.getItem("ab_target_today") || "null"),
-      closing: parseInt(localStorage.getItem("ab_target_closing_hour")||"20",10),
-      openCount: parseInt(localStorage.getItem("ab_target_open_count")||"0",10),
-      firstShown: localStorage.getItem("ab_target_first_shown") || "",
-      thesis: localStorage.getItem("ab_target_thesis") || ""
-    };
-  } catch(e) { return {goal:"",today:null,closing:20,openCount:0,firstShown:"",thesis:""}; }
+function targetTodayKey(){return new Date().toISOString().slice(0,10);}
+function targetRead(){try{return{goal:localStorage.getItem('ab_target_goal')||'',today:JSON.parse(localStorage.getItem('ab_target_today')||'null'),closing:parseInt(localStorage.getItem('ab_target_closing_hour')||'20',10),firstShown:localStorage.getItem('ab_target_first_shown')||'',engage:parseInt(localStorage.getItem('ab_target_engage_count')||'0',10),thesis:localStorage.getItem('ab_target_thesis')||''};}catch(e){return{goal:'',today:null,closing:20,firstShown:'',engage:0,thesis:''};}}
+function targetSave(p){var s=targetRead();for(var k in p)s[k]=p[k];if(p.goal!==undefined)localStorage.setItem('ab_target_goal',p.goal||'');if(p.today!==undefined)localStorage.setItem('ab_target_today',JSON.stringify(p.today));if(p.closing!==undefined)localStorage.setItem('ab_target_closing_hour',String(p.closing));if(p.firstShown!==undefined)localStorage.setItem('ab_target_first_shown',p.firstShown);if(p.engage!==undefined)localStorage.setItem('ab_target_engage_count',String(p.engage));if(p.thesis!==undefined)localStorage.setItem('ab_target_thesis',p.thesis);}
+function targetCountAttention(){try{if(typeof window.__aib_attention_count!=='undefined')return window.__aib_attention_count||0;var c=localStorage.getItem('ab_leads_cache');if(c){var ls=JSON.parse(c),t=targetTodayKey();return ls.filter(function(l){return l.follow_up_date&&l.follow_up_date<=t;}).length;}}catch(e){}return 0;}
+function targetCountDrafts(){try{var d=localStorage.getItem('ab_drafts_count');if(d)return parseInt(d,10)||0;}catch(e){}return 0;}
+function targetCountLeads(){try{var c=localStorage.getItem('ab_leads_cache');if(c)return JSON.parse(c).length||0;}catch(e){}return 0;}
+function targetBuildPriorities(attn,drafts,leads,vk){
+  var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other,p=[];
+  if(attn>0)p.push({t:'Follow up your '+attn+' quiet lead'+(attn>1?'s':''),d:v.quiet_verb+'. Open the follow-up inbox and send one nudge in your own voice.',page:'followup',done:false});
+  else if(leads===0)p.push({t:'Add your first lead',d:'Save one person who asked you something. The bell only bites once there is a lead to catch.',page:'leads',done:false});
+  else p.push({t:'Log one new enquiry',d:'Every enquiry you save becomes a quiet lead the bell can catch tomorrow.',page:'leads',done:false});
+  if(drafts>0)p.push({t:'Approve '+drafts+' draft'+(drafts>1?'s':'')+' waiting',d:'AI wrote them in your voice. Read one and tap send. Nothing goes out without you.',page:'followup',done:false});
+  else p.push({t:v.daily_content,d:'One small post today for your '+v.label+'. No polish needed — done beats perfect.',page:null,done:false});
+  if(leads>0)p.push({t:'Send one short check-in',d:'Pick one saved lead and send a two-line still-thinking-about-it in your voice.',page:'leads',done:false});
+  else p.push({t:'Run one Lead Finder search',d:'Find fresh names in your area so tomorrow has something to catch.',page:'leadFinder',done:false});
+  return p;
 }
-
-function targetSave(patch) {
-  var s = targetRead();
-  for (var k in patch) s[k] = patch[k];
-  if (patch.goal !== undefined) localStorage.setItem("ab_target_goal", patch.goal || "");
-  if (patch.today !== undefined) localStorage.setItem("ab_target_today", JSON.stringify(patch.today));
-  if (patch.closing !== undefined) localStorage.setItem("ab_target_closing_hour", String(patch.closing));
-  if (patch.openCount !== undefined) localStorage.setItem("ab_target_open_count", String(patch.openCount));
-  if (patch.firstShown !== undefined) localStorage.setItem("ab_target_first_shown", patch.firstShown);
-  if (patch.thesis !== undefined) localStorage.setItem("ab_target_thesis", patch.thesis);
+function targetSynthesis(goal,vk){
+  var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+  if(goal)return 'Three small steps that move you toward '+(String(goal).length>60?String(goal).slice(0,60)+'…':goal)+'.';
+  return 'Three small steps for your '+v.label+' today.';
 }
-
-function targetBuildPriorities(attentionCount, draftCount, leadCount) {
-  var vk = targetGetVertical();
-  var v = TARGET_PLAYBOOK.verticals[vk] || TARGET_PLAYBOOK.verticals.other;
-  var prios = [];
-  // Priority 1: real data first — quiet leads
-  if (attentionCount > 0) {
-    prios.push({t:"Follow up with your "+attentionCount+" quiet lead(s)", d:"These asked and went silent. "+v.quiet_verb+". Open the follow-up inbox and send one.", v:"opens:followup", done:false, postponed:false});
-  } else if (leadCount === 0) {
-    prios.push({t:"Add your first lead", d:"The bell only bites when there is a lead to catch. Save one person who asked you something.", v:"opens:leads", done:false, postponed:false});
-  } else {
-    prios.push({t:"Save one new enquiry", d:"Every lead you log becomes a quiet-lead the bell can catch tomorrow.", v:"opens:leads", done:false, postponed:false});
-  }
-  // Priority 2: drafts waiting, or onboarding step
-  if (draftCount > 0) {
-    prios.push({t:"Approve your "+draftCount+" draft(s) waiting", d:"AI drafted; you approve. Nothing sends without you.", v:"opens:followup", done:false, postponed:false});
-  } else {
-    prios.push({t:v.daily_content, d:"One post today in your vertical ("+v.label+"). No polish needed.", v:"opens:posts", done:false, postponed:false});
-  }
-  // Priority 3: vertical-specific action
-  prios.push({t:"Send one "+v.followup_phrase.split("?")[0]+"?", d:"Pick ONE quiet lead from your list. Send that line. No more.", v:"opens:followup", done:false, postponed:false});
-  return prios;
+function insertTarget(root,card){var an=document.getElementById('summary_card_anchor');if(an&&an.parentNode===root)root.insertBefore(card,an);else root.insertBefore(card,root.firstChild);}
+function showTargetEvening(key){
+  var box=document.createElement('div');box.className='target-modal';
+  box.innerHTML="<div class='target-modal-box'><p class='target-modal-h'>How did today go?</p><p class='target-modal-d'>No guilt, no streaks — just an honest check.</p><button class='target-modal-btn' onclick='targetEvening(\"all\",this)'>Completed everything</button><button class='target-modal-btn' onclick='targetEvening(\"some\",this)'>Completed some</button><button class='target-modal-btn life' onclick='targetEvening(\"life\",this)'>Life happened</button><button class='target-modal-btn' onclick='targetEvening(\"skip\",this)'>Skip today</button></div>";
+  document.body.appendChild(box);
 }
-
-function targetShouldShow() {
-  var s = targetRead();
-  var key = targetTodayKey();
-  // Already dismissed today?
-  if (localStorage.getItem("ab_target_dismissed_"+key)) return false;
-  // Evening check pending?
-  var hour = new Date().getHours();
-  if (hour >= s.closing && !localStorage.getItem("ab_target_evening_done_"+key)) return true;
-  // Morning mount: only if we have prepared work OR goal not set yet
-  if (!s.goal) return true;
-  if (!s.today || s.today.date !== key) return true;
-  // Has any incomplete priority?
-  if (s.today.priorities && s.today.priorities.some(function(p){return !p.done && !p.postponed;})) return true;
-  return false;
+function targetEvening(r,btn){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('.target-modal');if(m)m.parentNode.removeChild(m);targetMount();}
+function targetToggleBar(btn){
+  var body=btn.nextElementSibling;if(!body)return;
+  var open=body.style.display==='none';
+  body.style.display=open?'block':'none';
+  var ch=btn.querySelector('.target-chev');if(ch)ch.textContent=open?'▴':'▾';
+  if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}
 }
-
-function targetCountAttention() {
-  // Read the live attention state from app.js's own counters if available
-  try {
-    if (typeof window.__aib_attention_count !== "undefined") return window.__aib_attention_count || 0;
-    // Fallback: count leads with overdue follow_up_date from any cached list
-    var cached = localStorage.getItem("ab_leads_cache");
-    if (cached) {
-      var ls = JSON.parse(cached);
-      var today = new Date().toISOString().slice(0,10);
-      return ls.filter(function(l){return l.follow_up_date && l.follow_up_date <= today;}).length;
+function targetSetDone(i){var s=targetRead();if(s.today&&s.today.priorities[i]){s.today.priorities[i].done=!s.today.priorities[i].done;targetSave({today:s.today});}var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetOpenPage(i){var s=targetRead();var p=s.today&&s.today.priorities[i];if(p&&p.page&&typeof loadPage==='function')loadPage(p.page);}
+function targetSaveFocus(){var inp=document.getElementById('target-focus-input');var g=(inp&&inp.value||'').trim();targetSave({goal:g});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
+function targetDismiss(){localStorage.setItem('ab_target_dismissed_'+targetTodayKey(),'1');var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);}
+function targetMount(){
+  try{
+    if(typeof currentProfile==='undefined'||currentProfile===null)return;
+    var root=document.getElementById('app');if(!root)return;
+    if(document.getElementById('target-card-root'))return;
+    var s=targetRead(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
+    if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
+      if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(targetCountAttention(),targetCountDrafts(),targetCountLeads(),vk)};targetSave({today:s.today});}
+      showTargetEvening(key);return;
     }
-  } catch(e){}
-  return 0;
+    if(localStorage.getItem('ab_target_dismissed_'+key))return;
+    if(!s.today||s.today.date!==key){s.today={date:key,priorities:targetBuildPriorities(targetCountAttention(),targetCountDrafts(),targetCountLeads(),vk)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
+    var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+    var goal=s.goal||(currentProfile&&currentProfile.primary_goal)||'';
+    var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
+    var card=document.createElement('div');card.id='target-card-root';card.className='target-card';
+    var h="<button class='target-bar' onclick='targetToggleBar(this)'><span class='target-bar-l'>🎯 Target · "+doneN+" of "+total+" today</span><span class='target-chev'>▾</span></button>";
+    h+="<div class='target-body' style='display:none'>";
+    h+="<p class='target-syn'>"+escT(targetSynthesis(goal,vk))+"</p>";
+    h+="<p class='target-h'>Today's three steps</p>";
+    s.today.priorities.forEach(function(p,i){
+      h+="<div class='target-prio"+(p.done?' done':'')+"'>";
+      h+="<button class='target-check' onclick='targetSetDone("+i+")'>"+(p.done?'✓':'○')+"</button>";
+      h+="<div class='target-prio-main' onclick='targetOpenPage("+i+")'><p class='target-pt'>"+escT(p.t)+"</p><p class='target-pd'>"+escT(p.d)+"</p></div>";
+      if(p.page)h+="<span class='target-open'>Open →</span>";
+      h+="</div>";
+    });
+    h+="<div class='target-focus'><label>This week's focus (optional)</label><input id='target-focus-input' value='"+escT(s.goal||"")+"' placeholder='e.g. close 3 quiet leads, launch my booking page' maxlength='140'><button onclick='targetSaveFocus()'>Save focus</button></div>";
+    h+="<p class='target-tip'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
+    h+="<div class='target-foot'><span class='target-prog'><b>"+doneN+"/"+total+"</b> done today</span><button class='target-dismiss' onclick='targetDismiss()'>Dismiss for today</button></div>";
+    h+="</div>";
+    card.innerHTML=h;
+    insertTarget(root,card);
+  }catch(e){}
 }
-
-function targetCountDrafts() {
-  try {
-    var d = localStorage.getItem("ab_drafts_count");
-    if (d) return parseInt(d,10) || 0;
-  } catch(e){}
-  return 0;
+if(typeof window!=='undefined'){
+  setInterval(function(){try{if(document.getElementById('app')&&typeof currentProfile!=='undefined'&&currentProfile!==null&&!document.getElementById('target-card-root'))targetMount();}catch(e){}},1200);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)setTimeout(targetMount,100);});
 }
-
-function targetCountLeads() {
-  try {
-    var cached = localStorage.getItem("ab_leads_cache");
-    if (cached) return JSON.parse(cached).length || 0;
-  } catch(e){}
-  return 0;
-}
-
-function targetMount() {
-  if (!targetShouldShow()) return;
-  var root = document.getElementById("app");
-  if (!root) return;
-  if (document.getElementById("target-card-root")) return; // already mounted
-  var anchor = document.getElementById("summary_card_anchor");
-  function insertTarget(card){ if (anchor && anchor.parentNode === root) root.insertBefore(card, anchor); else root.insertBefore(card, root.firstChild); }
-
-  var s = targetRead();
-  var key = targetTodayKey();
-  var hour = new Date().getHours();
-
-  // Evening check flow
-  if (hour >= s.closing && !localStorage.getItem("ab_target_evening_done_"+key) && s.goal) {
-    var box = document.createElement("div");
-    box.className = "target-evening";
-    box.innerHTML = '<div class="target-evening-box">' +
-      '<p class="target-evening-h">How did today go?</p>' +
-      '<p class="target-evening-d">No guilt. No streaks. Just an honest check.</p>' +
-      '<button class="target-evening-btn" data-r="all">✓ Completed everything</button>' +
-      '<button class="target-evening-btn" data-r="some">◐ Completed some</button>' +
-      '<button class="target-evening-btn life" data-r="life">🌿 Life happened</button>' +
-      '<button class="target-dismiss" style="margin-top:10px" data-r="skip">Skip today</button>' +
-      '</div>';
-    document.body.appendChild(box);
-    var btns = box.querySelectorAll("[data-r]");
-    for (var i=0;i<btns.length;i++){
-      btns[i].onclick = (function(r){return function(){
-        localStorage.setItem("ab_target_evening_done_"+key, r);
-        if (r === "life") {
-          // Grace: re-plan tomorrow, no shame
-          var s2 = targetRead();
-          if (s2.today && s2.today.priorities) {
-            s2.today.priorities.forEach(function(p){if(!p.done) p.postponed = true;});
-            targetSave({today:s2.today});
-          }
-        }
-        document.body.removeChild(box);
-        targetMount(); // re-mount the morning card
-      };})(btns[i].getAttribute("data-r"));
-    }
-    return;
-  }
-
-  // Intake flow (first time, no goal)
-  if (!s.goal) {
-    var card = document.createElement("div");
-    card.id = "target-card-root";
-    card.className = "target-card";
-    card.innerHTML = '<span class="target-badge">🎯 Target</span>' +
-      '<span class="target-kill">phase 1 · intake</span>' +
-      '<div class="target-intake">' +
-      '<p class="target-intake-h">What are you trying to achieve this week?</p>' +
-      '<p class="target-intake-d">Not a 3-year plan. One honest thing. We will build 3 small priorities around it.</p>' +
-      '<input id="target-goal-input" placeholder="e.g. close 3 quiet leads, launch my booking page, land my first paying client" maxlength="140">' +
-      '<button id="target-goal-save">Save my week</button>' +
-      '</div>';
-    insertTarget(card);
-    var btn = card.querySelector("#target-goal-save");
-    var inp = card.querySelector("#target-goal-input");
-    btn.onclick = function(){
-      var g = (inp.value||"").trim();
-      if (!g) { inp.focus(); return; }
-      targetSave({goal:g, firstShown: s.firstShown || key});
-      card.remove();
-      targetMount();
-    };
-    inp.onkeydown = function(e){ if (e.key==="Enter") btn.click(); };
-    inp.focus();
-    return;
-  }
-
-  // Main daily card — build today's priorities if needed
-  if (!s.today || s.today.date !== key) {
-    var attn = targetCountAttention();
-    var drafts = targetCountDrafts();
-    var leads = targetCountLeads();
-    s.today = { date: key, priorities: targetBuildPriorities(attn, drafts, leads), goal: s.goal };
-    targetSave({today:s.today});
-    // Day-2+ kill-criterion tracking
-    if (s.firstShown && s.firstShown !== key) {
-      var oc = (s.openCount || 0) + 1;
-      targetSave({openCount: oc});
-      if (oc >= 3 && !s.thesis) targetSave({thesis:"alive"});
-    }
-  }
-
-  var vk = targetGetVertical();
-  var v = TARGET_PLAYBOOK.verticals[vk] || TARGET_PLAYBOOK.verticals.other;
-  var doneN = s.today.priorities.filter(function(p){return p.done;}).length;
-  var total = s.today.priorities.length;
-
-  var card = document.createElement("div");
-  card.id = "target-card-root";
-  card.className = "target-card";
-  var html = '<span class="target-badge">🎯 Target · '+v.label+'</span>' +
-    '<span class="target-kill">playbook '+TARGET_PLAYBOOK.updated+'</span>' +
-    '<p class="target-h">This week: '+(s.goal.length>80?s.goal.slice(0,80)+"…":s.goal)+'</p>' +
-    '<p class="target-sub">Three small things today. Tap to open, check when done.</p>';
-  s.today.priorities.forEach(function(p,i){
-    var cls = "target-priority" + (p.done?" done":"");
-    html += '<div class="'+cls+'" data-i="'+i+'">' +
-      '<div class="target-pn'+(p.done?" done":"")+'">'+(p.done?"✓":(i+1))+'</div>' +
-      '<div style="flex:1">' +
-      '<p class="target-pt">'+p.t+'</p>' +
-      '<p class="target-pd">'+p.d+'</p>' +
-      (p.v?"<p class=\"target-pv\">tap to open</p>":"") +
-      '</div></div>';
-  });
-  html += '<div class="target-playbook"><b>What works for '+v.label+' now:</b> '+v.works_now+'. <b>Might work later:</b> '+v.might_later+'.</div>';
-  html += '<div class="target-footer">' +
-    '<span class="target-progress"><b>'+doneN+'/'+total+'</b> done</span>' +
-    '<button class="target-dismiss" id="target-dismiss-today">Dismiss today</button>' +
-    '</div>';
-  card.innerHTML = html;
-  insertTarget(card);
-
-  // Wire priority clicks
-  var rows = card.querySelectorAll(".target-priority");
-  for (var i=0;i<rows.length;i++){
-    rows[i].onclick = (function(idx){return function(){
-      var s2 = targetRead();
-      var p = s2.today.priorities[idx];
-      if (!p.done && p.v && p.v.indexOf("opens:")===0) {
-        var pg = p.v.replace("opens:","");
-        if (typeof loadPage === "function") loadPage(pg);
-      }
-      p.done = !p.done;
-      targetSave({today:s2.today});
-      card.remove();
-      targetMount();
-    };})(parseInt(rows[i].getAttribute("data-i"),10));
-  }
-
-  var dis = card.querySelector("#target-dismiss-today");
-  if (dis) dis.onclick = function(){
-    localStorage.setItem("ab_target_dismissed_"+key, "1");
-    card.remove();
-  };
-}
-
-// Wire: call targetMount() after dashboard loads (alongside checkCelebrations)
-if (typeof window !== "undefined") {
-  setInterval(function(){
-    try {
-      var _a = document.getElementById("summary_card_anchor");
-      if (_a && !document.getElementById("target-card-root")) targetMount();
-    } catch(e){}
-  }, 1500);
-  // Also try again on page visibility change (user switches back to tab)
-  document.addEventListener("visibilitychange", function(){
-    if (!document.hidden) setTimeout(targetMount, 100);
-  });
-}
-/* ===== /TARGET ===== */
+/* ===== /TARGET v2 ===== */
 
 /* ===== TARGET-WATCHER-V2: persistent mount, survives a broken loadSummaryCard ===== */
 if (typeof window !== "undefined") {
