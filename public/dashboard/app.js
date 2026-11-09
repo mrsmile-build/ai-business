@@ -3190,6 +3190,7 @@ function lfSetFields(o){
   if(!o) return;
   for (var k in o){ var el=document.getElementById(k); if(!el) continue; if(el.type==="checkbox") el.checked=!!o[k]; else el.value=o[k]; }
   try{ checkCustomIndustry(); }catch(e){}
+  if(window.__LF_PENDING){ try{ lfPreset(window.__LF_PENDING.service||"", window.__LF_PENDING.industry||"", window.__LF_PENDING.context||""); }catch(e){} delete window.__LF_PENDING; }
 }
 function recordHistory(){
   var res = document.getElementById("lf_results");
@@ -7356,6 +7357,23 @@ var TARGET_GOALS = {
     {label:"Create proposals", page:"proposal", icon:"📄"},
     {label:"Follow up", page:"automation", icon:"⚡"} ] }
 };
+function targetHandoffPending(){
+  try{
+    var svc="";
+    try{ svc=(currentProfile&&currentProfile.voice_profile)||""; }catch(e){}
+    svc=String(svc).replace(/\s+/g," ").trim();
+    if(!svc){ try{ svc=formatBizTypes((currentProfile&&currentProfile.business_type)||""); }catch(e){ svc=""; } }
+    if(svc==="Not set") svc="";
+    if(svc.length>120) svc=svc.slice(0,120);
+    var ind="";
+    try{ var h=JSON.parse(localStorage.getItem("ab_lf_history")||"[]"); if(h&&h[0]){ ind=(h[0].i||(h[0].f&&h[0].f.lf_industry)||""); } }catch(e){}
+    if(INDUSTRIES.indexOf(ind)===-1) ind="";
+    var vk=targetGetVertical(); var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+    var qv=String(v.quiet_verb||"the ones who went quiet"); qv=qv.charAt(0).toUpperCase()+qv.slice(1);
+    var ctx="I help "+(svc||String(v.label).toLowerCase())+" businesses. "+qv+" — I want to catch them before they go cold.";
+    window.__LF_PENDING={service:svc, industry:ind, context:ctx};
+  }catch(e){}
+}
 function targetGoalKey(intent){var m={booking:"bookings",sales:"sales",followup:"followup",customers:"customers",promote:"promotion",grow:"growth",general:"guide"};return m[intent]||"guide";}
 function targetStepsCanonical(intent,quiet,vk){
   var key=targetGoalKey(intent);var g=TARGET_GOALS[key]||TARGET_GOALS.guide;
@@ -7450,7 +7468,7 @@ function showTargetEvening(){var box=document.createElement('div');box.setAttrib
 function targetEvening(r){var key=targetTodayKey();localStorage.setItem('ab_target_evening_done_'+key,r);var m=document.querySelector('[data-target-modal]');if(m&&m.parentNode)m.parentNode.removeChild(m);var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetToggleBar(btn){var body=btn.nextElementSibling;if(!body)return;var open=body.style.display==='none';body.style.display=open?'block':'none';var ch=btn.querySelector('[data-chev]');if(ch)ch.textContent=open?'▴':'▾';if(open){var s=targetRead();if(s.firstShown&&s.firstShown!==targetTodayKey()){var e=(s.engage||0)+1;targetSave({engage:e});if(e>=3&&!s.thesis)targetSave({thesis:'alive'});}}}
 function targetSetDone(i){var s=targetRead();if(s.today&&s.today.priorities[i]){s.today.priorities[i].done=!s.today.priorities[i].done;targetSave({today:s.today});}var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
-function targetOpenPage(i){var s=targetRead();var p=s.today&&s.today.priorities[i];if(p&&p.page&&typeof loadPage==='function')loadPage(p.page);}
+function targetOpenPage(i){var s=targetRead();var p=s.today&&s.today.priorities[i];if(p&&p.page&&typeof loadPage==='function'){if(p.page==='leadFinder'){targetHandoffPending();}loadPage(p.page);}}
 function targetAddDream(){var inp=document.getElementById('target-dream-input');var t=(inp&&inp.value||'').trim();if(!t)return;var s=targetRead();var id=Date.now()+Math.floor(Math.random()*1000);var dreams=(s.dreams||[]).concat([{id:id,text:t}]);targetSave({dreams:dreams,active:id,goal:t});targetPersistGoal(targetGoalKey(targetDreamIntent(t)));var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetSetActiveDream(id){var s=targetRead();var txt='';for(var i=0;i<s.dreams.length;i++){if(s.dreams[i].id===id)txt=s.dreams[i].text||'';}targetSave({active:id,goal:txt});targetPersistGoal(targetGoalKey(targetDreamIntent(txt)));var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
 function targetRemoveDream(id){var s=targetRead();var dreams=(s.dreams||[]).filter(function(d){return d.id!==id;});var active=s.active;if(String(active)===String(id))active=dreams.length?dreams[0].id:'';targetSave({dreams:dreams,active:active,goal:active?targetActiveText({dreams:dreams,active:active}):''});var c=document.getElementById('target-card-root');if(c)c.parentNode.removeChild(c);targetMount();}
