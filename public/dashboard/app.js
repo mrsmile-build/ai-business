@@ -7379,6 +7379,21 @@ function targetStepsIntent(intent,quiet,vk){var v=TARGET_PLAYBOOK.verticals[vk]|
   else if(intent==='grow'){p.push({t:'Ship one small thing today',d:'One honest improvement beats one grand plan.',page:null,done:false});p.push({t:'Post one build-in-public update',d:'On '+INTENT_PLAN.grow.platform+'. Receipts compound trust.',page:null,done:false});p.push({t:'Review last week: what worked, what to stop',d:'The plan learns from your real results, not from a guess.',page:null,done:false});}
   else{p.push(q?{t:'Follow up your '+q+' with a win',d:v.quiet_verb+'. Show one receipt, nudge in your voice.',page:'followup',done:false}:{t:'Log one new enquiry',d:'Save one person who asked something today.',page:'leads',done:false});p.push({t:'Post one small win today',d:'On '+INTENT_PLAN.general.platform+'. Fill the bracket, copy below.',page:null,done:false});p.push({t:'Send one short check-in',d:'Pick one saved lead and nudge them personally.',page:'leads',done:false});}
   return p;}
+function targetComposePost(intent,vk,activeText,quiet){
+  var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
+  var biz="";try{biz=(currentProfile&&(currentProfile.business||currentProfile.display_name))||"";}catch(e){}
+  var dream=String(activeText||v.label);if(dream.length>50)dream=dream.slice(0,50)+"…";
+  var q=quiet>0?quiet:0;
+  var quietTail=q>0?(" And "+q+" quiet lead"+(q>1?"s":"")+" are getting a nudge in my own voice — nothing sends without me."):" The quiet ones get a nudge in my voice — nothing sends without me.";
+  var head=biz?(biz+" — "):"";
+  if(intent==="grow")return "Building toward "+dream+". Today's honest step: "+v.daily_content+"."+quietTail;
+  if(intent==="booking")return head+"Booking slots are open for "+v.label+" — pick a time in one tap, no back-and-forth."+(q>0?(" The "+q+" who asked and went quiet get one gentle nudge each."):"");
+  if(intent==="sales")return head+"This week only — a real offer for "+v.label+"."+(q>0?(" Starting with the "+q+" who already asked and went quiet — a priced nudge in my voice."):" Reserve with the link, done in seconds.");
+  if(intent==="followup")return "Still thinking about what you asked? I kept your spot."+(q>0?(" Today I'm nudging the "+q+" quiet ones in my own voice — nothing sends without me."):"");
+  if(intent==="customers")return "Now serving "+v.label+" in my area."+(q>0?(" Already logging the "+q+" who went quiet so they don't slip."):" Find me, ask, and I'll remember you.");
+  if(intent==="promote")return "One thing I solved for a "+v.label+" customer today — and here's what it took."+(q>0?(" The "+q+" quiet ones get a nudge too, in my voice."):"");
+  return "Working toward "+dream+". Today's small step: "+v.daily_content+"."+(q>0?(" Plus "+q+" quiet lead"+(q>1?"s":"")+" getting a nudge in my own voice."):"");
+}
 function targetSynthesis(activeText,vk){var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;if(activeText)return 'Three small steps that move you toward '+(String(activeText).length>60?String(activeText).slice(0,60)+'…':activeText)+'.';return 'Three small steps for your '+v.label+' today.';}
 function insertTarget(root,card){var an=document.getElementById('summary_card_anchor');if(an&&an.parentNode===root)root.insertBefore(card,an);else root.insertBefore(card,root.firstChild);}
 function targetCopyPost(){var el=document.getElementById('target-post-draft');if(!el)return;var txt=(el.textContent||'').trim();try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt);}else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}var b=document.getElementById('target-copy-btn');if(b){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy post';},1500);}}catch(e){}}
@@ -7400,13 +7415,13 @@ function targetMount(){try{
   var s=targetEnsureDreams(),key=targetTodayKey(),hour=new Date().getHours(),vk=targetGetVertical();
   if(hour>=s.closing&&!localStorage.getItem('ab_target_evening_done_'+key)){
     var at0=targetActiveText(s);var it0=targetDreamIntent(at0);var hasDream=!!at0;
-    if(!s.today||s.today.date!==key){s.today={date:key,priorities:hasDream?targetStepsIntent(it0,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});}
+    if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:hasDream?targetStepsIntent(it0,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});}
     showTargetEvening();return;
   }
   if(localStorage.getItem('ab_target_dismissed_'+key))return;
   var activeText=targetActiveText(s);var intent=targetDreamIntent(activeText);var hasDream=!!activeText;var v=TARGET_PLAYBOOK.verticals[vk]||TARGET_PLAYBOOK.verticals.other;
   var plan=hasDream?INTENT_PLAN[intent]:{platform:v.platform,post:v.post_draft};
-  if(!s.today||s.today.date!==key){s.today={date:key,priorities:hasDream?targetStepsIntent(intent,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
+  if(!s.today||s.today.date!==key||String(s.today.dreamId||'')!==String(s.active||'')){s.today={date:key,dreamId:s.active,priorities:hasDream?targetStepsIntent(intent,quiet,vk):targetStepsVertical(vk,quiet)};targetSave({today:s.today});if(!s.firstShown)targetSave({firstShown:key});}
   var doneN=s.today.priorities.filter(function(p){return p.done;}).length,total=s.today.priorities.length;
   var card=document.createElement('div');card.id='target-card-root';card.setAttribute('style','margin-bottom:12px');
   var h="";
@@ -7420,7 +7435,7 @@ function targetMount(){try{
   h+="<p style='font-size:12px;color:#93c5fd;margin:0 0 12px;line-height:1.5'>"+escT(targetSynthesis(activeText,vk))+"</p>";
   h+="<p style='font-size:13px;font-weight:700;color:#f8fafc;margin:0 0 10px'>Today's three steps</p>";
   s.today.priorities.forEach(function(p,i){h+="<div style='display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #1e293b'>";h+="<button type='button' onclick='targetSetDone("+i+")' style='width:24px;height:24px;border-radius:50%;background:"+(p.done?'#10b981':'#1e293b')+";border:1px solid "+(p.done?'#10b981':'#334155')+";color:"+(p.done?'#fff':'#3b82f6')+";font-size:13px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0'>"+(p.done?'✓':'○')+"</button>";h+="<div onclick='targetOpenPage("+i+")' style='flex:1;cursor:pointer'><p style='font-size:13px;font-weight:600;color:"+(p.done?'#64748b':'#e2e8f0')+";margin:0 0 2px;text-decoration:"+(p.done?'line-through':'none')+"'>"+escT(p.t)+"</p><p style='font-size:11px;color:#94a3b8;margin:0;line-height:1.45'>"+escT(p.d)+"</p></div>";if(p.page)h+="<span style='font-size:11px;color:#60a5fa;font-weight:600;flex-shrink:0;align-self:center'>Open →</span>";h+="</div>";});
-  h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><p style='font-size:11px;color:#64748b;margin:0 0 6px'>Suggested post today · best platform: <span style='color:#60a5fa;font-weight:600'>"+escT(plan.platform)+"</span></p><div id='target-post-draft' style='font-size:12px;color:#cbd5e1;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 12px;line-height:1.5;margin-bottom:8px'>"+escT(plan.post)+"</div><button type='button' id='target-copy-btn' onclick='targetCopyPost()' style='display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Copy post</button></div>";
+  h+="<div style='margin:14px 0 0;padding-top:12px;border-top:1px solid #1e293b'><p style='font-size:11px;color:#64748b;margin:0 0 6px'>Suggested post today · best platform: <span style='color:#60a5fa;font-weight:600'>"+escT(plan.platform)+"</span></p><div id='target-post-draft' style='font-size:12px;color:#cbd5e1;background:#0b1220;border:1px solid #334155;border-radius:8px;padding:10px 12px;line-height:1.5;margin-bottom:8px'>"+escT(targetComposePost(intent,vk,activeText,quiet))+"</div><button type='button' id='target-copy-btn' onclick='targetCopyPost()' style='display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer'>Copy post</button></div>";
   h+="<p style='font-size:11px;color:#60a5fa;margin:12px 0 0;padding:9px 11px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.22);border-radius:8px;line-height:1.5'>Tip for "+escT(v.label)+": "+escT(v.tip)+"</p>";
   h+="<div style='display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #1e293b'><span style='font-size:11px;color:#94a3b8'><b style='color:#3b82f6'>"+doneN+"/"+total+"</b> done today</span><button type='button' onclick='targetDismiss()' style='background:transparent;border:1px solid #334155;color:#94a3b8;padding:5px 12px;border-radius:7px;font-size:11px;cursor:pointer'>Dismiss for today</button></div>";
   h+="</div>";
