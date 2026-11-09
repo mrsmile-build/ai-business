@@ -5875,7 +5875,7 @@ function renderOnboarding(){
             <p style="margin:0;font-size:13px;font-weight:600;${s[st.key]?'text-decoration:line-through;color:#475569':''}">${st.title}</p>
             <p style="margin:0;font-size:11px;color:#64748b">${st.desc}</p>
           </div>
-          ${!s[st.key] ? `<button onclick="setOnboardStep('${st.key}');loadPage('${st.action}')" style="padding:6px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0">${st.btn}</button>` : ""}
+          ${!s[st.key] ? `<button onclick="setOnboardStep('${st.key}');if('${st.action}'==='leadFinder'){targetHandoffPending();}loadPage('${st.action}')" style="padding:6px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0">${st.btn}</button>` : ""}
         </div>
       `).join("")}
     </div>`;
@@ -7189,13 +7189,13 @@ async function moveLead(id, status){
     var card = document.createElement("div");
     card.id = "ea_card";
     card.style.cssText = "background:#0f172a;border:1px solid #1e2d42;border-radius:12px;padding:16px;margin:14px 0";
-    var html = '<p style="margin:0 0 4px;font-size:14px;font-weight:700">🚧 Help shape what we build next</p>' +
+    var html = '<details style="margin:0"><summary style="cursor:pointer;font-size:14px;font-weight:700;color:#f1f5f9;display:block;list-style:none">🚧 Help shape what we build next — tap to vote ▾</summary>' +
       '<p style="margin:0 0 10px;font-size:12px;color:#64748b">Vote for the capability that would save you the most time. Early voters get first access.</p>';
     EA_CAPS.forEach(function(c){
       html += '<button type="button" onclick="eaVoteX(\''+c.k+'\', this)" style="display:block;width:100%;text-align:left;margin-bottom:6px;padding:10px 12px;background:#131d2e;border:1px solid #1e2d42;border-radius:8px;color:#f1f5f9;cursor:pointer;font-size:12px"><strong>'+c.label+'</strong><span style="display:block;color:#64748b;font-size:11px;margin-top:2px">'+c.desc+'</span></button>';
     });
     html += '<select id="dash_team" style="display:block;width:100%;margin:10px 0 0;padding:10px 12px;background:#131d2e;border:1px solid #1e2d42;border-radius:8px;color:#f1f5f9;font-size:12px"><option value="">Team size (optional)</option><option value="solo">Just me</option><option value="2-10">2-10 people</option><option value="11-50">11-50 people</option><option value="50+">50+ people</option></select>' +
-      '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p>';
+      '<p style="margin:8px 0 0;font-size:11px;color:#64748b">Know a business owner who should vote? <a href="/early-access" style="color:#3b82f6">Send them this link →</a></p></details>';
     card.innerHTML = html;
     box.parentNode.insertBefore(card, box);
   }
