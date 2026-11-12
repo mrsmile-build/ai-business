@@ -522,6 +522,7 @@ function loadPage(page){
     affiliate: 'renderAffiliate',
     automation: 'renderAutomation',
     blogadmin: 'renderBlogAdmin',
+    activity: 'renderActivity',
     testimonials: 'renderTestimonials',
     healthcheck: 'renderWebsiteHealth',
     followup: 'renderFollowupAssistantUI',
@@ -779,7 +780,8 @@ function openSearch(){
     {label:"Earn / Referrals",icon:"💸",kw:["earn","referral","affiliate","commission","partner","make money"],run:function(){location.href='/earn';}},
     {label:"Help / Support",icon:"❓",kw:["help","support","guide","faq","contact","tutorial"],run:function(){loadPage('support');}},
     {label:"Manage Blog",icon:"📝",kw:["blog","post","article","manage blog","write"],run:function(){loadPage('blogadmin');}},
-    {label:"Testimonials",icon:"💬",kw:["testimonial","testimonials","review","reviews"],run:function(){loadPage('testimonials');}}
+    {label:"Testimonials",icon:"💬",kw:["testimonial","testimonials","review","reviews"],run:function(){loadPage('testimonials');}},
+    {label:"Activity log",icon:"📜",kw:["activity","what did the system do","what did it do","history","audit","log","records","show your work","memory"],run:function(){loadPage('activity');}}
   ];
   var shell='<div id="search_overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding-top:8px">'
     +'<div style="background:#0b1220;border:1px solid #1e293b;border-radius:14px;width:94%;max-width:560px;max-height:92vh;overflow:auto;padding:14px 14px 18px">'
@@ -1368,6 +1370,41 @@ async function quickStatus(id, status){
       }
     }
   } catch(e){}
+}
+
+async function renderActivity(){
+  setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading…</p></div>');
+  try{
+    const res = await apiFetch("/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const data = await res.json();
+    if(!data || !data.success){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+((data&&data.error)||"Could not load your activity")+'</p></div>'); return; }
+    const rows = data.activity || [];
+    var LABELS = {
+      first_value_achieved:"Reached your first real value",
+      booking_created:"Created a booking",
+      booking_confirmed:"Confirmed a booking",
+      booking_cancelled:"Cancelled a booking",
+      booking_rescheduled:"Rescheduled a booking"
+    };
+    function prettyAct(x){ return LABELS[x] || String(x||"").replace(/_/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+    var html='<div class="card">'+header("📜 What AI Business did for you","dashboard");
+    html+='<p style="font-size:12px;color:#64748b;margin:0 0 14px">Every action the system took on your behalf, newest first. Nothing here sent without you — this is the record, so you can see the work before you trust it with more.</p>';
+    if(!rows.length){ html+='<p style="color:#94a3b8">No recorded actions yet. The moment you save a lead, book, or hit your first value, it appears here — the memory building itself.</p>'; }
+    else {
+      rows.forEach(function(r){
+        var when = r.created_at ? new Date(r.created_at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) : "";
+        var det = "";
+        try{ if(r.details && Object.keys(r.details).length){ det = Object.entries(r.details).map(function(kv){return kv[0]+": "+kv[1];}).join(" · "); } }catch(e){}
+        html+='<div style="border:1px solid #1e293b;border-radius:10px;padding:11px 13px;margin-bottom:7px;background:#0f172a">';
+        html+='<p style="margin:0;font-size:13px;font-weight:600;color:#f8fafc">'+esc(prettyAct(r.action))+'</p>';
+        if(det) html+='<p style="margin:3px 0 0;font-size:11px;color:#94a3b8">'+esc(det)+'</p>';
+        if(when) html+='<p style="margin:4px 0 0;font-size:10px;color:#475569">'+esc(when)+'</p>';
+        html+='</div>';
+      });
+    }
+    html+='</div>';
+    setView(html);
+  }catch(e){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+esc(e.message)+'</p></div>'); }
 }
 
 async function renderLeadDetail(id){

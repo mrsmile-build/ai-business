@@ -581,6 +581,21 @@ app.get("/api/leads", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/api/activity", authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("activity")
+      .select("*")
+      .eq("user_id", req.user.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw error;
+    res.json({ success: true, activity: data || [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /* ---------------- LEADS POST ---------------- */
 app.post("/api/leads", authMiddleware, async (req, res) => {
   try {
