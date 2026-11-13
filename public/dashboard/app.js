@@ -1376,7 +1376,7 @@ async function quickStatus(id, status){
 async function renderActivity(){
   setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading…</p></div>');
   try{
-    const res = await apiFetch("/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    const res = await Promise.race([ apiFetch("/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("Activity request timed out - tap Back and retry")); },20000); }) ]);
     const data = await res.json();
     if(!data || !data.success){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+((data&&data.error)||"Could not load your activity")+'</p></div>'); return; }
     const rows = data.activity || [];
