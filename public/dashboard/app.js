@@ -1382,8 +1382,15 @@ async function quickStatus(id, status){
 async function renderActivity(){
   setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading… (bld-act2)</p></div>');
   try{
-    const _ac=new AbortController(); const _at=setTimeout(function(){_ac.abort();},12000); let res; try{ res=await fetch(API_BACKENDS[0]+"/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:_ac.signal}); }finally{ clearTimeout(_at); } if(res.status===401){ setView('<div class="card">'+header("What AI Business did for you","dashboard")+'<p style="color:#f59e0b">Your session expired. <a href="/auth" style="color:#3b82f6">Log in again</a> to see your activity.</p></div>'); return; }
-    const data = await res.json();
+    const _ac=new AbortController(); const _at=setTimeout(function(){_ac.abort();},15000);
+    window.__actSeq=(window.__actSeq||0)+1; const _my=window.__actSeq;
+    let res, data;
+    try{
+      res=await fetch(API_BACKENDS[0]+"/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:_ac.signal});
+      if(res.status===401){ clearTimeout(_at); if(_my===window.__actSeq){ setView('<div class="card">'+header("What AI Business did for you","dashboard")+'<p style="color:#f59e0b">Your session expired. <a href="/auth" style="color:#3b82f6">Log in again</a> to see your activity.</p></div>'); } return; }
+      data=await res.json();
+    } finally { clearTimeout(_at); }
+    if(_my!==window.__actSeq) return;
     if(!data || !data.success){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+((data&&data.error)||"Could not load your activity")+'</p></div>'); return; }
     const rows = data.activity || [];
     var LABELS = {
