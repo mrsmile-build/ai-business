@@ -59,6 +59,8 @@ function feasCalc(){
 }
 function renderFeasibility(){
   var p={};try{p=JSON.parse(localStorage.getItem('ab_feas_last')||'{}');}catch(e){}
+  var _prof={};try{_prof=JSON.parse(localStorage.getItem('ab_biz_profile')||'{}');}catch(e){}
+  if(!p.living&&_prof.living){p.living=_prof.living;}
   var c=feasCur();
   function f(id,label,ph){return '<label style="display:block;font-size:11px;color:#64748b;margin:0 0 4px">'+label+'</label><input id="'+id+'" type="number" inputmode="decimal" value="'+(p[id]!=null?p[id]:'')+'" placeholder="'+ph+'" style="display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;margin:0 0 10px">';}
   var hdr=(typeof header==='function')?header('Business Architect - Feasibility','dashboard'):'';
@@ -84,3 +86,41 @@ if (typeof window.loadPage==='function' && !window.__ARCH_HOOKED) {
 }
 
 
+
+function archProfile(){ try{ return JSON.parse(localStorage.getItem('ab_biz_profile')||'{}'); }catch(e){ return {}; } }
+function archSaveProfile(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value:'';};
+  var p={capital:g('bp_capital'),location:g('bp_location'),skills:g('bp_skills'),hours:g('bp_hours'),living:g('bp_living'),storage:g('bp_storage'),income_now:g('bp_income'),ambition:g('bp_ambition')};
+  try{ localStorage.setItem('ab_biz_profile',JSON.stringify(p)); }catch(e){}
+  var msg=document.getElementById('bp_msg'); if(msg){ msg.textContent='Profile saved. Feasibility will use your living costs automatically.'; }
+}
+function renderArchitect(){
+  var p=archProfile();
+  function f(id,label,ph,val){return '<label style="display:block;font-size:11px;color:#64748b;margin:0 0 4px">'+label+'</label><input id="'+id+'" value="'+(val||'')+'" placeholder="'+ph+'" style="display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;margin:0 0 10px">';}
+  var hdr=(typeof header==='function')?header('Business Architect','dashboard'):'';
+  setView('<div class="card">'+hdr
+   +'<p style="font-size:13px;color:#94a3b8;margin:0 0 14px">From your current situation to a real, growing business. Tell us where you are; the system investigates, calculates and plans with you - never inventing numbers.</p>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
+   +'<button type="button" onclick="loadPage(\'feasibility\')" style="flex:1;min-width:150px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">I have an idea - test if it can feed me</button>'
+   +'<button type="button" disabled style="flex:1;min-width:150px;background:#0f172a;border:1px solid #1e293b;color:#475569;border-radius:10px;padding:12px;font-size:13px;cursor:not-allowed">I have no idea yet - Discovery (stage 2, needs research sources)</button>'
+   +'</div>'
+   +'<p style="font-size:12px;color:#93c5fd;font-weight:700;margin:0 0 8px">Your business profile (saved on this device)</p>'
+   + f('bp_capital','Available starting capital (in your currency)','e.g. 50000',p.capital)
+   + f('bp_location','Country, state and town','e.g. Nigeria, Lagos, Ikeja',p.location)
+   + f('bp_skills','Skills and experience','e.g. tailoring, sales, coding',p.skills)
+   + f('bp_hours','Hours available per day','e.g. 4',p.hours)
+   + f('bp_living','Personal living expenses per month','e.g. 100000',p.living)
+   + f('bp_storage','Can you store inventory? (yes/no)','yes or no',p.storage)
+   + f('bp_income','Do you need income immediately? (yes/no)','yes or no',p.income_now)
+   + f('bp_ambition','Long-term ambition','e.g. own a production company',p.ambition)
+   +'<button type="button" onclick="archSaveProfile()" style="display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">Save my profile</button>'
+   +'<p id="bp_msg" style="margin:8px 0 0;font-size:12px;color:#10b981"></p>'
+   +'</div>');
+}
+if (typeof window.loadPage==='function') {
+  var _lp2=window.loadPage;
+  window.loadPage=function(page){
+    if(page==='architect' && typeof renderArchitect==='function'){ try{ renderArchitect(); return; }catch(e){} }
+    return _lp2.apply(this, arguments);
+  };
+}
