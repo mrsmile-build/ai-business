@@ -1380,7 +1380,7 @@ async function quickStatus(id, status){
 }
 
 async function renderActivity(){
-  setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading… (bld-act2)</p></div>');
+  setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading… (bld-act2)</p></div>'); window.__actT0=Date.now();
   try{
     const _ac=new AbortController(); const _at=setTimeout(function(){_ac.abort();},15000);
     window.__actSeq=(window.__actSeq||0)+1; const _my=window.__actSeq;
@@ -1418,7 +1418,7 @@ async function renderActivity(){
     }
     html+='</div>';
     setView(html);
-  }catch(e){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+esc(e.message)+'</p></div>'); }
+  }catch(e){ var _el=Date.now()-(window.__actT0||Date.now()); setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">Could not load after '+_el+'ms: '+esc(e.message)+'</p><button type="button" onclick="renderActivity()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry now</button></div>'); }
 }
 
 async function renderLeadDetail(id){
