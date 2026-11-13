@@ -781,6 +781,7 @@ function openSearch(){
     {label:"Help / Support",icon:"❓",kw:["help","support","guide","faq","contact","tutorial"],run:function(){loadPage('support');}},
     {label:"Manage Blog",icon:"📝",kw:["blog","post","article","manage blog","write"],run:function(){loadPage('blogadmin');}},
     {label:"Testimonials",icon:"💬",kw:["testimonial","testimonials","review","reviews"],run:function(){loadPage('testimonials');}},
+    {label:"Business Architect",icon:"BA",kw:["feasibility","can it feed me","what business","break even","business plan","start a business","profit","architect","owner salary","will this feed me"],run:function(){loadPage('feasibility');}},
     {label:"Activity log",icon:"📜",kw:["activity","what did the system do","what did it do","history","audit","log","records","show your work","memory"],run:function(){loadPage('activity');}}
   ];
   var shell='<div id="search_overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:flex-start;justify-content:center;padding-top:8px">'
