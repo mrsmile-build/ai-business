@@ -99,11 +99,14 @@ async function refreshAccessToken(){
 
       const backend = await resolveBackend();
 
+      var _rc = new AbortController();
+      var _rt = setTimeout(function(){ _rc.abort(); }, 15000);
       const response = await fetch(backend + "/api/refresh", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({refresh_token: rt})
-      });
+        body: JSON.stringify({refresh_token: rt}),
+        signal: _rc.signal
+      }).finally(function(){ clearTimeout(_rt); });
 
       if(!response.ok) return null;
 
@@ -141,10 +144,13 @@ async function apiFetch(path, options){
       headers.set("Authorization", "Bearer " + token);
     }
 
+    var _ctrl = new AbortController();
+    var _to = setTimeout(function(){ _ctrl.abort(); }, 25000);
     return fetch(baseUrl + path, {
       ...requestOptions,
-      headers
-    });
+      headers,
+      signal: _ctrl.signal
+    }).finally(function(){ clearTimeout(_to); });
   }
 
   try {
