@@ -1382,7 +1382,7 @@ async function quickStatus(id, status){
 async function renderActivity(){
   setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#64748b">Loading…</p></div>');
   try{
-    const res = await Promise.race([ apiFetch("/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}}), new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("Activity request timed out - tap Back and retry")); },20000); }) ]);
+    const _ac=new AbortController(); const _at=setTimeout(function(){_ac.abort();},12000); let res; try{ res=await fetch(API_BACKENDS[0]+"/api/activity",{headers:{Authorization:"Bearer "+localStorage.getItem("token")},signal:_ac.signal}); }finally{ clearTimeout(_at); } if(res.status===401){ setView('<div class="card">'+header("What AI Business did for you","dashboard")+'<p style="color:#f59e0b">Your session expired. <a href="/auth" style="color:#3b82f6">Log in again</a> to see your activity.</p></div>'); return; }
     const data = await res.json();
     if(!data || !data.success){ setView('<div class="card">'+header("📜 What AI Business did for you","dashboard")+'<p style="color:#ef4444">'+((data&&data.error)||"Could not load your activity")+'</p></div>'); return; }
     const rows = data.activity || [];
