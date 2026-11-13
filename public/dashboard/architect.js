@@ -79,22 +79,8 @@ if (typeof window.loadPage==='function' && !window.__ARCH_HOOKED) {
   var _origLP=window.loadPage;
   window.loadPage=function(page){
     if(page==='feasibility' && typeof renderFeasibility==='function'){ try{ renderFeasibility(); return; }catch(e){} }
-    var _r=_origLP.apply(this, arguments);
-    if(page==='dashboard'){ setTimeout(archStrip,300); setTimeout(archStrip,1200); }
-    return _r;
+    return _origLP.apply(this, arguments);
   };
 }
 
-function archStrip(){
-  try{
-    if(document.getElementById('arch_strip')) return;
-    var app=document.getElementById('app'); if(!app) return;
-    var d=document.createElement('div'); d.id='arch_strip';
-    d.style.cssText='display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap';
-    d.innerHTML='<button type="button" onclick="loadPage(\'feasibility\')" style="flex:1;min-width:150px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer">Business Architect - will it feed me?</button>'
-      +'<button type="button" onclick="loadPage(\'activity\')" style="flex:1;min-width:150px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:700;cursor:pointer">Activity log - what the system did</button>';
-    app.insertBefore(d, app.firstChild);
-  }catch(e){}
-}
-setTimeout(archStrip,600); setTimeout(archStrip,1500);
 
