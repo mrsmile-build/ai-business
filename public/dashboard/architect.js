@@ -102,7 +102,7 @@ function renderArchitect(){
    +'<p style="font-size:13px;color:#94a3b8;margin:0 0 14px">From your current situation to a real, growing business. Tell us where you are; the system investigates, calculates and plans with you - never inventing numbers.</p>'
    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
    +'<button type="button" onclick="loadPage(\'feasibility\')" style="flex:1;min-width:150px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">I have an idea - test if it can feed me</button>'
-   +'<button type="button" disabled style="flex:1;min-width:150px;background:#0f172a;border:1px solid #1e293b;color:#475569;border-radius:10px;padding:12px;font-size:13px;cursor:not-allowed">I have no idea yet - Discovery (stage 2, needs research sources)</button>'
+   +'<button type="button" onclick="archDiscoveryNote()" style="flex:1;min-width:150px;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:10px;padding:12px;font-size:13px;cursor:pointer">I have no idea yet - show me Discovery</button>'
    +'</div>'
    +'<p style="font-size:12px;color:#93c5fd;font-weight:700;margin:0 0 8px">Your business profile (saved on this device)</p>'
    + f('bp_capital','Available starting capital (in your currency)','e.g. 50000',p.capital)
@@ -124,3 +124,43 @@ if (typeof window.loadPage==='function') {
     return _lp2.apply(this, arguments);
   };
 }
+
+function archDiscoveryNote(){
+  var hdr=(typeof header==='function')?header('Business Discovery - stage 2','dashboard'):'';
+  setView('<div class="card">'+hdr
+   +'<p style="font-size:13px;color:#94a3b8;margin:0 0 12px">Discovery - finding you a business when you have no idea yet - is stage 2, and it is deliberately not live. It needs real research sources (supplier prices, demand, competitors). We will not invent those numbers for you, so it stays closed until the research layer exists.</p>'
+   +'<p style="font-size:13px;color:#94a3b8;margin:0 0 12px">Meanwhile, the honest way to explore your market today is Lead Finder: search your town plus a product or service, and study who already sells it, their ratings and whether they have a website. That is real evidence, not a guess.</p>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +'<button type="button" onclick="loadPage(\'leadFinder\')" style="background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer">Open Lead Finder</button>'
+   +'<button type="button" onclick="loadPage(\'architect\')" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Back to Architect</button>'
+   +'</div></div>');
+}
+
+var __awN=0, __awDone=false;
+function archWatchdog(){
+  try{
+    var app=document.getElementById('app'); if(!app) return;
+    var txt=app.textContent||'';
+    var isAct = txt.indexOf('What AI Business did for you')!==-1;
+    var isLoad = txt.indexOf('Loading')!==-1;
+    var chip=document.getElementById('act_dbg');
+    if(!chip){ chip=document.createElement('div'); chip.id='act_dbg'; chip.style.cssText='position:fixed;right:8px;bottom:74px;z-index:9999;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:6px 10px;font-size:11px'; document.body.appendChild(chip); }
+    if(isAct && isLoad){
+      __awN++;
+      chip.textContent='activity: waiting '+__awN+'s';
+      if(__awN>=20 && !__awDone){
+        __awDone=true;
+        chip.textContent='activity: watchdog fired at 20s';
+        app.innerHTML='<div class="card">'+((typeof header==='function')?header('What AI Business did for you','dashboard'):'')
+          +'<p style="color:#ef4444;font-size:13px">The activity request did not settle within 20 seconds. This is a connection or server delay, not your data being lost.</p>'
+          +'<button type="button" onclick="loadPage(\'activity\')" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry now</button></div>';
+      }
+    } else {
+      if(isAct && !isLoad){ chip.textContent='activity: loaded'; }
+      else { chip.style.display='none'; }
+      __awN=0; __awDone=false;
+      if(isAct && !isLoad){ chip.style.display=''; }
+    }
+  }catch(e){}
+}
+setInterval(archWatchdog,1000);
