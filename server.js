@@ -582,17 +582,24 @@ app.get("/api/leads", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/activity", authMiddleware, async (req, res) => {
+  var _t0 = Date.now();
   try {
-    const { data, error } = await supabase
-      .from("activity")
-      .select("*")
-      .eq("user_id", req.user.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    if (error) throw error;
-    res.json({ success: true, activity: data || [] });
+    var _q = supabase.from("activity").select("*").eq("user_id", req.user.id).order("created_at", { ascending: false }).limit(100);
+    var _race = await Promise.race([
+      _q.then(function(r){ return { data: r.data, error: r.error }; }),
+      new Promise(function(_,rej){ setTimeout(function(){ rej(new Error("activity query timeout")); }, 15000); })
+    ]);
+    var _ms = Date.now() - _t0;
+    if (_race.error) { console.error("activity ERROR user=" + req.user.id + " ms=" + _ms + " err=" + _race.error.message); throw _race.error; }
+    var _rows = _race.data || [];
+    console.log("activity OK user=" + req.user.id + " ms=" + _ms + " rows=" + _rows.length);
+    res.json({ success: true, activity: _rows });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    var _ms2 = Date.now() - _t0;
+    var _to = /timeout/i.test((err && err.message) || "");
+    if (_to) console.warn("activity TIMEOUT user=" + req.user.id + " ms=" + _ms2 + " - likely missing index on (user_id, created_at) or large table scan; check Supabase index");
+    else console.error("activity CATCH user=" + req.user.id + " ms=" + _ms2 + " err=" + ((err && err.message) || "unknown"));
+    res.status(_to ? 200 : 500).json({ success: false, error: _to ? "Activity is taking too long right now. Tap Retry in a moment." : ((err && err.message) || "Failed") });
   }
 });
 
@@ -4712,3 +4719,24 @@ app.listen(process.env.PORT || 3000, () => {
 
 app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 app.get('/api/debug-backends', (req, res) => res.json({ active: 'https://ai-business-90n6.onrender.com', note: 'Proxy removed — domain routes directly to active Render instance.' }));
+
+
+/* ---------------- BUSINESS ARCHITECT: GROQ DISCOVERY (hypotheses only, no invented market facts) ---------------- */
+app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
+  try {
+    var p = req.body || {};
+    var profile = "Capital: " + (p.capital||"unknown") + ". Location: " + (p.location||"unknown") + ". Skills: " + (p.skills||"unknown") + ". Hours/day: " + (p.hours||"unknown") + ". Monthly living cost: " + (p.living||"unknown") + ". Can store inventory: " + (p.storage||"unknown") + ". Needs income immediately: " + (p.income_now||"unknown") + ". Ambition: " + (p.ambition||"unknown") + ".";
+    var sys = "You are a business-planning assistant for a founder. Given their profile, propose 3 to 5 candidate business DIRECTIONS that fit their money, skills, hours and location. HARD RULES: (1) You have NO live market data. NEVER state specific supplier prices, demand figures, competitor counts, or market statistics as fact. (2) Treat every suggestion as a HYPOTHESIS the founder must validate by contacting real suppliers and buyers (e.g. via Lead Finder and direct calls). (3) Respect the capital constraint: prefer directions that can start with little or no money - brokerage, pre-orders, services, small distribution - before any machinery or stock. (4) Do NOT promise immunity from economic, currency or competitive risk. (5) For each direction give exactly: a short name, why it fits THIS profile, and the single first validation step. Plain text, no markdown tables, no headers. Be concise and honest.";
+    var groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "system", content: sys }, { role: "user", content: "My profile:\n" + profile + "\n\nGive me candidate directions I should validate." }], temperature: 0.6, max_tokens: 900 })
+    });
+    var data = await groqRes.json();
+    var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
+    if(!content){ return res.status(200).json({ success:false, error:"The planning assistant returned nothing. Try again in a moment." }); }
+    res.json({ success:true, ideas: content });
+  } catch(err) {
+    res.status(200).json({ success:false, error: (err && err.message) || "Planning assistant unavailable." });
+  }
+});
