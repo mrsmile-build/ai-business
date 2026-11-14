@@ -151,28 +151,49 @@ if(typeof window.esc!=='function'){
 }
 
 window.archDiscoveryNote=async function(){
-  var BE=(typeof API_BACKENDS!=='undefined'&&API_BACKENDS[0])||'https://ai-business-1-ok3x.onrender.com';
   var prof={};try{prof=JSON.parse(localStorage.getItem('ab_biz_profile')||'{}');}catch(e){}
   var hdr=(typeof header==='function')?header('Business Discovery','dashboard'):'';
-  setView('<div class="card">'+hdr+'<p style="font-size:12px;color:#93c5fd;margin:0 0 12px">These are AI hypotheses from your profile - NOT confirmed market prices or demand. In Nigeria costs move with the economy, so any figure can be far off today. Validate every one by contacting real suppliers and buyers before you spend.</p><p id="disc_status" style="font-size:12px;color:#64748b">Thinking through your profile...</p><div id="disc_out"></div></div>');
+  var form='<div class="card">'+hdr
+    +'<p style="font-size:12px;color:#93c5fd;margin:0 0 12px">These are AI hypotheses from your profile - NOT confirmed market prices or demand. In Nigeria costs move with the economy, so any figure can be far off today. Validate every one by contacting real suppliers and buyers before you spend.</p>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px">'
+    +'<label style="font-size:11px;color:#64748b;display:block">How many ideas<input id="disc_count" type="number" min="3" max="20" value="5" style="display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-top:4px"></label>'
+    +'<label style="font-size:11px;color:#64748b;display:block;flex:1;min-width:160px">What kind (optional)<input id="disc_focus" type="text" value="" placeholder="e.g. production, service, brokerage" style="display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:8px 10px;font-size:13px;margin-top:4px"></label>'
+    +'</div>'
+    +'<label style="font-size:12px;color:#94a3b8;display:flex;align-items:center;gap:8px;margin:0 0 14px"><input id="disc_resil" type="checkbox" checked style="width:auto"> Prefer durable businesses (essential demand, local, asset-backed, recurring) - a tendency, not a guarantee</label>'
+    +'<button type="button" onclick="archRunDiscovery()" style="display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">Get my ideas</button>'
+    +'<p id="disc_status" style="font-size:12px;color:#64748b;margin:12px 0 0"></p>'
+    +'<div id="disc_out" style="margin-top:12px"></div>'
+    +'</div>';
+  setView(form);
+};
+window.archRunDiscovery=async function(){
+  var BE=(typeof API_BACKENDS!=='undefined'&&API_BACKENDS[0])||'https://ai-business-1-ok3x.onrender.com';
+  var prof={};try{prof=JSON.parse(localStorage.getItem('ab_biz_profile')||'{}');}catch(e){}
+  var g=function(id){var e=document.getElementById(id);return e?e.value:'';};
+  var cnt=parseInt(g('disc_count'),10)||5; if(cnt<3)cnt=3; if(cnt>20)cnt=20;
+  var foc=g('disc_focus');
+  var rb=document.getElementById('disc_resil'); var res=rb?rb.checked:true;
+  var st=document.getElementById('disc_status'); if(st){ st.style.display=''; st.textContent='Thinking through your profile, capital band, the kind you asked for, and durability...'; }
+  var out=document.getElementById('disc_out'); if(out) out.innerHTML='';
   try{
-    var ac=new AbortController(); var to=setTimeout(function(){ac.abort();},20000);
-    var res;
-    try{ res=await fetch(BE+'/api/biz-ideas',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify(prof),signal:ac.signal}); }finally{ clearTimeout(to); }
-    var data=await res.json();
-    var st=document.getElementById('disc_status'); if(st) st.style.display='none';
-    var out=document.getElementById('disc_out');
-    if(!data||!data.success){ if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">'+esc((data&&data.error)||'The planning assistant returned nothing.')+'</p><button type="button" onclick="archDiscoveryNote()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry</button>'; return; }
+    var ac=new AbortController(); var to=setTimeout(function(){ac.abort();},30000);
+    var body={capital:prof.capital,location:prof.location,skills:prof.skills,hours:prof.hours,living:prof.living,storage:prof.storage,income_now:prof.income_now,ambition:prof.ambition,count:cnt,focus:foc,resilience:res};
+    var r;
+    try{ r=await fetch(BE+'/api/biz-ideas',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify(body),signal:ac.signal}); }finally{ clearTimeout(to); }
+    if(st) st.style.display='none';
+    var ct=(r.headers.get('content-type')||'');
+    if(ct.indexOf('application/json')===-1){ if(out) out.innerHTML='<p style="color:#f59e0b;font-size:13px">The server returned a non-JSON reply (likely still waking up). Tap Get my ideas again in a moment.</p>'; return; }
+    var data=await r.json();
+    if(!data||!data.success){ if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">'+esc((data&&data.error)||'The planning assistant returned nothing.')+'</p>'; return; }
     if(out) out.innerHTML='<div style="white-space:pre-wrap;font-size:13px;color:#e2e8f0;line-height:1.6">'+esc(String(data.ideas||''))+'</div>'
-      +'<p style="margin:14px 0 6px;font-size:12px;color:#94a3b8">Next real step: open Lead Finder, search your town plus the product, get REAL listings (these businesses exist), then call them to confirm prices. That turns a hypothesis into a fact.</p>'
+      +'<p style="margin:14px 0 6px;font-size:12px;color:#94a3b8">Next real step: open Lead Finder, search your town plus the product, get REAL listings (these businesses exist), then call them to confirm prices. That turns a hypothesis into a fact. The ratings are relative fit and durability, not guarantees.</p>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
       +'<button type="button" onclick="loadPage(\'leadFinder\')" style="background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer">Open Lead Finder</button>'
-      +'<button type="button" onclick="loadPage(\'architect\')" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Back to Architect</button>'
+      +'<button type="button" onclick="archDiscoveryNote()" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Adjust and ask again</button>'
       +'</div>';
   }catch(e){
-    var st2=document.getElementById('disc_status'); if(st2) st2.style.display='none';
-    var out2=document.getElementById('disc_out');
-    if(out2) out2.innerHTML='<p style="color:#ef4444;font-size:13px">Could not reach the planning assistant: '+esc((e&&e.message)||'unknown')+'</p><button type="button" onclick="archDiscoveryNote()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry</button>';
+    if(st) st.style.display='none';
+    if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">Could not reach the planning assistant: '+esc((e&&e.message)||'unknown')+'</p>';
   }
 };
 
