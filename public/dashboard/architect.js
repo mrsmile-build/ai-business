@@ -98,24 +98,29 @@ function renderArchitect(){
   var p=archProfile();
   function f(id,label,ph,val){return '<label style="display:block;font-size:11px;color:#64748b;margin:0 0 4px">'+label+'</label><input id="'+id+'" value="'+(val||'')+'" placeholder="'+ph+'" style="display:block;width:100%;box-sizing:border-box;background:#0b1220;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 11px;font-size:13px;margin:0 0 10px">';}
   var hdr=(typeof header==='function')?header('Business Architect','dashboard'):'';
-  setView('<div class="card">'+hdr
-   +'<p style="font-size:13px;color:#94a3b8;margin:0 0 14px">From your current situation to a real, growing business. Tell us where you are; the system investigates, calculates and plans with you - never inventing numbers.</p>'
-   +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">'
-   +'<button type="button" onclick="loadPage(\'feasibility\')" style="flex:1;min-width:150px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">I have an idea - test if it can feed me</button>'
-   +'<button type="button" onclick="archDiscoveryNote()" style="flex:1;min-width:150px;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:10px;padding:12px;font-size:13px;cursor:pointer">I have no idea yet - show me Discovery</button>'
-   +'</div>'
-   +'<p style="font-size:12px;color:#93c5fd;font-weight:700;margin:0 0 8px">Your business profile (saved on this device)</p>'
-   + f('bp_capital','Available starting capital (in your currency)','e.g. 50000',p.capital)
-   + f('bp_location','Country, state and town','e.g. Nigeria, Lagos, Ikeja',p.location)
-   + f('bp_skills','Skills and experience','e.g. tailoring, sales, coding',p.skills)
-   + f('bp_hours','Hours available per day','e.g. 4',p.hours)
-   + f('bp_living','Personal living expenses per month','e.g. 100000',p.living)
-   + f('bp_storage','Can you store inventory? (yes/no)','yes or no',p.storage)
-   + f('bp_income','Do you need income immediately? (yes/no)','yes or no',p.income_now)
-   + f('bp_ambition','Long-term ambition','e.g. own a production company',p.ambition)
-   +'<button type="button" onclick="archSaveProfile()" style="display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">Save my profile</button>'
-   +'<p id="bp_msg" style="margin:8px 0 0;font-size:12px;color:#10b981"></p>'
-   +'</div>');
+  setView(
+  '<div class="card">' +
+  hdr +
+  '<p style="font-size:13px;color:#94a3b8;margin:0 0 14px">From your current situation to a real, growing business. Three live rooms now. The rest open only when there is real evidence to stand on.</p>' +
+  '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">' +
+  '<button type="button" onclick="archGoFeas()" style="flex:1;min-width:140px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">I have an idea - test if it can feed me</button>' +
+  '<button type="button" onclick="archGoDisc()" style="flex:1;min-width:140px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer">I have no idea - ask the planner</button>' +
+  '<button type="button" onclick="archGoGuide()" style="flex:1;min-width:140px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:12px;font-size:13px;cursor:pointer">New here? Learn the basics</button>' +
+  '</div>' +
+  '<p style="font-size:12px;color:#93c5fd;font-weight:700;margin:0 0 8px">Your business profile (saved on this device)</p>' +
+  f('bp_capital','Available starting capital (in your currency)','e.g. 50000',p.capital) +
+  f('bp_location','Country, state and town','e.g. Nigeria, Lagos, Ikeja',p.location) +
+  f('bp_skills','Skills and experience','e.g. tailoring, sales, coding',p.skills) +
+  f('bp_hours','Hours available per day','e.g. 4',p.hours) +
+  f('bp_living','Personal living expenses per month','e.g. 100000',p.living) +
+  f('bp_storage','Can you store inventory? (yes/no)','yes or no',p.storage) +
+  f('bp_income','Do you need income immediately? (yes/no)','yes or no',p.income_now) +
+  f('bp_ambition','Long-term ambition','e.g. own a production company',p.ambition) +
+  '<button type="button" onclick="archSaveProfile()" style="display:block;width:100%;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:11px;font-size:13px;font-weight:700;cursor:pointer">Save my profile</button>' +
+  '<p id="bp_msg" style="margin:8px 0 0;font-size:12px;color:#10b981"></p>' +
+  '<p style="margin:14px 0 0;font-size:11px;color:#475569">Planner ideas are AI hypotheses, not confirmed prices or demand. Research, roadmap and mentor open later, built on real evidence - never invented numbers. HasData is reserved for Lead Finder, not spent on browsing.</p>' +
+  '</div>'
+  );
 }
 if (typeof window.loadPage==='function') {
   var _lp2=window.loadPage;
@@ -136,62 +141,6 @@ function archDiscoveryNote(){
    +'</div></div>');
 }
 
-var __awN=0, __awDone=false;
-function archWatchdog(){
-  try{
-    var app=document.getElementById('app'); if(!app) return;
-    var txt=app.textContent||'';
-    var isAct = txt.indexOf('What AI Business did for you')!==-1;
-    var isLoad = txt.indexOf('Loading')!==-1;
-    var chip=document.getElementById('act_dbg');
-    if(!chip){ chip=document.createElement('div'); chip.id='act_dbg'; chip.style.cssText='position:fixed;right:8px;bottom:74px;z-index:9999;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:6px 10px;font-size:11px'; document.body.appendChild(chip); }
-    if(isAct && isLoad){
-      __awN++;
-      chip.textContent='activity: waiting '+__awN+'s';
-      if(__awN>=20 && !__awDone){
-        __awDone=true;
-        chip.textContent='activity: watchdog fired at 20s';
-        app.innerHTML='<div class="card">'+((typeof header==='function')?header('What AI Business did for you','dashboard'):'')
-          +'<p style="color:#ef4444;font-size:13px">The activity request did not settle within 20 seconds. This is a connection or server delay, not your data being lost.</p>'
-          +'<button type="button" onclick="loadPage(\'activity\')" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry now</button></div>';
-      }
-    } else {
-      if(isAct && !isLoad){ chip.textContent='activity: loaded'; }
-      else { chip.style.display='none'; }
-      __awN=0; __awDone=false;
-      if(isAct && !isLoad){ chip.style.display=''; }
-    }
-  }catch(e){}
-}
-setInterval(archWatchdog,1000);
-
-(function(){
-  var _ra = window.renderActivity;
-  if(typeof _ra !== 'function' || window.__actTraced) return;
-  window.__actTraced = 1;
-  function tr(m){
-    var el = document.getElementById('act_trace');
-    if(!el){
-      el = document.createElement('div');
-      el.id = 'act_trace';
-      el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:6px 8px;font-size:10px;line-height:1.4;max-width:62vw;max-height:34vh;overflow:auto;white-space:pre-wrap';
-      document.body.appendChild(el);
-    }
-    el.textContent += m + '\n';
-    el.scrollTop = el.scrollHeight;
-  }
-  window.renderActivity = async function(){
-    tr('ENTER seq=' + (window.__actSeq||0) + ' t=' + Date.now());
-    try{
-      var r = await _ra.apply(this, arguments);
-      tr('EXIT  seq=' + (window.__actSeq||0));
-      return r;
-    }catch(e){
-      tr('ERR   ' + ((e && e.message) || '?'));
-      throw e;
-    }
-  };
-})();
 
 if(typeof window.esc!=='function'){
   window.esc=function(s){
@@ -226,3 +175,23 @@ window.archDiscoveryNote=async function(){
     if(out2) out2.innerHTML='<p style="color:#ef4444;font-size:13px">Could not reach the planning assistant: '+esc((e&&e.message)||'unknown')+'</p><button type="button" onclick="archDiscoveryNote()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry</button>';
   }
 };
+
+function renderArchGuide(){
+  var hdr=(typeof header==='function')?header('Business Architect - beginner guide','dashboard'):'';
+  function card(t,b){return '<div style="border:1px solid #1e293b;border-radius:10px;padding:12px 14px;margin-bottom:8px;background:#0f172a"><p style="margin:0;font-size:13px;font-weight:700;color:#f8fafc">'+t+'</p><p style="margin:4px 0 0;font-size:12px;color:#94a3b8;line-height:1.5">'+b+'</p></div>';}
+  setView('<div class="card">'+hdr
+   +'<p style="font-size:13px;color:#94a3b8;margin:0 0 14px">Plain meaning of the numbers, so no tool can bluff you. This is education, not market data.</p>'
+   + card('Gross profit','Selling price minus the all-in cost of one unit (supplier + transport + packaging + delivery). If this is zero or negative, no volume saves you - fix price or cost first.')
+   + card('Operating profit','Gross profit minus monthly business expenses (data, calls, tools). This is what the business keeps before it pays you.')
+   + card('Break-even units','The number you must sell so gross profit covers business expenses. Below it, the business eats your savings.')
+   + card('Profit is not cash','An invoice is not a payment; an agreement is not a delivery. Track real money in Revenue and real hand-over, or the math lies by omission.')
+   + card('Volume is an assumption','Your expected units is an assumption, not a guarantee. The report shows conservative, base and optimistic so you see the swing before you commit money.')
+   + card('How to validate a planner idea','Treat it as a hypothesis. Open Lead Finder, search your town plus the product, get real listings (that proves the business exists), then call them to confirm price and demand. A June price is not a December price in Nigeria - the economy moves. Confirm before you spend.')
+   + card('Three evidence labels','VERIFIED = you saw it (a real quote, a real listing). ESTIMATED = a public source hinted it, with date and origin. UNKNOWN = not confirmed - do not build on it.')
+   +'<button type="button" onclick="archGoHome()" style="margin-top:6px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Back to Architect</button>'
+   +'</div>');
+}
+function archGoFeas(){ loadPage('feasibility'); }
+function archGoDisc(){ archDiscoveryNote(); }
+function archGoGuide(){ renderArchGuide(); }
+function archGoHome(){ loadPage('architect'); }
