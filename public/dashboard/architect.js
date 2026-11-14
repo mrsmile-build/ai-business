@@ -205,10 +205,10 @@ window.archRunDiscovery=async function(){
       return;
     }
     window.__discRetryCount=0; window.__discFailed=false;
-    if(out) out.innerHTML='<div style="white-space:pre-wrap;font-size:13px;color:#e2e8f0;line-height:1.6">'+esc(String(data.ideas||''))+'</div>'
+    if(out) out.innerHTML=discRenderIdeas(String(data.ideas||''))
       +'<p style="margin:14px 0 6px;font-size:12px;color:#94a3b8">Next real step: open Lead Finder, search your town plus the product, get REAL listings (these businesses exist), then call them to confirm prices. That turns a hypothesis into a fact. The ratings are relative fit and durability, not guarantees.</p>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      +'<button type="button" onclick="loadPage(\'leadFinder\')" style="background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer">Open Lead Finder</button>'
+      +'<button type="button" onclick="archGoLead()" style="background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer">Open Lead Finder</button>'
       +'<button type="button" onclick="archDiscoveryNote()" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Adjust and ask again</button>'
       +'</div>';
   }catch(e){
@@ -300,3 +300,42 @@ function archGoFeas(){ loadPage('feasibility'); }
 function archGoDisc(){ archDiscoveryNote(); }
 function archGoGuide(){ renderArchGuide(); }
 function archGoHome(){ loadPage('architect'); }
+
+window.discRenderIdeas=function(raw){
+  raw=String(raw||'');
+  var lines=raw.split('\n');
+  var LB={'name':'name','capital fit':'cap','why it fits you':'why','ease to start':'ease','demand':'demand','competition':'comp','margin structure':'margin','resilience':'res','overall fit':'overall','first validation step':'step'};
+  var ideas=[]; var cur=null; var pre=[]; var post=[];
+  function newIdea(num){ cur={num:(num||String(ideas.length+1)),f:{},x:[]}; ideas.push(cur); }
+  for(var i=0;i<lines.length;i++){
+    var t=lines[i].trim(); if(!t){ continue; }
+    if(/^[0-9]{1,2}[.)]?$/.test(t)){ newIdea(t.replace(/[^0-9]/g,'')); continue; }
+    var lead=t.match(/^([0-9]{1,2})[.)][ ]+(.*)$/); var nh=''; var bd=t;
+    if(lead){ nh=lead[1]; bd=lead[2]; }
+    var lm=bd.match(/^([A-Za-z][A-Za-z ]{2,26}):[ ]*(.*)$/);
+    if(lm){
+      var key=lm[1].trim().toLowerCase(); var val=lm[2].trim(); var mk=LB[key];
+      if(mk){ if(!cur||(cur.f.name&&mk==='name')){ newIdea(nh||undefined); } cur.f[mk]=val; continue; }
+      if(cur){ cur.x.push(lm[1].trim()+': '+val); continue; }
+      pre.push(bd); continue;
+    }
+    if(cur){ post.push(t); } else { pre.push(t); }
+  }
+  if(!ideas.length){ return '<div style="white-space:pre-wrap;font-size:13px;color:#e2e8f0;line-height:1.6">'+esc(raw)+'</div>'; }
+  function pill(lb,vl,cat){ var v=(vl===''||vl==null)?'-':String(vl).trim(); var st=cat?' *':''; return '<span style="display:inline-block;background:#131d2e;border:1px solid #1e2d42;border-radius:999px;padding:3px 9px;margin:0 4px 4px 0;font-size:11px;color:#cbd5e1">'+esc(lb)+st+': <b style="color:#f8fafc">'+esc(v)+'</b></span>'; }
+  function card(ic,k){ var f=ic.f;
+    var head='<div style="display:flex;gap:8px;align-items:baseline;margin:0 0 6px"><span style="display:inline-block;min-width:20px;text-align:center;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700">'+esc(ic.num)+'</span><span style="font-size:14px;font-weight:700;color:#f8fafc">'+esc(f.name||('Idea '+k))+'</span></div>';
+    var strip='<div style="margin:0 0 8px">'+pill('Ease',f.ease,false)+pill('Demand',f.demand,true)+pill('Competition',f.comp,true)+pill('Margin',f.margin,true)+pill('Resilience',f.res,false)+pill('Overall',f.overall,false)+'</div>';
+    var cap=f.cap?('<p style="margin:0 0 6px;font-size:12px;color:#94a3b8">'+esc(f.cap)+'</p>'):'';
+    var why=f.why?('<p style="margin:0 0 8px;font-size:12px;color:#cbd5e1">'+esc(f.why)+'</p>'):'';
+    var step=f.step?('<div style="border-left:3px solid #2563eb;background:#0f172a;border-radius:0 8px 8px 0;padding:8px 12px;margin:0 0 6px"><p style="margin:0;font-size:12px;color:#dbeafe"><b>First validation step:</b> '+esc(f.step)+'</p></div>'):'';
+    var ex=(ic.x&&ic.x.length)?('<p style="margin:4px 0 0;font-size:11px;color:#64748b">'+ic.x.map(esc).join(' / ')+'</p>'):'';
+    return '<div style="border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#0b1220">'+head+strip+cap+why+step+ex+'</div>';
+  }
+  var preB=pre.length?('<p style="margin:0 0 10px;font-size:11px;color:#fbbf24;background:#1c1206;border:1px solid #b45309;border-radius:8px;padding:8px 10px">'+pre.map(esc).join(' ')+'</p>'):'';
+  var leg='<p style="margin:0 0 12px;font-size:10px;color:#64748b">* Demand, Competition and Margin are general category patterns for the business type, not measurements of your local market. Confirm real local numbers by calling.</p>';
+  var body=''; for(var j=0;j<ideas.length;j++){ body+=card(ideas[j],j+1); }
+  var postB=post.length?('<p style="margin:10px 0 0;font-size:11px;color:#94a3b8;background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:8px 10px">'+post.map(esc).join(' ')+'</p>'):'';
+  return preB+leg+body+postB;
+};
+function archGoLead(){ loadPage('leadFinder'); }
