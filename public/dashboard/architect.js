@@ -304,7 +304,7 @@ function archGoHome(){ loadPage('architect'); }
 window.discRenderIdeas=function(raw){
   raw=String(raw||'');
   var lines=raw.split('\n');
-  var LB={'name':'name','capital fit':'cap','why it fits you':'why','ease to start':'ease','demand':'demand','competition':'comp','margin structure':'margin','resilience':'res','overall fit':'overall','first validation step':'step'};
+  var LB={'name':'name','capital fit':'cap','why it fits you':'why','ease to start':'ease','demand':'demand','competition':'comp','margin structure':'margin','resilience':'res','overall fit':'overall','first validation step':'step','product':'prod','products':'prod'};
   var ideas=[]; var cur=null; var pre=[]; var post=[];
   function newIdea(num){ cur={num:(num||String(ideas.length+1)),f:{},x:[]}; ideas.push(cur); }
   for(var i=0;i<lines.length;i++){
@@ -326,11 +326,12 @@ window.discRenderIdeas=function(raw){
   function card(ic,k){ var f=ic.f;
     var head='<div style="display:flex;gap:8px;align-items:baseline;margin:0 0 6px"><span style="display:inline-block;min-width:20px;text-align:center;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700">'+esc(ic.num)+'</span><span style="font-size:14px;font-weight:700;color:#f8fafc">'+esc(f.name||('Idea '+k))+'</span></div>';
     var strip='<div style="margin:0 0 8px">'+pill('Ease',f.ease,false)+pill('Demand',f.demand,true)+pill('Competition',f.comp,true)+pill('Margin',f.margin,true)+pill('Resilience',f.res,false)+pill('Overall',f.overall,false)+'</div>';
+    var prod=f.prod?('<p style="margin:0 0 6px;font-size:12px;color:#6ee7b7"><b>Product:</b> '+esc(f.prod)+'</p>'):'';
     var cap=f.cap?('<p style="margin:0 0 6px;font-size:12px;color:#94a3b8">'+esc(f.cap)+'</p>'):'';
     var why=f.why?('<p style="margin:0 0 8px;font-size:12px;color:#cbd5e1">'+esc(f.why)+'</p>'):'';
     var step=f.step?('<div style="border-left:3px solid #2563eb;background:#0f172a;border-radius:0 8px 8px 0;padding:8px 12px;margin:0 0 6px"><p style="margin:0;font-size:12px;color:#dbeafe"><b>First validation step:</b> '+esc(f.step)+'</p></div>'):'';
     var ex=(ic.x&&ic.x.length)?('<p style="margin:4px 0 0;font-size:11px;color:#64748b">'+ic.x.map(esc).join(' / ')+'</p>'):'';
-    return '<div style="border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#0b1220">'+head+strip+cap+why+step+ex+'</div>';
+    return '<div style="border:1px solid #1e293b;border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#0b1220">'+head+prod+strip+cap+why+step+ex+'</div>';
   }
   var preB=pre.length?('<p style="margin:0 0 10px;font-size:11px;color:#fbbf24;background:#1c1206;border:1px solid #b45309;border-radius:8px;padding:8px 10px">'+pre.map(esc).join(' ')+'</p>'):'';
   var leg='<p style="margin:0 0 12px;font-size:10px;color:#64748b">* Demand, Competition and Margin are general category patterns for the business type, not measurements of your local market. Confirm real local numbers by calling.</p>';
