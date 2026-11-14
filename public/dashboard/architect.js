@@ -192,3 +192,37 @@ setInterval(archWatchdog,1000);
     }
   };
 })();
+
+if(typeof window.esc!=='function'){
+  window.esc=function(s){
+    return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+      return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;';
+    });
+  };
+}
+
+window.archDiscoveryNote=async function(){
+  var BE=(typeof API_BACKENDS!=='undefined'&&API_BACKENDS[0])||'https://ai-business-1-ok3x.onrender.com';
+  var prof={};try{prof=JSON.parse(localStorage.getItem('ab_biz_profile')||'{}');}catch(e){}
+  var hdr=(typeof header==='function')?header('Business Discovery','dashboard'):'';
+  setView('<div class="card">'+hdr+'<p style="font-size:12px;color:#93c5fd;margin:0 0 12px">These are AI hypotheses from your profile - NOT confirmed market prices or demand. In Nigeria costs move with the economy, so any figure can be far off today. Validate every one by contacting real suppliers and buyers before you spend.</p><p id="disc_status" style="font-size:12px;color:#64748b">Thinking through your profile...</p><div id="disc_out"></div></div>');
+  try{
+    var ac=new AbortController(); var to=setTimeout(function(){ac.abort();},20000);
+    var res;
+    try{ res=await fetch(BE+'/api/biz-ideas',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify(prof),signal:ac.signal}); }finally{ clearTimeout(to); }
+    var data=await res.json();
+    var st=document.getElementById('disc_status'); if(st) st.style.display='none';
+    var out=document.getElementById('disc_out');
+    if(!data||!data.success){ if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">'+esc((data&&data.error)||'The planning assistant returned nothing.')+'</p><button type="button" onclick="archDiscoveryNote()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry</button>'; return; }
+    if(out) out.innerHTML='<div style="white-space:pre-wrap;font-size:13px;color:#e2e8f0;line-height:1.6">'+esc(String(data.ideas||''))+'</div>'
+      +'<p style="margin:14px 0 6px;font-size:12px;color:#94a3b8">Next real step: open Lead Finder, search your town plus the product, get REAL listings (these businesses exist), then call them to confirm prices. That turns a hypothesis into a fact.</p>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button type="button" onclick="loadPage(\'leadFinder\')" style="background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;cursor:pointer">Open Lead Finder</button>'
+      +'<button type="button" onclick="loadPage(\'architect\')" style="background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;font-size:13px;cursor:pointer">Back to Architect</button>'
+      +'</div>';
+  }catch(e){
+    var st2=document.getElementById('disc_status'); if(st2) st2.style.display='none';
+    var out2=document.getElementById('disc_out');
+    if(out2) out2.innerHTML='<p style="color:#ef4444;font-size:13px">Could not reach the planning assistant: '+esc((e&&e.message)||'unknown')+'</p><button type="button" onclick="archDiscoveryNote()" style="margin-top:10px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry</button>';
+  }
+};
