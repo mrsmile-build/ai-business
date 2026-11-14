@@ -164,3 +164,31 @@ function archWatchdog(){
   }catch(e){}
 }
 setInterval(archWatchdog,1000);
+
+(function(){
+  var _ra = window.renderActivity;
+  if(typeof _ra !== 'function' || window.__actTraced) return;
+  window.__actTraced = 1;
+  function tr(m){
+    var el = document.getElementById('act_trace');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'act_trace';
+      el.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:9999;background:#0f172a;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:6px 8px;font-size:10px;line-height:1.4;max-width:62vw;max-height:34vh;overflow:auto;white-space:pre-wrap';
+      document.body.appendChild(el);
+    }
+    el.textContent += m + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+  window.renderActivity = async function(){
+    tr('ENTER seq=' + (window.__actSeq||0) + ' t=' + Date.now());
+    try{
+      var r = await _ra.apply(this, arguments);
+      tr('EXIT  seq=' + (window.__actSeq||0));
+      return r;
+    }catch(e){
+      tr('ERR   ' + ((e && e.message) || '?'));
+      throw e;
+    }
+  };
+})();
