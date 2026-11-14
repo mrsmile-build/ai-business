@@ -4757,12 +4757,22 @@ app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY_1 },
       body: JSON.stringify({ model: 'qwen/qwen3.8-27b', messages: [{ role: 'system', content: rules }, { role: 'user', content: 'My profile:\n' + profile + '\n\nGive me ' + count + ' candidate directions I should validate.' }], temperature: 0.6, max_tokens: mt })
     });
-    var data = await groqRes.json();
+    var data = null;
+    try { data = await groqRes.json(); } catch (pe) { data = null; }
+    if (!data) {
+      return res.status(200).json({ success: false, errorKind: 'upstream', error: 'The planning service returned an unreadable reply (status ' + groqRes.status + '). It is likely waking up - retry in a moment.' });
+    }
+    if (data.error) {
+      var em = (data.error && data.error.message) || 'planning service error';
+      return res.status(200).json({ success: false, errorKind: 'upstream', error: em });
+    }
     var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
-    if (!content) { return res.status(200).json({ success: false, error: 'The planning assistant returned nothing. Try again in a moment.' }); }
+    if (!content) {
+      return res.status(200).json({ success: false, errorKind: 'empty', error: 'The assistant returned no text this time (it may have filtered the request). Adjust the kind or tap Retry.' });
+    }
     res.json({ success: true, ideas: content, count: count, band: band });
   } catch (err) {
-    res.status(200).json({ success: false, error: (err && err.message) || 'Planning assistant unavailable.' });
+    res.status(200).json({ success: false, errorKind: 'upstream', error: (err && err.message) || 'Planning assistant unavailable.' });
   }
 });
 
