@@ -4713,7 +4713,7 @@ app.patch("/api/admin/feedback/:id/resolve", authMiddleware, async (req, res) =>
 app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
   try {
     var p = req.body || {};
-    var num = function(v){ var n=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,'')); return isFinite(n)?n:0; };
+    var num = function(v){ var x=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,'')); return isFinite(x)?x:0; };
     var cap = num(p.capital);
     var band = 'unknown (treat as bootstrap: near-zero capital)';
     if (cap>0 && cap<50000) band='very low / bootstrap (near-zero capital: no stock, no machinery)';
@@ -4722,28 +4722,34 @@ app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
     else if (cap>=1000000 && cap<5000000) band='growth (about 1 million to 5 million)';
     else if (cap>=5000000) band='scale (5 million and above)';
     var count = Math.max(3, Math.min(20, parseInt(p.count,10) || 5));
-    var mt = Math.min(4096, 300 + count*170);
+    var mt = Math.min(4096, 350 + count*180);
     var focus = String(p.focus||'').trim();
     var resil = !(p.resilience===false || p.resilience==='false' || p.resilience==='off');
-    var profile = 'Capital available: ' + (p.capital||'unknown') + ' (band: ' + band + '). Location: ' + (p.location||'unknown') + '. Skills: ' + (p.skills||'unknown') + '. Hours per day: ' + (p.hours||'unknown') + '. Monthly living cost: ' + (p.living||'unknown') + '. Can store inventory: ' + (p.storage||'unknown') + '. Needs income immediately: ' + (p.income_now||'unknown') + '. Long-term ambition: ' + (p.ambition||'unknown') + '.';
-    var focusLine = focus ? ('The founder asked about this kind of business: ' + focus + '. Prefer directions of that type. If that type realistically needs more capital than the band, still include it but mark the capital gap honestly and give a smaller startable variant (pre-order, partnership, rent equipment, start as brokerage or agency first).') : 'No specific type requested; choose types that fit the skills and ambition above.';
+    var loc = String(p.location||'').trim();
+    var profile = 'Capital available: ' + (p.capital||'unknown') + ' (band: ' + band + '). Location: ' + (loc||'unknown') + '. Skills: ' + (p.skills||'unknown') + '. Hours per day: ' + (p.hours||'unknown') + '. Monthly living cost: ' + (p.living||'unknown') + '. Can store inventory: ' + (p.storage||'unknown') + '. Needs income immediately: ' + (p.income_now||'unknown') + '. Long-term ambition: ' + (p.ambition||'unknown') + '.';
+    var focusLine = focus ? ('The founder named this kind of business: ' + focus + '. Treat it as the required kind, not a suggestion.') : 'No specific kind requested; choose kinds that fit the skills and ambition above.';
+    var typeRule = focus
+      ? ('RULE 2b HONOR THE REQUESTED KIND (AUTHORITATIVE): the founder asked for ' + focus + '. At least the majority of the directions (round count times 0.6 up) MUST be of that kind or a startable variant of the SAME kind. Do NOT swap it for generic online services. If the capital band is tighter than full ' + focus + ' needs, KEEP the kind and give startable variants of it: small-batch make-to-order, pre-order production funded by customer deposits, contract manufacturing arranged as brokerage or agency, repair and refurbish then resell, local assembly from bought parts, or a one-machine start. The requested kind stays central; only the scale flexes. If you truly cannot fit the kind in the band, say so in one line and still give the closest startable variant of that same kind, never an unrelated online service.')
+      : 'RULE 2b No specific kind requested; diversify across kinds that fit the profile.';
     var resilLine = resil ? ('Prefer directions with durability traits: essential daily demand, local logistics, human trust and relationships, asset-backed value, recurring revenue, low dependence on a single tech platform or app. These tend to survive technology shifts, currency swings and recessions better. BUT never claim any direction is immune to economy, currency, competition or technology - no such guarantee exists. Frame resilience as tends-to-be-more-durable, never cannot-be-affected.') : 'Durability is not a priority here; optimize for speed to first income and fit to skills.';
     var rules = [
       'You are a business planner for a founder. Return EXACTLY ' + count + ' candidate business DIRECTIONS, numbered 1 to ' + count + '.',
       'If the profile is thin or mostly empty, STILL return ' + count + ' directions sized for a bootstrap or unknown-capital founder (near-zero capital plays), and add one line naming which profile details would sharpen them. Do not refuse outright unless literally nothing at all is known.',
       'RULE 1 CAPITAL: every direction must realistically start within the band above (' + band + '). If the band is bootstrap, only suggest near-zero-capital directions (brokerage, agency, service, pre-order sales, small distribution, skill-for-cash). Never suggest a direction whose true startup need exceeds the band without flagging the gap.',
-      'RULE 2 TYPE: ' + focusLine,
+      'RULE 2 KIND: ' + focusLine,
+      typeRule,
       'RULE 3 RESILIENCE: ' + resilLine,
       'RULE 4 NO INVENTED FACTS: you have NO live market data. Never state specific supplier prices, demand figures, competitor counts, or market statistics as fact. Any number is a hypothesis to validate, not a claim.',
       'RULE 5 NO IMMUNITY PROMISE: do not promise protection from price rises, currency moves, competition, or technology. Honest limits only.',
       'RULE 6 FORMAT each direction as plain text with these labeled lines, no markdown tables, no headers:',
       'Name: (short)',
-      'Capital fit: (fits the band? if not, the gap and a smaller variant)',
+      'Capital fit: (fits the band? if not, the gap and a smaller variant of the SAME kind)',
       'Why it fits you: (tie to skills, hours, location, ambition)',
       'Resilience and limits: (durability traits it has, and what can still hurt it)',
       'FIT rating: (1 to 5) - one line reason',
       'RESILIENCE rating: (1 to 5) - one line reason, relative not guaranteed',
       'First validation step: (concrete: who to call, what to ask, what to confirm before spending)',
+      'RULE 7 COUNTRY AND CITY: derive the country, state and city ONLY from the location field above (' + (loc||'unknown') + '). Do NOT assume Nigeria or any specific country unless the location states it. Use that country for logistics, legal, currency and supplier context. If location is empty or unknown, treat the country as unspecified, keep such advice generic, and add one line asking the founder to enter their country for sharper answers.',
       'Be concise and honest. Plain text only.'
     ].join('\n');
     var groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
