@@ -4709,18 +4709,6 @@ app.patch("/api/admin/feedback/:id/resolve", authMiddleware, async (req, res) =>
     res.json({ success: true });
   } catch(err){ res.json({ success: false, error: err.message }); }
 });
-app.use((req, res) => {
-  res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
-});
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server running...");
-});
-
-app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
-app.get('/api/debug-backends', (req, res) => res.json({ active: 'https://ai-business-90n6.onrender.com', note: 'Proxy removed — domain routes directly to active Render instance.' }));
-
-
 /* ---------------- BUSINESS ARCHITECT: GROQ DISCOVERY (hypotheses only, no invented market facts) ---------------- */
 app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
   try {
@@ -4740,3 +4728,17 @@ app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
     res.status(200).json({ success:false, error: (err && err.message) || "Planning assistant unavailable." });
   }
 });
+
+app.use((req, res) => {
+  res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running...");
+});
+
+app.get('/api/ping', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+app.get('/api/debug-backends', (req, res) => res.json({ active: 'https://ai-business-90n6.onrender.com', note: 'Proxy removed — domain routes directly to active Render instance.' }));
+
+
+
