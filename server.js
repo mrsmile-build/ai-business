@@ -4713,19 +4713,50 @@ app.patch("/api/admin/feedback/:id/resolve", authMiddleware, async (req, res) =>
 app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
   try {
     var p = req.body || {};
-    var profile = "Capital: " + (p.capital||"unknown") + ". Location: " + (p.location||"unknown") + ". Skills: " + (p.skills||"unknown") + ". Hours/day: " + (p.hours||"unknown") + ". Monthly living cost: " + (p.living||"unknown") + ". Can store inventory: " + (p.storage||"unknown") + ". Needs income immediately: " + (p.income_now||"unknown") + ". Ambition: " + (p.ambition||"unknown") + ".";
-    var sys = "You are a business-planning assistant for a founder. Given their profile, propose 3 to 5 candidate business DIRECTIONS that fit their money, skills, hours and location. HARD RULES: (1) You have NO live market data. NEVER state specific supplier prices, demand figures, competitor counts, or market statistics as fact. (2) Treat every suggestion as a HYPOTHESIS the founder must validate by contacting real suppliers and buyers (e.g. via Lead Finder and direct calls). (3) Respect the capital constraint: prefer directions that can start with little or no money - brokerage, pre-orders, services, small distribution - before any machinery or stock. (4) Do NOT promise immunity from economic, currency or competitive risk. (5) For each direction give exactly: a short name, why it fits THIS profile, and the single first validation step. Plain text, no markdown tables, no headers. Be concise and honest.";
-    var groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + process.env.GROQ_API_KEY_1 },
-      body: JSON.stringify({ model: "qwen/qwen3.8-27b", messages: [{ role: "system", content: sys }, { role: "user", content: "My profile:\n" + profile + "\n\nGive me candidate directions I should validate." }], temperature: 0.6, max_tokens: 900 })
+    var num = function(v){ var n=parseFloat(String(v==null?'':v).replace(/[^0-9.]/g,'')); return isFinite(n)?n:0; };
+    var cap = num(p.capital);
+    var band = 'unknown (treat as bootstrap: near-zero capital)';
+    if (cap>0 && cap<50000) band='very low / bootstrap (near-zero capital: no stock, no machinery)';
+    else if (cap>=50000 && cap<200000) band='low';
+    else if (cap>=200000 && cap<1000000) band='moderate';
+    else if (cap>=1000000 && cap<5000000) band='growth (about 1 million to 5 million)';
+    else if (cap>=5000000) band='scale (5 million and above)';
+    var count = Math.max(3, Math.min(20, parseInt(p.count,10) || 5));
+    var mt = Math.min(4096, 300 + count*170);
+    var focus = String(p.focus||'').trim();
+    var resil = !(p.resilience===false || p.resilience==='false' || p.resilience==='off');
+    var profile = 'Capital available: ' + (p.capital||'unknown') + ' (band: ' + band + '). Location: ' + (p.location||'unknown') + '. Skills: ' + (p.skills||'unknown') + '. Hours per day: ' + (p.hours||'unknown') + '. Monthly living cost: ' + (p.living||'unknown') + '. Can store inventory: ' + (p.storage||'unknown') + '. Needs income immediately: ' + (p.income_now||'unknown') + '. Long-term ambition: ' + (p.ambition||'unknown') + '.';
+    var focusLine = focus ? ('The founder asked about this kind of business: ' + focus + '. Prefer directions of that type. If that type realistically needs more capital than the band, still include it but mark the capital gap honestly and give a smaller startable variant (pre-order, partnership, rent equipment, start as brokerage or agency first).') : 'No specific type requested; choose types that fit the skills and ambition above.';
+    var resilLine = resil ? ('Prefer directions with durability traits: essential daily demand, local logistics, human trust and relationships, asset-backed value, recurring revenue, low dependence on a single tech platform or app. These tend to survive technology shifts, currency swings and recessions better. BUT never claim any direction is immune to economy, currency, competition or technology - no such guarantee exists. Frame resilience as tends-to-be-more-durable, never cannot-be-affected.') : 'Durability is not a priority here; optimize for speed to first income and fit to skills.';
+    var rules = [
+      'You are a business planner for a founder. Return EXACTLY ' + count + ' candidate business DIRECTIONS, numbered 1 to ' + count + '.',
+      'If the profile is thin or mostly empty, STILL return ' + count + ' directions sized for a bootstrap or unknown-capital founder (near-zero capital plays), and add one line naming which profile details would sharpen them. Do not refuse outright unless literally nothing at all is known.',
+      'RULE 1 CAPITAL: every direction must realistically start within the band above (' + band + '). If the band is bootstrap, only suggest near-zero-capital directions (brokerage, agency, service, pre-order sales, small distribution, skill-for-cash). Never suggest a direction whose true startup need exceeds the band without flagging the gap.',
+      'RULE 2 TYPE: ' + focusLine,
+      'RULE 3 RESILIENCE: ' + resilLine,
+      'RULE 4 NO INVENTED FACTS: you have NO live market data. Never state specific supplier prices, demand figures, competitor counts, or market statistics as fact. Any number is a hypothesis to validate, not a claim.',
+      'RULE 5 NO IMMUNITY PROMISE: do not promise protection from price rises, currency moves, competition, or technology. Honest limits only.',
+      'RULE 6 FORMAT each direction as plain text with these labeled lines, no markdown tables, no headers:',
+      'Name: (short)',
+      'Capital fit: (fits the band? if not, the gap and a smaller variant)',
+      'Why it fits you: (tie to skills, hours, location, ambition)',
+      'Resilience and limits: (durability traits it has, and what can still hurt it)',
+      'FIT rating: (1 to 5) - one line reason',
+      'RESILIENCE rating: (1 to 5) - one line reason, relative not guaranteed',
+      'First validation step: (concrete: who to call, what to ask, what to confirm before spending)',
+      'Be concise and honest. Plain text only.'
+    ].join('\n');
+    var groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + process.env.GROQ_API_KEY_1 },
+      body: JSON.stringify({ model: 'qwen/qwen3.8-27b', messages: [{ role: 'system', content: rules }, { role: 'user', content: 'My profile:\n' + profile + '\n\nGive me ' + count + ' candidate directions I should validate.' }], temperature: 0.6, max_tokens: mt })
     });
     var data = await groqRes.json();
-    var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || "";
-    if(!content){ return res.status(200).json({ success:false, error:"The planning assistant returned nothing. Try again in a moment." }); }
-    res.json({ success:true, ideas: content });
-  } catch(err) {
-    res.status(200).json({ success:false, error: (err && err.message) || "Planning assistant unavailable." });
+    var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+    if (!content) { return res.status(200).json({ success: false, error: 'The planning assistant returned nothing. Try again in a moment.' }); }
+    res.json({ success: true, ideas: content, count: count, band: band });
+  } catch (err) {
+    res.status(200).json({ success: false, error: (err && err.message) || 'Planning assistant unavailable.' });
   }
 });
 
