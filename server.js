@@ -4722,7 +4722,7 @@ app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
     else if (cap>=1000000 && cap<5000000) band='growth (about 1 million to 5 million)';
     else if (cap>=5000000) band='scale (5 million and above)';
     var count = Math.max(3, Math.min(20, parseInt(p.count,10) || 5));
-    var mt = Math.min(4096, 350 + count*180);
+    var mt = Math.min(4096, 420 + count*230);
     var focus = String(p.focus||'').trim();
     var resil = !(p.resilience===false || p.resilience==='false' || p.resilience==='off');
     var loc = String(p.location||'').trim();
@@ -4745,11 +4745,15 @@ app.post("/api/biz-ideas", authMiddleware, async (req, res) => {
       'Name: (short)',
       'Capital fit: (fits the band? if not, the gap and a smaller variant of the SAME kind)',
       'Why it fits you: (tie to skills, hours, location, ambition)',
-      'Resilience and limits: (durability traits it has, and what can still hurt it)',
-      'FIT rating: (1 to 5) - one line reason',
-      'RESILIENCE rating: (1 to 5) - one line reason, relative not guaranteed',
+      'Ease to start: (1 to 5) - how quickly this can begin given the capital band, skills and hours; 5 means it can start this week with what you already have. This is profile-derived, not market data.',
+      'Demand: (1 to 5) - GENERAL demand strength for this business TYPE (essential daily need scores high, discretionary or niche scores lower). This is a category pattern, NOT a measurement of your local market - confirm real demand by calling buyers.',
+      'Competition: (1 to 5) - GENERAL competition intensity for this TYPE (mass-produced or crowded scores low meaning harder, underserved local service scores high meaning easier). Category pattern, NOT a local count - confirm by checking your area.',
+      'Margin structure: (1 to 5) - GENERAL profitability shape (asset-backed, recurring or low-overhead scores high; thin resale or stock-heavy scores lower). Structure only, NOT a real price or margin - confirm supplier cost and selling price by calling.',
+      'Resilience: (1 to 5) - durability traits (essential demand, local, asset-backed, recurring, low platform dependence). Relative, never guaranteed.',
+      'Overall fit: (1 to 5) - your composite of ease, skill-match and resilience for THIS founder.',
       'First validation step: (concrete: who to call, what to ask, what to confirm before spending)',
-      'RULE 7 COUNTRY AND CITY: derive the country, state and city ONLY from the location field above (' + (loc||'unknown') + '). Do NOT assume Nigeria or any specific country unless the location states it. Use that country for logistics, legal, currency and supplier context. If location is empty or unknown, treat the country as unspecified, keep such advice generic, and add one line asking the founder to enter their country for sharper answers.',
+      'RULE 7 COUNTRY AND CITY: derive the country, state and city ONLY from the location field above (' + (loc||'unknown') + '). Do NOT assume Nigeria or any specific country unless the location states it. Use that country for logistics, legal, currency and supplier context. If location is empty or unknown, treat the country as unspecified, keep such advice generic, and add one line asking the founder to enter their country and city for sharper answers.',
+      'RULE 8 RATINGS ARE CATEGORY JUDGMENTS, NOT LOCAL DATA: the Demand, Competition and Margin numbers above are general patterns for the business TYPE, drawn from common knowledge, NOT measurements of the local market. Never present them as local market facts. Any real local number (actual demand, actual competitor count, actual price or margin) is UNKNOWN until the founder validates by calling. State this once at the top of the reply in one short line, then keep each rating reason to one line.',
       'Be concise and honest. Plain text only.'
     ].join('\n');
     var groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
