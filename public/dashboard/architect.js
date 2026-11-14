@@ -178,8 +178,13 @@ window.archRunDiscovery=async function(){
   var foc=g('disc_focus');
   var locIn=g('disc_loc'); var useLoc=locIn||prof.location||'';
   var rb=document.getElementById('disc_resil'); var res=rb?rb.checked:true;
-  var st=document.getElementById('disc_status'); if(st){ st.style.display=''; st.textContent='Thinking through your profile, your country, the kind you asked for, your capital band, and durability...'; }
-  var out=document.getElementById('disc_out'); if(out) out.innerHTML='';
+  var st=document.getElementById('disc_status'); var out=document.getElementById('disc_out');
+  if (typeof navigator!=='undefined' && navigator.onLine===false){
+    discShowFail('You appear to be offline right now. Check your connection - the ideas will load automatically the moment you are back online.','offline',false);
+    return;
+  }
+  if(st){ st.style.display=''; st.textContent='Thinking through your profile, your country, the kind you asked for, your capital band, and durability...'; }
+  if(out) out.innerHTML='';
   try{
     var ac=new AbortController(); var to=setTimeout(function(){ac.abort();},30000);
     var body={capital:prof.capital,location:useLoc,skills:prof.skills,hours:prof.hours,living:prof.living,storage:prof.storage,income_now:prof.income_now,ambition:prof.ambition,count:cnt,focus:foc,resilience:res};
@@ -187,9 +192,19 @@ window.archRunDiscovery=async function(){
     try{ r=await fetch(BE+'/api/biz-ideas',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify(body),signal:ac.signal}); }finally{ clearTimeout(to); }
     if(st) st.style.display='none';
     var ct=(r.headers.get('content-type')||'');
-    if(ct.indexOf('application/json')===-1){ if(out) out.innerHTML='<p style="color:#f59e0b;font-size:13px">The server returned a non-JSON reply (likely still waking up). Tap Get my ideas again in a moment.</p>'; return; }
+    if(ct.indexOf('application/json')===-1){
+      discShowFail('The planning service is still waking up (it returns a plain page for a moment). Retrying automatically - you can also tap Retry now.','upstream',true);
+      return;
+    }
     var data=await r.json();
-    if(!data||!data.success){ if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">'+esc((data&&data.error)||'The planning assistant returned nothing.')+'</p>'; return; }
+    if(!data || !data.success){
+      var kind=(data&&data.errorKind)||'upstream';
+      var msg=(data&&data.error)||'The planning assistant returned nothing this time.';
+      if(kind==='empty'){ discShowFail(msg,'empty',false); }
+      else { discShowFail(msg,'upstream',true); }
+      return;
+    }
+    window.__discRetryCount=0; window.__discFailed=false;
     if(out) out.innerHTML='<div style="white-space:pre-wrap;font-size:13px;color:#e2e8f0;line-height:1.6">'+esc(String(data.ideas||''))+'</div>'
       +'<p style="margin:14px 0 6px;font-size:12px;color:#94a3b8">Next real step: open Lead Finder, search your town plus the product, get REAL listings (these businesses exist), then call them to confirm prices. That turns a hypothesis into a fact. The ratings are relative fit and durability, not guarantees.</p>'
       +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -198,9 +213,43 @@ window.archRunDiscovery=async function(){
       +'</div>';
   }catch(e){
     if(st) st.style.display='none';
-    if(out) out.innerHTML='<p style="color:#ef4444;font-size:13px">Could not reach the planning assistant: '+esc((e&&e.message)||'unknown')+'</p>';
+    var offline = (typeof navigator!=='undefined' && navigator.onLine===false);
+    discShowFail(offline ? 'Connection lost while thinking. It will retry automatically when you are back online.' : ('Could not reach the planning assistant: '+((e&&e.message)||'unknown')), offline?'offline':'upstream', !offline);
   }
 };
+function discShowFail(reason, kind, allowAuto){
+  window.__discFailed=true;
+  var out=document.getElementById('disc_out');
+  var title = (kind==='offline') ? 'Check your connection' : 'Service not reachable right now';
+  var autoNote = (kind==='offline') ? 'Waiting for your connection - it reloads by itself when you are back online.' : (allowAuto ? 'Retrying automatically in a few seconds - or tap Retry now.' : 'Tap Retry to ask again, or adjust the kind.');
+  if(out) out.innerHTML='<div style="border:1px solid #b45309;border-radius:10px;padding:12px 14px;background:#1c1206">'
+    +'<p style="margin:0 0 6px;font-size:13px;color:#fbbf24;font-weight:700">'+esc(title)+'</p>'
+    +'<p style="margin:0 0 8px;font-size:12px;color:#fcd34d">'+esc(reason)+'</p>'
+    +'<p style="margin:0 0 10px;font-size:11px;color:#94a3b8">'+esc(autoNote)+'</p>'
+    +'<button type="button" onclick="archRunDiscovery()" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:9px 14px;font-size:12px;cursor:pointer">Retry now</button>'
+    +'</div>';
+  discBindOnline();
+  if(allowAuto) discScheduleAuto();
+}
+function discScheduleAuto(){
+  if((window.__discRetryCount||0)>=2) return;
+  window.__discRetryCount=(window.__discRetryCount||0)+1;
+  setTimeout(function(){
+    if(!document.getElementById('disc_out')) return;
+    if(typeof navigator!=='undefined' && navigator.onLine===false) return;
+    archRunDiscovery();
+  }, 9000);
+}
+function discBindOnline(){
+  if(window.__discBound) return;
+  window.__discBound=true;
+  window.addEventListener('online', function(){
+    if(window.__discFailed && document.getElementById('disc_out')){
+      window.__discRetryCount=0;
+      archRunDiscovery();
+    }
+  });
+}
 window.archRunDiscovery=async function(){
   var BE=(typeof API_BACKENDS!=='undefined'&&API_BACKENDS[0])||'https://ai-business-1-ok3x.onrender.com';
   var prof={};try{prof=JSON.parse(localStorage.getItem('ab_biz_profile')||'{}');}catch(e){}
