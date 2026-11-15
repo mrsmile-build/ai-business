@@ -14,7 +14,7 @@
     },
     {
       "source": "/biz/:slug",
-      "destination": "/biz/"
+      "destination": "https://ai-business-1-ok3x.onrender.com/biz/:slug"
     }
   ]
 }
