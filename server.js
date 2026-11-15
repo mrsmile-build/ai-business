@@ -2854,7 +2854,10 @@ ${post.cover_image_url ? `<img src="${post.cover_image_url}" class="cover">` : "
 
 app.get("/biz/:slug", async (req, res) => {
   try {
-    const { data: page, error: pageErr } = await supabase.from("biz_pages").select("*").eq("slug", req.params.slug).single();
+    let page = null; let pageErr = null;
+    try { const r1 = await supabase.from("biz_pages").select("*").eq("slug", req.params.slug).maybeSingle(); page = r1.data || null; pageErr = r1.error || null; } catch(e) {}
+    if (!page) { try { const r2 = await supabase.from("biz_pages").select("*").eq("id", req.params.slug).maybeSingle(); page = r2.data || null; } catch(e) {} }
+    if (!page) { try { const r3 = await supabase.from("biz_pages").select("*").eq("user_id", req.params.slug).maybeSingle(); page = r3.data || null; } catch(e) {} }
     if(pageErr) console.log("Biz page lookup error:", pageErr.message);
     if(!page) return res.status(404).send("Business page not found");
     const uid = page.user_id;
@@ -2863,7 +2866,7 @@ app.get("/biz/:slug", async (req, res) => {
     const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
     const ldJson = (function(){
       try {
-        var ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":String(page.business_name||"Business"),"url":"https://www.ai-business.com.ng/biz/"+req.params.slug};
+        var ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":String(page.business_name||"Business"),"url":"https://www.ai-business.com.ng/biz/"+String(page.slug||req.params.slug)};
         if (page.tagline) { ld.description = String(page.tagline); }
         if (page.location) { ld.address = {"@type":"PostalAddress","addressLocality":String(page.location)}; }
         if (waLink) { ld.telephone = "+" + String(waLink).replace(/[^0-9]/g,""); }
@@ -2881,8 +2884,8 @@ app.get("/biz/:slug", async (req, res) => {
 <meta property="og:title" content="${page.business_name || 'Business'} | AI Business">
 <meta property="og:description" content="${page.tagline ? page.tagline + (page.location ? ' \u00b7 ' + page.location : '') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
 <meta property="og:image" content="https://www.ai-business.com.ng/og-image.png">
-<meta property="og:url" content="https://www.ai-business.com.ng/biz/${req.params.slug}">
-<link rel="canonical" href="https://www.ai-business.com.ng/biz/${req.params.slug}">
+<meta property="og:url" content="https://www.ai-business.com.ng/biz/${page.slug || req.params.slug}">
+<link rel="canonical" href="https://www.ai-business.com.ng/biz/${page.slug || req.params.slug}">
 ${ldJson ? '<script type="application/ld+json">' + ldJson + '</script>' : ''}
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
