@@ -2861,6 +2861,17 @@ app.get("/biz/:slug", async (req, res) => {
     const { data: services } = await supabase.from("services").select("*").eq("user_id", uid).eq("is_active", true);
     const color = page.theme_color || "#3b82f6";
     const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
+    const ldJson = (function(){
+      try {
+        var ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":String(page.business_name||"Business"),"url":"https://www.ai-business.com.ng/biz/"+req.params.slug};
+        if (page.tagline) { ld.description = String(page.tagline); }
+        if (page.location) { ld.address = {"@type":"PostalAddress","addressLocality":String(page.location)}; }
+        if (waLink) { ld.telephone = "+" + String(waLink).replace(/[^0-9]/g,""); }
+        var offers = (services||[]).slice(0,20).map(function(sv2){ return {"@type":"Offer","itemOffered":{"@type":"Service","name":String(sv2.name||"")}}; });
+        if (offers.length) { ld.makesOffer = offers; }
+        return JSON.stringify(ld).replace(/</g,"\\u003c");
+      } catch(e) { return ""; }
+    })();
 
     res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -2868,13 +2879,15 @@ app.get("/biz/:slug", async (req, res) => {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <meta property="og:title" content="${page.business_name || 'Business'} | AI Business">
-<meta property="og:description" content="${page.tagline ? page.tagline + ' · ' + (page.location || 'Nigeria') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
+<meta property="og:description" content="${page.tagline ? page.tagline + (page.location ? ' \u00b7 ' + page.location : '') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
 <meta property="og:image" content="https://www.ai-business.com.ng/og-image.png">
 <meta property="og:url" content="https://www.ai-business.com.ng/biz/${req.params.slug}">
+<link rel="canonical" href="https://www.ai-business.com.ng/biz/${req.params.slug}">
+${ldJson ? '<script type="application/ld+json">' + ldJson + '</script>' : ''}
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${page.business_name || 'Business'} | AI Business">
-<meta name="twitter:description" content="${page.tagline ? page.tagline + ' · ' + (page.location || 'Nigeria') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
+<meta name="twitter:description" content="${page.tagline ? page.tagline + (page.location ? ' \u00b7 ' + page.location : '') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
 <meta name="twitter:image" content="https://www.ai-business.com.ng/og-image.png">
 <title>${page.business_name || "Business"}</title>
 <style>
