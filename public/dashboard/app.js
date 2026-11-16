@@ -4738,6 +4738,14 @@ async function renderBizPage(){
           <button onclick="saveBizPay()" style="width:100%;padding:10px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save payment settings</button>
           <p id="bp_pay_msg" style="margin:8px 0 0;font-size:11px;color:#94a3b8"></p>
         </div>
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px">
+          <p style="margin:0 0 6px;font-size:13px;font-weight:bold">Photos</p>
+          <p style="margin:0 0 10px;font-size:11px;color:#94a3b8;line-height:1.5">Add up to 10 photos of your work. Use the arrows to change their order on your page.</p>
+          <input type="file" id="bp_files" accept="image/jpeg,image/png,image/webp" multiple style="width:100%;margin-bottom:8px;font-size:12px;color:#cbd5e1">
+          <button onclick="uploadBizPhotos()" style="width:100%;padding:10px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Upload photos</button>
+          <div id="bp_photos" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px"></div>
+          <p id="bp_photos_msg" style="margin:8px 0 0;font-size:11px;color:#94a3b8"></p>
+        </div>
         <button onclick="saveBizPage()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🌐 Save and Publish Page</button>
 
         ${p.business_name ? `
@@ -7598,3 +7606,52 @@ async function saveBizPay(){
     else { set("#ef4444",(data&&data.error)||"Could not save."); }
   }catch(e){ set("#ef4444","Could not reach the server. Try again."); }
 }
+
+var __bpList=[];
+async function loadBizPhotos(){
+  var host=document.getElementById('bp_photos'); if(!host) return;
+  try{
+    var res=await apiFetch("/api/biz-photo",{headers:{Authorization:"Bearer "+localStorage.getItem("token")}});
+    var d=await res.json(); __bpList=(d&&d.photos)||[];
+    var h='';
+    for(var i=0;i<__bpList.length;i++){
+      var p=__bpList[i];
+      h+='<div style="position:relative"><img src="'+String(p.url).replace(/"/g,'&quot;')+'" style="width:100%;border-radius:8px;display:block" alt="">'
+        +'<div style="display:flex;gap:4px;margin-top:4px">'
+        +'<button onclick="moveBizPhoto('+i+',-1)" style="flex:1;padding:4px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;font-size:11px;cursor:pointer">Up</button>'
+        +'<button onclick="moveBizPhoto('+i+',1)" style="flex:1;padding:4px;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:6px;font-size:11px;cursor:pointer">Down</button>'
+        +'<button onclick="delBizPhoto(\''+p.id+'\')" style="flex:1;padding:4px;background:#3f1d1d;border:1px solid #7f1d1d;color:#fca5a5;border-radius:6px;font-size:11px;cursor:pointer">Del</button>'
+        +'</div></div>';
+    }
+    host.innerHTML=h||'<p style="grid-column:1/4;font-size:11px;color:#64748b">No photos yet.</p>';
+  }catch(e){ host.innerHTML='<p style="font-size:11px;color:#fca5a5">Could not load photos.</p>'; }
+}
+function __bpRead(f){ return new Promise(function(ok){ var r=new FileReader(); r.onload=function(){ ok({data:r.result,mime:f.type}); }; r.readAsDataURL(f); }); }
+async function uploadBizPhotos(){
+  var inp=document.getElementById('bp_files'); var msg=document.getElementById('bp_photos_msg');
+  if(!inp||!inp.files||!inp.files.length){ if(msg){msg.style.color='#fca5a5';msg.textContent='Choose images first.';} return; }
+  if(msg){msg.style.color='#94a3b8';msg.textContent='Uploading...';}
+  var imgs=[]; for(var i=0;i<inp.files.length&&i<6;i++){ imgs.push(await __bpRead(inp.files[i])); }
+  try{
+    var res=await apiFetch("/api/biz-photo/upload",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({images:imgs})});
+    var d=await res.json();
+    if(d&&d.success){ if(msg){msg.style.color='#10b981';msg.textContent='Uploaded.';} inp.value=''; loadBizPhotos(); }
+    else { if(msg){msg.style.color='#fca5a5';msg.textContent=(d&&d.error)||'Upload failed.';} }
+  }catch(e){ if(msg){msg.style.color='#fca5a5';msg.textContent='Could not reach the server.';} }
+}
+async function moveBizPhoto(i,dir){
+  var j=i+dir; if(j<0||j>=__bpList.length) return;
+  var t=__bpList[i]; __bpList[i]=__bpList[j]; __bpList[j]=t;
+  var ids=__bpList.map(function(p){return p.id;});
+  try{
+    await apiFetch("/api/biz-photo/reorder",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({ids:ids})});
+    loadBizPhotos();
+  }catch(e){}
+}
+async function delBizPhoto(id){
+  try{
+    var res=await apiFetch("/api/biz-photo/delete",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({id:id})});
+    var d=await res.json(); if(d&&d.success) loadBizPhotos();
+  }catch(e){}
+}
+setInterval(function(){ var el=document.getElementById('bp_photos'); if(el && !el.getAttribute('data-loaded')){ el.setAttribute('data-loaded','1'); loadBizPhotos(); } },600);

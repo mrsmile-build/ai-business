@@ -20,6 +20,7 @@ function cleanAIOutput(text) {
     .trim();
 }
 app.use(cors());
+app.use('/api/biz-photo', express.json({ limit: '12mb' }));
 app.use(express.json());
 
     // === EXPLICIT STATIC ROUTES (TOP PRIORITY) ===
@@ -2723,6 +2724,70 @@ app.post("/api/book/:userId", rateLimit(5, 60000), async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+/* ---------------- BIZ PHOTOS ---------------- */
+app.post("/api/biz-photo/upload", authMiddleware, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const imgs = (req.body && req.body.images) || [];
+    if (!Array.isArray(imgs) || imgs.length === 0) return res.json({ success:false, error:"No images sent." });
+    if (imgs.length > 6) return res.json({ success:false, error:"Send at most 6 images at a time." });
+    const MIME = { "image/jpeg":"jpg", "image/png":"png", "image/webp":"webp" };
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const existing = await sc.from("biz_page_photos").select("position").eq("user_id", uid);
+    let pos = (existing.data||[]).length;
+    if (pos >= 10) return res.json({ success:false, error:"A page can hold at most 10 photos." });
+    const out = [];
+    for (let i=0;i<imgs.length && pos<10;i++){
+      const it = imgs[i];
+      const mime = String((it && it.mime) || "");
+      if (!MIME[mime]) continue;
+      const b64 = String((it && it.data) || "").replace(/^data:[^;]+;base64,/,"");
+      const buf = Buffer.from(b64, "base64");
+      if (!buf.length || buf.length > 4*1024*1024) continue;
+      const path = uid + "/" + Date.now() + "-" + i + "." + MIME[mime];
+      const up = await sc.storage.from("biz-photos").upload(path, buf, { contentType: mime, upsert: false });
+      if (up.error) continue;
+      const pub = sc.storage.from("biz-photos").getPublicUrl(path);
+      const url = pub && pub.data && pub.data.publicUrl;
+      if (!url) continue;
+      const ins = await sc.from("biz_page_photos").insert({ user_id: uid, url: url, position: pos });
+      pos++;
+      if (ins.data && ins.data[0]) out.push(ins.data[0]);
+    }
+    res.json({ success:true, photos: out });
+  } catch(err){ res.json({ success:false, error: err.message }); }
+});
+app.get("/api/biz-photo", authMiddleware, async (req, res) => {
+  try {
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data } = await sc.from("biz_page_photos").select("*").eq("user_id", req.user.id).order("position", { ascending:true });
+    res.json({ success:true, photos: data||[] });
+  } catch(err){ res.json({ success:false, error: err.message }); }
+});
+app.post("/api/biz-photo/reorder", authMiddleware, async (req, res) => {
+  try {
+    const ids = (req.body && req.body.ids) || [];
+    if (!Array.isArray(ids)) return res.json({ success:false, error:"Bad ids." });
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    for (let i=0;i<ids.length;i++){
+      await sc.from("biz_page_photos").update({ position: i }).eq("id", ids[i]).eq("user_id", req.user.id);
+    }
+    res.json({ success:true });
+  } catch(err){ res.json({ success:false, error: err.message }); }
+});
+app.post("/api/biz-photo/delete", authMiddleware, async (req, res) => {
+  try {
+    const id = req.body && req.body.id;
+    const sc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    const { data } = await sc.from("biz_page_photos").select("*").eq("id", id).eq("user_id", req.user.id).maybeSingle();
+    if (!data) return res.json({ success:false, error:"Not found." });
+    await sc.from("biz_page_photos").delete().eq("id", id).eq("user_id", req.user.id);
+    const m = String(data.url||"").match(/\/biz-photos\/(.+)$/);
+    if (m) { try { await sc.storage.from("biz-photos").remove([decodeURIComponent(m[1])]); } catch(e){} }
+    res.json({ success:true });
+  } catch(err){ res.json({ success:false, error: err.message }); }
+});
+
 /* ---------------- BUSINESS PAGE ---------------- */
 app.get("/api/biz-settings", authMiddleware, async (req, res) => {
   const { data } = await supabase.from("biz_pages").select("*").eq("user_id", req.user.id).single();
@@ -2870,6 +2935,10 @@ app.get("/biz/:slug", async (req, res) => {
     const curSym = CUR[curCode] || (escHtml(curCode)+" ");
     const payLink = (page.payment_link && /^https:\/\//i.test(String(page.payment_link).trim())) ? String(page.payment_link).trim() : "";
     const payBtn = payLink ? '<a href="'+escHtml(payLink)+'" class="cta" target="_blank" rel="noopener nofollow">Pay / Deposit</a>' : "";
+    let photos = [];
+    try { const pr = await supabase.from("biz_page_photos").select("url,position").eq("user_id", uid).order("position", { ascending:true }); photos = pr.data || []; } catch(e) { photos = []; }
+    const bizData = { name: page.business_name||"", tagline: page.tagline||"", description: page.description||"", location: page.location||"", hours: page.booking_hours||null, services: (services||[]).map(function(sv3){ return { name: sv3.name||"", price: sv3.price||0, minutes: sv3.duration_minutes||0 }; }), whatsapp: waLink||"", pay: payLink||"", currency: curCode||"NGN" };
+    const bizDataJson = JSON.stringify(bizData).replace(/</g,"\\u003c");
     const ldJson = (function(){
       try {
         var ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":String(page.business_name||"Business"),"url":"https://www.ai-business.com.ng/biz/"+String(page.slug||req.params.slug)};
@@ -2950,6 +3019,8 @@ h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transfor
 
 ${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${escHtml(page.description)}</p></section>` : ""}
 
+${photos && photos.length ? '<section><h2>Photos</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+photos.map(function(ph){ return '<img src="'+escHtml(ph.url)+'" alt="'+escHtml(page.business_name||'')+'" loading="lazy" style="width:100%;border-radius:10px;display:block">'; }).join('')+'</div></section>' : ''}
+<script type="application/json" id="biz-data">${bizDataJson}</script>
 ${services && services.length > 0 ? `
 <section>
   <h2>Our Services</h2>
