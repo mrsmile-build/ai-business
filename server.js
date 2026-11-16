@@ -3010,6 +3010,7 @@ h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transfor
 </head>
 <body>
 <div class="hero">
+  ${photos && photos.length ? '<img src="'+escHtml(photos[0].url)+'" alt="'+escHtml(page.business_name||'')+'" style="width:100%;height:190px;object-fit:cover;border-radius:12px;margin-bottom:16px">' : ''}
   <div class="logo">${escHtml((page.business_name||"B").substring(0,2).toUpperCase())}</div>
   <h1>${escHtml(page.business_name||"")}</h1>
   <p class="tagline">${escHtml(page.tagline||"")}</p>
@@ -3019,7 +3020,7 @@ h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transfor
 
 ${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${escHtml(page.description)}</p></section>` : ""}
 
-${photos && photos.length ? '<section><h2>Photos</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+photos.map(function(ph){ return '<img src="'+escHtml(ph.url)+'" alt="'+escHtml(page.business_name||'')+'" loading="lazy" style="width:100%;border-radius:10px;display:block">'; }).join('')+'</div></section>' : ''}
+${photos && photos.length ? '<section><h2>Photos</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+photos.map(function(ph){ return '<img src="'+escHtml(ph.url)+'" alt="'+escHtml(page.business_name||'')+'" loading="lazy" style="width:100%;height:150px;object-fit:cover;border-radius:10px;display:block">'; }).join('')+'</div></section>' : ''}
 <script type="application/json" id="biz-data">${bizDataJson}</script>
 ${services && services.length > 0 ? `
 <section>
