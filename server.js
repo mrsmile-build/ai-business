@@ -2863,6 +2863,7 @@ app.get("/biz/:slug", async (req, res) => {
     const uid = page.user_id;
     const { data: services } = await supabase.from("services").select("*").eq("user_id", uid).eq("is_active", true);
     const color = page.theme_color || "#3b82f6";
+    const escHtml = function(v){ return String(v==null?"":v).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
     const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
     const ldJson = (function(){
       try {
@@ -2901,18 +2902,18 @@ app.get("/biz/:slug", async (req, res) => {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<meta property="og:title" content="${page.business_name || 'Business'} | AI Business">
-<meta property="og:description" content="${page.tagline ? page.tagline + (page.location ? ' \u00b7 ' + page.location : '') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
+<meta property="og:title" content="${escHtml(page.business_name || 'Business')} | AI Business">
+<meta property="og:description" content="${page.tagline ? escHtml(page.tagline + (page.location ? ' \u00b7 ' + page.location : '')) : 'Find and book ' + (escHtml(page.business_name || 'this business')) + ' on AI Business'}">
 <meta property="og:image" content="https://www.ai-business.com.ng/og-image.png">
 <meta property="og:url" content="https://www.ai-business.com.ng/biz/${page.slug || req.params.slug}">
 <link rel="canonical" href="https://www.ai-business.com.ng/biz/${page.slug || req.params.slug}">
 ${ldJson ? '<script type="application/ld+json">' + ldJson + '</script>' : ''}
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${page.business_name || 'Business'} | AI Business">
-<meta name="twitter:description" content="${page.tagline ? page.tagline + (page.location ? ' \u00b7 ' + page.location : '') : 'Find and book ' + (page.business_name || 'this business') + ' on AI Business'}">
+<meta name="twitter:title" content="${escHtml(page.business_name || 'Business')} | AI Business">
+<meta name="twitter:description" content="${page.tagline ? escHtml(page.tagline + (page.location ? ' \u00b7 ' + page.location : '')) : 'Find and book ' + (escHtml(page.business_name || 'this business')) + ' on AI Business'}">
 <meta name="twitter:image" content="https://www.ai-business.com.ng/og-image.png">
-<title>${page.business_name || "Business"}</title>
+<title>${escHtml(page.business_name || "Business")}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:Arial,sans-serif;background:#080c14;color:white;min-height:100vh}
@@ -2935,14 +2936,14 @@ h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transfor
 </head>
 <body>
 <div class="hero">
-  <div class="logo">${(page.business_name||"B").substring(0,2).toUpperCase()}</div>
-  <h1>${page.business_name||""}</h1>
-  <p class="tagline">${page.tagline||""}</p>
+  <div class="logo">${escHtml((page.business_name||"B").substring(0,2).toUpperCase())}</div>
+  <h1>${escHtml(page.business_name||"")}</h1>
+  <p class="tagline">${escHtml(page.tagline||"")}</p>
   ${waLink ? `<a href="${waLink}" class="cta">💬 WhatsApp Us</a>` : ""}
   <a href="/book/${uid}" class="cta" style="background:transparent;border:1px solid ${color};color:${color}">📅 Book Appointment</a>
 </div>
 
-${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${page.description}</p></section>` : ""}
+${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${escHtml(page.description)}</p></section>` : ""}
 
 ${services && services.length > 0 ? `
 <section>
@@ -2950,8 +2951,8 @@ ${services && services.length > 0 ? `
   ${services.map(s => `
     <div class="service-card">
       <div>
-        <div class="service-name">${s.name}</div>
-        <div class="service-detail">${s.duration_minutes} mins</div>
+        <div class="service-name">${escHtml(s.name)}</div>
+        <div class="service-detail">${escHtml(s.duration_minutes)} mins</div>
       </div>
       <div class="service-price">₦${parseFloat(s.price||0).toLocaleString()}</div>
     </div>
