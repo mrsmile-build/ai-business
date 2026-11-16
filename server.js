@@ -2865,6 +2865,11 @@ app.get("/biz/:slug", async (req, res) => {
     const color = page.theme_color || "#3b82f6";
     const escHtml = function(v){ return String(v==null?"":v).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
     const waLink = page.whatsapp ? "https://wa.me/" + page.whatsapp.replace(/[^0-9]/g,"").replace(/^0/,"234") : null;
+    const CUR = {NGN:"&#8358;",GHS:"&#8373;",KES:"KSh ",ZAR:"R ",USD:"$",EUR:"&euro;",GBP:"&pound;",XOF:"CFA ",UGX:"USh ",TZS:"TSh "};
+    const curCode = String(page.currency||"NGN").toUpperCase().replace(/[^A-Z]/g,"").substring(0,3) || "NGN";
+    const curSym = CUR[curCode] || (escHtml(curCode)+" ");
+    const payLink = (page.payment_link && /^https:\/\//i.test(String(page.payment_link).trim())) ? String(page.payment_link).trim() : "";
+    const payBtn = payLink ? '<a href="'+escHtml(payLink)+'" class="cta" target="_blank" rel="noopener nofollow">Pay / Deposit</a>' : "";
     const ldJson = (function(){
       try {
         var ld = {"@context":"https://schema.org","@type":"LocalBusiness","name":String(page.business_name||"Business"),"url":"https://www.ai-business.com.ng/biz/"+String(page.slug||req.params.slug)};
@@ -2940,7 +2945,7 @@ h2{font-size:16px;font-weight:700;margin-bottom:14px;color:#94a3b8;text-transfor
   <h1>${escHtml(page.business_name||"")}</h1>
   <p class="tagline">${escHtml(page.tagline||"")}</p>
   ${waLink ? `<a href="${waLink}" class="cta">💬 WhatsApp Us</a>` : ""}
-  <a href="/book/${uid}" class="cta" style="background:transparent;border:1px solid ${color};color:${color}">📅 Book Appointment</a>
+  ${payBtn}<a href="/book/${uid}" class="cta" style="background:transparent;border:1px solid ${color};color:${color}">📅 Book Appointment</a>
 </div>
 
 ${page.description ? `<section><h2>About Us</h2><p style="font-size:14px;color:#94a3b8;line-height:1.6">${escHtml(page.description)}</p></section>` : ""}
@@ -2954,7 +2959,7 @@ ${services && services.length > 0 ? `
         <div class="service-name">${escHtml(s.name)}</div>
         <div class="service-detail">${escHtml(s.duration_minutes)} mins</div>
       </div>
-      <div class="service-price">₦${parseFloat(s.price||0).toLocaleString()}</div>
+      <div class="service-price">${curSym}${parseFloat(s.price||0).toLocaleString()}</div>
     </div>
   `).join("")}
 </section>` : ""}
