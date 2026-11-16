@@ -2872,6 +2872,26 @@ app.get("/biz/:slug", async (req, res) => {
         if (waLink) { ld.telephone = "+" + String(waLink).replace(/[^0-9]/g,""); }
         var offers = (services||[]).slice(0,20).map(function(sv2){ return {"@type":"Offer","itemOffered":{"@type":"Service","name":String(sv2.name||"")}}; });
         if (offers.length) { ld.makesOffer = offers; }
+        var DAYS={mon:"Monday",tue:"Tuesday",wed:"Wednesday",thu:"Thursday",fri:"Friday",sat:"Saturday",sun:"Sunday"};
+        if (page.booking_hours && typeof page.booking_hours === "object") {
+          var oh=[];
+          Object.keys(DAYS).forEach(function(k){
+            var d=page.booking_hours[k];
+            if(!d || d.closed || !d.open || !d.close || d.open===d.close) return;
+            var segs=[[d.open,d.close]];
+            (d.breaks||[]).forEach(function(b){
+              if(!b || b.length<2) return;
+              var out=[];
+              segs.forEach(function(sg){
+                if(b[0]>sg[0] && b[1]<sg[1]){ out.push([sg[0],b[0]]); out.push([b[1],sg[1]]); }
+                else { out.push(sg); }
+              });
+              segs=out;
+            });
+            segs.forEach(function(sg){ oh.push({"@type":"OpeningHoursSpecification","dayOfWeek":"https://schema.org/"+DAYS[k],"opens":sg[0],"closes":sg[1]}); });
+          });
+          if(oh.length) ld.openingHoursSpecification=oh;
+        }
         return JSON.stringify(ld).replace(/</g,"\\u003c");
       } catch(e) { return ""; }
     })();
