@@ -4730,6 +4730,14 @@ async function renderBizPage(){
           </div>
         </div>
 
+        <div style="background:#0f172a;border-radius:10px;padding:15px;margin-bottom:12px">
+          <p style="margin:0 0 6px;font-size:13px;font-weight:bold">Payment and currency</p>
+          <p style="margin:0 0 10px;font-size:11px;color:#94a3b8;line-height:1.5">Customers pay you directly on your own payment page. AI Business never holds your money.</p>
+          <select id="bp_cur" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">${["NGN","GHS","KES","ZAR","USD","EUR","GBP","XOF","UGX","TZS"].map(function(c){return '<option value="'+c+'"'+((p.currency||"NGN")===c?' selected':'')+'>'+c+'</option>';}).join("")}</select>
+          <input id="bp_pay" placeholder="https://paystack.com/pay/your-name" value="${(p.payment_link||"").replace(/"/g,"&quot;")}" style="width:100%;padding:9px;margin-bottom:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:white;font-size:13px;box-sizing:border-box">
+          <button onclick="saveBizPay()" style="width:100%;padding:10px;background:#132a4a;border:1px solid #2563eb;color:#dbeafe;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Save payment settings</button>
+          <p id="bp_pay_msg" style="margin:8px 0 0;font-size:11px;color:#94a3b8"></p>
+        </div>
         <button onclick="saveBizPage()" style="width:100%;padding:12px;background:#3b82f6;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600">🌐 Save and Publish Page</button>
 
         ${p.business_name ? `
@@ -7574,3 +7582,19 @@ if (typeof window !== "undefined") {
   });
 }
 /* ===== /TARGET-WATCHER-V2 ===== */
+
+async function saveBizPay(){
+  var g=function(id){var e=document.getElementById(id);return e?String(e.value||"").trim():"";};
+  var cur=g("bp_cur")||"NGN"; var pay=g("bp_pay"); var slug=g("bp_slug");
+  var msg=document.getElementById("bp_pay_msg");
+  var set=function(c,t){ if(msg){ msg.style.color=c; msg.textContent=t; } };
+  if(pay && pay.indexOf("https://")!==0){ set("#ef4444","The payment link must start with https://"); return; }
+  if(!slug){ set("#ef4444","Set your page link name above first, then save."); return; }
+  set("#94a3b8","Saving...");
+  try{
+    var res=await apiFetch("/api/biz-settings",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token")},body:JSON.stringify({slug:slug,currency:cur,payment_link:pay})});
+    var data=await res.json();
+    if(data&&data.success){ set("#10b981","Saved. Prices now show in "+cur+(pay?", and your page shows a Pay / Deposit button.":".")); }
+    else { set("#ef4444",(data&&data.error)||"Could not save."); }
+  }catch(e){ set("#ef4444","Could not reach the server. Try again."); }
+}
