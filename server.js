@@ -1163,7 +1163,13 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
     };
     const prevJson = res.json.bind(res);
     res.json = async function(body){
-      try { if (body && body.success && Array.isArray(body.leads) && body.leads.length) await enrichContacts(body.leads); } catch(e){}
+      try {
+        if (body && body.success && Array.isArray(body.leads) && body.leads.length) {
+          await enrichContacts(body.leads);
+          var _en = body.leads.filter(function(x){ return x && (x.email || (x.socials && Object.keys(x.socials).length) || (x.phones && x.phones.length)); }).length;
+          console.log("enrich: leads=" + body.leads.length + " withContacts=" + _en);
+        }
+      } catch(e){ console.log("enrich error: " + ((e && e.message) || e)); }
       return prevJson(body);
     };
     try {
