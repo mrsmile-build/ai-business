@@ -200,6 +200,56 @@ app.get("/api/config/pricing", (req, res) => {
 });
 // ---------------------------------------
 
+async function enrichContacts(leads){
+  const targets = (leads||[]).filter(function(l){ return l && l.website && /^https?:\/\//i.test(l.website) && !l.email; }).slice(0,8);
+  await Promise.allSettled(targets.map(async function(l){
+    try {
+      const r = await fetch(l.website, { signal: AbortSignal.timeout(3500), headers: { "User-Agent": "Mozilla/5.0 (compatible; AIBusinessContactBot/1.0)" }, redirect: "follow" });
+      if (!r.ok) return;
+      const html = (await r.text()).slice(0, 400000);
+      const emails = []; let m;
+      const emRe = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+      while ((m = emRe.exec(html)) && emails.length < 4) {
+        const e = m[0].toLowerCase();
+        if (/\.(png|jpe?g|gif|webp|svg|css|js)$/.test(e)) continue;
+        if (/example\.|sentry\.|wixpress\.|schema\.|w3\.org|@2x/.test(e)) continue;
+        if (emails.indexOf(e) === -1) emails.push(e);
+      }
+      const mailRe = /mailto:([^"'?>\s]+)/gi;
+      while ((m = mailRe.exec(html)) && emails.length < 4) {
+        const e = decodeURIComponent(m[1]).toLowerCase();
+        if (e.indexOf("@") > 0 && emails.indexOf(e) === -1) emails.push(e);
+      }
+      const phones = [];
+      const telRe = /tel:([^"'?>\s]+)/gi;
+      while ((m = telRe.exec(html)) && phones.length < 4) {
+        const p = m[1].replace(/[^0-9+]/g, "");
+        if (p.length >= 7 && phones.indexOf(p) === -1) phones.push(p);
+      }
+      const waRe = /wa\.me\/([0-9]{7,15})/gi;
+      while ((m = waRe.exec(html)) && phones.length < 4) {
+        if (phones.indexOf(m[1]) === -1) phones.push(m[1]);
+      }
+      const soc = {};
+      const socRe = /https?:\/\/(?:www\.)?(instagram\.com|facebook\.com|fb\.com|tiktok\.com|twitter\.com|x\.com|linkedin\.com|youtube\.com|youtu\.be)\/[A-Za-z0-9_@.\-\/]+/gi;
+      while ((m = socRe.exec(html))) {
+        const h = m[1].toLowerCase();
+        const key = h.indexOf("instagram")===0 ? "instagram" : (h.indexOf("facebook")===0||h.indexOf("fb.")===0) ? "facebook" : h.indexOf("tiktok")===0 ? "tiktok" : (h.indexOf("twitter")===0||h==="x.com") ? "x" : h.indexOf("linkedin")===0 ? "linkedin" : "youtube";
+        if (!soc[key]) soc[key] = m[0];
+      }
+      if (emails.length) { l.emails = emails; if (!l.email) l.email = emails[0]; }
+      if (phones.length) l.phones = phones;
+      if (Object.keys(soc).length) {
+        l.socials = soc;
+        if (!l.instagram && soc.instagram) l.instagram = soc.instagram;
+        if (!l.facebook && soc.facebook) l.facebook = soc.facebook;
+      }
+      const wa = (html.match(/wa\.me\/([0-9]{7,15})/i) || [])[1];
+      if (wa && !l.whatsapp) l.whatsapp = wa;
+    } catch (e) {}
+  }));
+}
+
 const PLANS = {
   free:     { leads: 10,       ai_per_month: 20,      files: 3,  label: "Free",     price: 0 },
   starter:  { leads: 50,       ai_per_month: 40,      files: 3,  label: "Starter",  price: 6000 },
@@ -1110,6 +1160,11 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
         else if (body && body.success && Array.isArray(body.leads) && body.leads.length) poolUpsert(body.leads, req.body.industry || service, location, countryCode, "upstream");
       } catch(e){}
       return originalJson(body);
+    };
+    const prevJson = res.json.bind(res);
+    res.json = async function(body){
+      try { if (body && body.success && Array.isArray(body.leads) && body.leads.length) await enrichContacts(body.leads); } catch(e){}
+      return prevJson(body);
     };
     try {
       const pool = await poolServe(req.user.id, req.body.industry || service, location, countryCode, filters, 15);
