@@ -3396,6 +3396,10 @@ async function searchLeads(){
             <button onclick="copyEditedMsg(${i})" style="padding:7px 12px;background:#334155;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📋 Copy</button>
             <button onclick="shareMsg(${i})" style="padding:7px 12px;background:#8b5cf6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">📤 Share</button>
             ${l.phone?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${l.phone.replace(/[^0-9]/g,"").replace(/^0/,"234")}');saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','wa',${l.rating ?? ""},${l.reviews ?? ""})" style="padding:7px 12px;background:#25d366;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">💬 Send WhatsApp</a>`:""}
+            ${l.email?`<a href="mailto:${String(l.email).replace(/"/g,"%22")}" style="padding:7px 12px;background:#334155;color:#e2e8f0;border-radius:6px;text-decoration:none;font-size:12px">Email</a>`:""}
+            ${lfSafeUrl(l.instagram)?`<a href="${lfSafeUrl(l.instagram)}" target="_blank" rel="noopener" style="padding:7px 12px;background:#833ab4;color:white;border-radius:6px;text-decoration:none;font-size:12px">Instagram</a>`:""}
+            ${lfSafeUrl(l.facebook)?`<a href="${lfSafeUrl(l.facebook)}" target="_blank" rel="noopener" style="padding:7px 12px;background:#1877f2;color:white;border-radius:6px;text-decoration:none;font-size:12px">Facebook</a>`:""}
+            ${(l.whatsapp && String(l.whatsapp).replace(/[^0-9]/g,"")!==String(l.phone||"").replace(/[^0-9]/g,""))?`<a href="javascript:void(0)" onclick="sendLfWhatsApp(${i},'${String(l.whatsapp).replace(/[^0-9]/g,"").replace(/^0/,"234")}')" style="padding:7px 12px;background:#128c7e;color:white;border-radius:6px;text-decoration:none;font-size:12px;cursor:pointer">WhatsApp 2</a>`:""}
             <button onclick="saveToLeads(${i},'${l.name.replace(/'/g,"\'")}','${(l.phone||"").replace(/'/g,"\'")}','${(l.type||"").replace(/'/g,"\'")}','${(l.address||"").replace(/'/g,"\'")}','${(l.website||"").replace(/'/g,"\'")}','save',${(l.rating ?? l.ratingValue ?? l.stars) ?? 'null'},${(l.review_count ?? l.reviews ?? l.userRatingCount ?? l.num_reviews) ?? 'null'})" style="padding:7px 12px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px">💾 Save to Leads</button>
             ${l.website?`<a href="${l.website}" target="_blank" style="padding:7px 12px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-radius:6px;text-decoration:none;font-size:12px">🌐 Website</a>`:""}
           </div>
@@ -7655,3 +7659,5 @@ async function delBizPhoto(id){
   }catch(e){}
 }
 setInterval(function(){ var el=document.getElementById('bp_photos'); if(el && !el.getAttribute('data-loaded')){ el.setAttribute('data-loaded','1'); loadBizPhotos(); } },600);
+
+function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; return u.replace(/"/g,"%22").replace(/</g,"%3C"); }
