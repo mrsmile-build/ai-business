@@ -662,34 +662,6 @@ app.get("/api/activity", authMiddleware, async (req, res) => {
 app.post("/api/leads", authMiddleware, async (req, res) => {
 
 // POST /api/leads/capture - public endpoint for external forms
-app.post("/api/leads/capture", authMiddleware, async (req, res) => {
-  try {
-    const { name, phone, email, business, message, website, source } = req.body;
-    if (!name && !phone && !email) {
-      return res.status(400).json({ error: "Need at least name, phone, or email" });
-    }
-    
-    const base = {
-      user_id: req.user.id,
-      name: name || phone || email,
-      phone,
-      email,
-      business,
-      message: message || "",
-      source: source || "external_form",
-      stage: "new"
-    };
-    
-    let _r = await supabase.from("leads").insert(base).select().single();
-    if (_r.error) throw _r.error;
-    
-    const { data, error } = _r;
-    if (error) throw error;
-    
-    await pushNotification(req.user.id, "lead", "New lead from " + (source || "external form") + ": " + (name || phone || email)).catch(()=>{});
-    
-    res.json({ success: true, lead: data });
-  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -719,6 +691,39 @@ app.post("/api/leads/capture", authMiddleware, async (req, res) => {
     if (leadCount === 1) celebrate(req.user.id, "first_lead");
     celebrate(req.user.id, "first_lead_" + new Date().toISOString().slice(0,7));
     if (leadCount > 1) celebrate(req.user.id, "lead_save_" + leadCount);
+    res.json({ success: true, lead: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/leads/capture - public endpoint for external forms
+app.post("/api/leads/capture", authMiddleware, async (req, res) => {
+  try {
+    const { name, phone, email, business, message, website, source } = req.body;
+    if (!name && !phone && !email) {
+      return res.status(400).json({ error: "Need at least name, phone, or email" });
+    }
+
+    const base = {
+      user_id: req.user.id,
+      name: name || phone || email,
+      phone,
+      email,
+      business,
+      message: message || "",
+      source: source || "external_form",
+      stage: "new"
+    };
+
+    let _r = await supabase.from("leads").insert(base).select().single();
+    if (_r.error) throw _r.error;
+
+    const { data, error } = _r;
+    if (error) throw error;
+
+    await pushNotification(req.user.id, "lead", "New lead from " + (source || "external form") + ": " + (name || phone || email)).catch(()=>{});
+
     res.json({ success: true, lead: data });
   } catch (err) {
     res.status(500).json({ error: err.message });
