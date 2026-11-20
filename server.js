@@ -619,10 +619,6 @@ app.delete("/api/files/:id", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/leads", authMiddleware, async (req, res) => {
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
   try {
     const { data, error } = await supabase
       .from("leads")
@@ -661,10 +657,6 @@ app.get("/api/activity", authMiddleware, async (req, res) => {
 /* ---------------- LEADS POST ---------------- */
 app.post("/api/leads", authMiddleware, async (req, res) => {
 
-// POST /api/leads/capture - public endpoint for external forms
-    res.status(500).json({ error: err.message });
-  }
-});
   try {
     const sub = await getSubscription(req.user);
     const limits = PLANS[sub.plan] || PLANS.free;
