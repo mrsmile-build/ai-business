@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Capture test</title>
+<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui;margin:0;padding:24px}button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:14px 18px;font-weight:700;font-size:15px}pre{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap}</style></head>
+<body><h1 style="font-size:20px">Form-capture test</h1>
+<p style="color:#94a3b8;font-size:13px">Uses your logged-in dashboard session. No password needed.</p>
+<button id="b">Send test lead</button><pre id="o">idle</pre>
+<script>
+function tok(){
+  var ks=["aib_token","token"];
+  for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}
+  for(var k in localStorage){ if(/auth-token$/.test(k)){ try{var j=JSON.parse(localStorage.getItem(k)); if(j&&j.access_token)return j.access_token; if(j&&j.currentSession&&j.currentSession.access_token)return j.currentSession.access_token;}catch(e){} } }
+  return null;
+}
+document.getElementById("b").onclick=async function(){
+  var t=tok(),o=document.getElementById("o");
+  if(!t){o.textContent="No session found. Open /dashboard/ and log in first, then come back.";return;}
+  o.textContent="sending...";
+  var r=await fetch("/api/leads/capture",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+t},body:JSON.stringify({name:"Capture Test "+new Date().toISOString().slice(11,19),phone:"08012345678",source:"capture_test_page"})});
+  o.textContent=r.status+" "+(await r.text());
+};
+</script></body></html>
