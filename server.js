@@ -619,6 +619,10 @@ app.delete("/api/files/:id", authMiddleware, async (req, res) => {
 });
 
 app.get("/api/leads", authMiddleware, async (req, res) => {
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
   try {
     const { data, error } = await supabase
       .from("leads")
@@ -656,6 +660,39 @@ app.get("/api/activity", authMiddleware, async (req, res) => {
 
 /* ---------------- LEADS POST ---------------- */
 app.post("/api/leads", authMiddleware, async (req, res) => {
+
+// POST /api/leads/capture - public endpoint for external forms
+app.post("/api/leads/capture", authMiddleware, async (req, res) => {
+  try {
+    const { name, phone, email, business, message, website, source } = req.body;
+    if (!name && !phone && !email) {
+      return res.status(400).json({ error: "Need at least name, phone, or email" });
+    }
+    
+    const base = {
+      user_id: req.user.id,
+      name: name || phone || email,
+      phone,
+      email,
+      business,
+      message: message || "",
+      source: source || "external_form",
+      stage: "new"
+    };
+    
+    let _r = await supabase.from("leads").insert(base).select().single();
+    if (_r.error) throw _r.error;
+    
+    const { data, error } = _r;
+    if (error) throw error;
+    
+    await pushNotification(req.user.id, "lead", "New lead from " + (source || "external form") + ": " + (name || phone || email)).catch(()=>{});
+    
+    res.json({ success: true, lead: data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
   try {
     const sub = await getSubscription(req.user);
     const limits = PLANS[sub.plan] || PLANS.free;
