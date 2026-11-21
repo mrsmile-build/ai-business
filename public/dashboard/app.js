@@ -775,6 +775,7 @@ function openSearch(){
     {label:"Appointments",icon:"📅",kw:["appointment","appointments","booking","bookings","schedule","calendar","book a client"],run:function(){loadPage('appointments');}},
     {label:"My Business Page",icon:"🌐",kw:["business page","website","landing page","my page","page","storefront"],run:function(){loadPage('bizpage');}},
     {label:"Promo Video",icon:"🎬",kw:["video","promo","reel","tiktok","advert","faceless"],run:function(){location.href='/promo';}},
+    {label:"Growth Mission",icon:"🧭",kw:["growth mission","daily task","daily mission","playbook","acquisition","growth plan","outreach plan","global growth","what should I do today"],run:function(){location.href='/growth.html';}},
     {label:"Invoices",icon:"🧾",kw:["invoice","bill","receipt","payment request"],run:function(){loadPage('invoice');}},
     {label:"Revenue",icon:"💰",kw:["revenue","money","earnings","sales total","income","profit"],run:function(){loadPage('revenue');}},
     {label:"My Files",icon:"📁",kw:["files","documents","notes","dossier","saved","records"],run:function(){loadPage('files');}},
