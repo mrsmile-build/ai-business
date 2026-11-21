@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Growth Mission</title>
+<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui;margin:0;padding:20px;max-width:720px}h1{font-size:22px}h2{font-size:16px;margin:18px 0 6px}textarea,input{width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:10px;padding:10px;font-size:14px;margin-bottom:6px}button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:700;margin:6px 6px 0 0}pre{background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:13px;white-space:pre-wrap}.m{color:#94a3b8;font-size:13px}.ok{color:#4ade80}li{margin:6px 0}</style></head>
+<body><h1>Growth Mission</h1><p class="m" id="st">loading...</p>
+<div id="mission"></div>
+<h2>Your playbook — paste once, stored forever</h2>
+<textarea id="pb" rows="6" placeholder="Paste your Global Customer Acquisition Playbook here..."></textarea>
+<button id="save">Save playbook</button>
+<h2>Report today</h2>
+<input id="c1" placeholder="contacted"><input id="c2" placeholder="replies"><input id="c3" placeholder="interested"><input id="c4" placeholder="signups"><input id="c5" placeholder="active"><input id="c6" placeholder="paying">
+<textarea id="note" rows="2" placeholder="What happened? What blocked you?"></textarea>
+<button id="rep">Report and close today</button>
+<script>
+function tok(){var ks=["aib_token","token"];for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;if(j&&j.currentSession)return j.currentSession.access_token;}catch(e){}}}return null;}
+var T=tok(),M=null;
+function api(p,m,b){return fetch(p,{method:m||"GET",headers:{"Content-Type":"application/json","Authorization":"Bearer "+T},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json();});}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function load(){ if(!T){document.getElementById("st").textContent="Open /dashboard/ and log in first, then return here.";return;}
+ api("/api/growth/today").then(function(j){ if(!j.success){document.getElementById("st").textContent=JSON.stringify(j);return;}
+  M=j.mission; document.getElementById("st").textContent="Missions completed: "+j.history+" | playbook stored: "+j.playbook_chars+" chars";
+  if(!M){document.getElementById("mission").innerHTML="<p class='m'>No mission.</p>";return;}
+  var h="<h2>"+esc(M.date)+" — "+esc(M.country)+" · "+esc(M.niche)+"</h2><p class='m'>Channel: "+esc(M.channel)+" | recipient UTC"+(M.tz>=0?"+":"")+M.tz+" | windows: "+M.windows.join(", ")+" | attempts: "+M.attempts+(M.done?" | <span class='ok'>DONE</span>":"")+"</p><p class='m'>"+esc(M.objective)+"</p><pre id='msg'>"+esc(M.message)+"</pre><button id='copy'>Copy message</button><ul>";
+  M.checklist.forEach(function(c,i){h+="<li><label><input type='checkbox' class='ck' data-i='"+i+"' style='width:auto'> "+esc(c)+"</label></li>";});
+  h+="</ul><p class='m'>"+esc(M.rules)+"</p>";
+  document.getElementById("mission").innerHTML=h;
+  document.getElementById("copy").onclick=function(){navigator.clipboard.writeText(M.message);};
+ });}
+document.getElementById("save").onclick=function(){api("/api/growth/playbook","POST",{text:document.getElementById("pb").value}).then(function(j){document.getElementById("st").textContent=j.success?"Playbook saved ("+j.chars+" chars).":JSON.stringify(j);});};
+document.getElementById("rep").onclick=function(){var done=[];document.querySelectorAll(".ck").forEach(function(c){if(c.checked)done.push(+c.dataset.i);});
+ api("/api/growth/report","POST",{done:done,note:document.getElementById("note").value,counts:{contacted:+c1.value||0,replies:+c2.value||0,interested:+c3.value||0,signups:+c4.value||0,active:+c5.value||0,paying:+c6.value||0}}).then(function(j){document.getElementById("st").textContent=j.success?"Day closed. Completed: "+j.missions_completed+". Tomorrow brings the next untested market.":JSON.stringify(j);load();});};
+load();
+</script></body></html>

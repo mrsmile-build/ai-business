@@ -5000,13 +5000,18 @@ function gMsg(n,c){ const f=gFamily(n);
  if(f==="agency") return "Hi [Name], I saw [Business] works with "+n+" in "+c+". When a client asks for a quote and then goes quiet, how do you keep track of that follow-up today? I'm building AI Business around exactly that problem and would value your honest view.";
  if(f==="professional") return "Hi [Name], I came across [Business] in "+c+". When someone enquires about your services and takes time to decide, how do you manage that conversation until they reply? I'm building AI Business to organise enquiries and follow-ups and would like to learn how you handle it.";
  return "Hello [Business], good day. I came across your business in "+c+". When a customer asks your price but doesn't order immediately, how do you keep track of them and follow up later? I'm building AI Business around that problem and would appreciate hearing how you handle it."; }
+function gAttempts(ch){ if(/content|video/.test(ch)) return 3; if(/WhatsApp|communities/.test(ch)) return 5; return 10; }
+function gSteps(ch){ if(/content|video/.test(ch)) return ["Draft one useful post or 40-second video","Publish on the chosen platform","Reply to every comment within 1 hour"];
+ if(/WhatsApp/.test(ch)) return ["Pick 5 businesses you may appropriately contact","Send 5 permission-respecting openers","Ask permission before sharing any link","Log replies and counts"];
+ if(/communities/.test(ch)) return ["Find 2 relevant business communities","Answer 3 questions helpfully first","Share your demo only where rules allow","Log replies and counts"];
+ return ["Research 10 suitable businesses","Send first 5 personalised messages","Send next 5 and record replies","Log counts and feedback"]; }
 function gMission(hist,date){ for(let c=0;c<G_C.length;c++){ for(let n=0;n<G_N.length;n++){ const key=c+":"+n; if(hist.some(h=>h.key===key)) continue;
-  return { key, date, country:G_C[c], niche:G_N[n], channel:G_CH[(c+n)%G_CH.length], tz:G_TZ[G_C[c]], target:10, attempts:10,
+  return { key, date, country:G_C[c], niche:G_N[n], channel:G_CH[(c+n)%G_CH.length], tz:G_TZ[G_C[c]], target:gAttempts(G_CH[(c+n)%G_CH.length]), attempts:gAttempts(G_CH[(c+n)%G_CH.length]),
    windows:["09:00-11:00","14:00-16:00","19:00-20:00"], message:gMsg(G_N[n],G_C[c]),
    objective:"Start 10 meaningful conversations; invite suitable people to test AI Business.",
    expected:"10 attempts, replies logged, interested testers recorded.",
    rules:"Permission-based only. Respect opt-outs. Never invent contacts. One follow-up, then stop.",
-   checklist:["Research 10 suitable businesses","Send first 5 personalised messages","Send next 5 and record replies","Log counts and feedback"] }; } }
+   checklist:gSteps(G_CH[(c+n)%G_CH.length]) }; } }
  return null; }
 app.post("/api/growth/playbook", authMiddleware, async (req,res)=>{ try{
  const text=String((req.body&&req.body.text)||"").slice(0,20000);
@@ -5027,7 +5032,7 @@ app.post("/api/growth/report", authMiddleware, async (req,res)=>{ try{
  const st=data||{ playbook:"", history:[], current:null };
  const h=st.history||[]; const c=st.current;
  if(c) h.push({ key:c.key, date:c.date, country:c.country, niche:c.niche, counts:(req.body&&req.body.counts)||{}, note:String((req.body&&req.body.note)||"").slice(0,500), done:(req.body&&req.body.done)||[] });
- await supabase.from("growth_state").upsert({ user_id:req.user.id, playbook:st.playbook||"", history:h, current:null, updated_at:new Date().toISOString() });
+ await supabase.from("growth_state").upsert({ user_id:req.user.id, playbook:st.playbook||"", history:h, current:c?Object.assign({},c,{done:true}):null, updated_at:new Date().toISOString() });
  res.json({success:true, missions_completed:h.length});
 }catch(e){res.status(500).json({error:e.message});} });
 
