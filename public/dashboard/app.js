@@ -7667,7 +7667,7 @@ async function delBizPhoto(id){
 setInterval(function(){ var el=document.getElementById('bp_photos'); if(el && !el.getAttribute('data-loaded')){ el.setAttribute('data-loaded','1'); loadBizPhotos(); } },600);
 
 function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; return u.replace(/"/g,"%22").replace(/</g,"%3C"); }
-/* ---- Growth Mission: the daily task card (Target merged in) ---- */
+/* ---- Growth Mission v2: merged daily-task card ---- */
 (function(){
   function tok(){var ks=["aib_token","token"];for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;if(j&&j.currentSession)return j.currentSession.access_token;}catch(e){}}}return null;}
   var M=null,loaded=false;
@@ -7679,23 +7679,26 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
     header.textContent="🧭 Growth Mission · "+x+" of "+n+" today";
     var old=card.querySelector("[data-gmbody]");if(old)old.remove();
     var b=document.createElement("div");b.setAttribute("data-gmbody","1");
-    if(!M){b.innerHTML="<p style='margin:6px 0 10px;font-size:13px;color:#94a3b8'>No mission yet. Write what you want to achieve — a note, a goal or a full plan — and daily tasks appear here.</p>";}
-    else{var h="<p style='margin:4px 0 8px;font-size:12px;color:#60a5fa;font-weight:700'>"+M.country+" · "+M.niche+" · "+M.channel+"</p>";
-      M.checklist.forEach(function(c,i){var on=d.indexOf(i)>-1;
-        h+="<div data-i='"+i+"' style='display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #1e293b;cursor:pointer'><span style='width:18px;height:18px;border-radius:50%;border:2px solid "+(on?"#4ade80":"#334155")+";background:"+(on?"#4ade80":"transparent")+";flex:0 0 auto;margin-top:2px'></span><span style='font-size:13px;color:"+(on?"#64748b":"#e2e8f0")+";text-decoration:"+(on?"line-through":"none")+"'>"+c+"</span></div>";});
+    if(!M){
+      b.innerHTML="<p style='margin:6px 0 8px;font-size:13px;color:#94a3b8'>Write what you want to achieve — a note, a goal or a full plan. Your daily tasks appear here.</p><textarea id='gm_in' rows='3' placeholder='e.g. get 5 printing shops in Lagos to test my product' style='width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:10px;padding:10px;font-size:13px'></textarea><button id='gm_go' style='margin-top:8px;width:100%;background:#2563eb;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:700;font-size:13px'>Generate my daily tasks</button>";
+    } else {
+      var h="<p style='margin:4px 0 8px;font-size:12px;color:#60a5fa;font-weight:700'>"+M.country+" · "+M.niche+" · "+M.channel+"</p>";
+      M.checklist.forEach(function(c,i){var on=d.indexOf(i)>-1;h+="<div data-i='"+i+"' style='display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #1e293b;cursor:pointer'><span style='width:18px;height:18px;border-radius:50%;border:2px solid "+(on?"#4ade80":"#334155")+";background:"+(on?"#4ade80":"transparent")+";flex:0 0 auto;margin-top:2px'></span><span style='font-size:13px;color:"+(on?"#64748b":"#e2e8f0")+";text-decoration:"+(on?"line-through":"none")+"'>"+c+"</span></div>";});
       b.innerHTML=h;
-      b.querySelectorAll("[data-i]").forEach(function(r){r.onclick=function(){var i=+r.getAttribute("data-i"),a=gd(),p=a.indexOf(i);if(p>-1)a.splice(p,1);else a.push(i);sd(a);paint(card,header);};});
+      b.querySelectorAll("[data-i]").forEach(function(r){r.onclick=function(){var i=+r.getAttribute("data-i"),a=gd(),p=a.indexOf(i);if(p>-1)a.splice(p,1);else a.push(i);sd(a);card.dataset.gmstamp="";paint(card,header);};});
     }
-    var btn=document.createElement("button");btn.textContent="Open Growth Mission →";btn.style.cssText="margin-top:10px;width:100%;background:#2563eb;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:700;font-size:13px";btn.onclick=function(){location.href="/growth.html";};
+    var btn=document.createElement("button");btn.textContent="Open Growth Mission →";btn.style.cssText="margin-top:10px;width:100%;background:transparent;color:#60a5fa;border:1px solid #2563eb;border-radius:10px;padding:10px;font-weight:700;font-size:13px";btn.onclick=function(){location.href="/growth.html";};
     b.appendChild(btn);
     Array.prototype.forEach.call(card.children,function(ch){if(ch!==header&&!ch.contains(header)&&ch!==b)ch.style.display="none";});
     card.appendChild(b);
+    var go=b.querySelector("#gm_go");
+    if(go)go.onclick=function(){var t=(b.querySelector("#gm_in").value||"").trim();if(!t)return;go.textContent="Generating...";fetch("/api/growth/playbook",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+tok()},body:JSON.stringify({text:t})}).then(function(r){return r.json();}).then(function(){loaded=false;card.dataset.gmstamp="";}).catch(function(){go.textContent="Generate my daily tasks";});};
   }
   function scan(){
     if(!loaded){loaded=true;var t=tok();if(!t)return;fetch("/api/growth/today",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}).then(function(j){M=(j&&j.success)?j.mission:null;}).catch(function(){M=null;});return;}
     var els=document.querySelectorAll("div,p,span,h2,h3");
     for(var i=0;i<els.length;i++){var e=els[i];var tx=(e.textContent||"").trim();
-      if((tx.indexOf("Target ·")===0||tx.indexOf("🧭 Growth Mission ·")===0)&&tx.length<45){
+      if(tx.length<45&&(tx.indexOf("Target ·")>-1||tx.indexOf("Growth Mission ·")>-1)){
         var card=e;for(var k=0;k<4&&card;k++){if(card.style&&card.style.border)break;card=card.parentElement;}
         if(!card)continue;
         var stamp=dk()+":"+gd().join(",");if(card.dataset.gmstamp===stamp&&card.querySelector("[data-gmbody]"))return;
