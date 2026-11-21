@@ -7667,3 +7667,29 @@ async function delBizPhoto(id){
 setInterval(function(){ var el=document.getElementById('bp_photos'); if(el && !el.getAttribute('data-loaded')){ el.setAttribute('data-loaded','1'); loadBizPhotos(); } },600);
 
 function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; return u.replace(/"/g,"%22").replace(/</g,"%3C"); }
+/* ---- Growth Mission row inside the Target card ---- */
+(function(){
+  function gTok(){var ks=["aib_token","token"];for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;if(j&&j.currentSession)return j.currentSession.access_token;}catch(e){}}}return null;}
+  var cache=null,tried=false;
+  function row(m){
+    var d=document.createElement("div");
+    d.style.cssText="margin-top:10px;padding:12px;border:1px solid #1e293b;border-left:3px solid #2563eb;border-radius:10px;background:#0f172a";
+    d.innerHTML="<p style='margin:0 0 4px;font-size:12px;color:#60a5fa;font-weight:700'>🧭 GROWTH MISSION"+(m.done?" · DONE":"")+"</p>"
+      +"<p style='margin:0 0 8px;font-size:13px;color:#e2e8f0'>"+m.country+" · "+m.niche+" · "+m.channel+" · "+m.attempts+" attempts</p>"
+      +"<button style='background:#2563eb;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12px'>Open mission →</button>";
+    d.querySelector("button").onclick=function(){location.href="/growth.html";};
+    return d;
+  }
+  function scan(){
+    if(cache===null&&!tried){tried=true;var t=gTok();if(!t){cache=false;return;}
+      fetch("/api/growth/today",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}).then(function(j){cache=(j&&j.success&&j.mission)?j.mission:false;}).catch(function(){cache=false;});
+      return;}
+    if(!cache)return;
+    var els=document.querySelectorAll("div,p,span,h2,h3");
+    for(var i=0;i<els.length;i++){var e=els[i];var tx=(e.textContent||"").trim();
+      if(tx.indexOf("Target ·")>-1&&tx.length<40){
+        var card=e;for(var k=0;k<4&&card;k++){if(card.style&&card.style.border)break;card=card.parentElement;}
+        if(!card||card.dataset.gm)continue;card.dataset.gm="1";card.appendChild(row(cache));return;}}
+  }
+  setInterval(scan,1200);
+})();
