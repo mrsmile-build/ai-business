@@ -7667,29 +7667,39 @@ async function delBizPhoto(id){
 setInterval(function(){ var el=document.getElementById('bp_photos'); if(el && !el.getAttribute('data-loaded')){ el.setAttribute('data-loaded','1'); loadBizPhotos(); } },600);
 
 function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; return u.replace(/"/g,"%22").replace(/</g,"%3C"); }
-/* ---- Growth Mission row inside the Target card ---- */
+/* ---- Growth Mission: the daily task card (Target merged in) ---- */
 (function(){
-  function gTok(){var ks=["aib_token","token"];for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;if(j&&j.currentSession)return j.currentSession.access_token;}catch(e){}}}return null;}
-  var cache=null,tried=false;
-  function row(m){
-    var d=document.createElement("div");
-    d.style.cssText="margin-top:10px;padding:12px;border:1px solid #1e293b;border-left:3px solid #2563eb;border-radius:10px;background:#0f172a";
-    d.innerHTML="<p style='margin:0 0 4px;font-size:12px;color:#60a5fa;font-weight:700'>🧭 GROWTH MISSION"+(m.done?" · DONE":"")+"</p>"
-      +"<p style='margin:0 0 8px;font-size:13px;color:#e2e8f0'>"+m.country+" · "+m.niche+" · "+m.channel+" · "+m.attempts+" attempts</p>"
-      +"<button style='background:#2563eb;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12px'>Open mission →</button>";
-    d.querySelector("button").onclick=function(){location.href="/growth.html";};
-    return d;
+  function tok(){var ks=["aib_token","token"];for(var i=0;i<ks.length;i++){var v=localStorage.getItem(ks[i]);if(v)return v;}for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;if(j&&j.currentSession)return j.currentSession.access_token;}catch(e){}}}return null;}
+  var M=null,loaded=false;
+  function dk(){return "gm_done_"+(M?M.date:"x");}
+  function gd(){try{return JSON.parse(localStorage.getItem(dk())||"[]");}catch(e){return[];}}
+  function sd(a){localStorage.setItem(dk(),JSON.stringify(a));}
+  function paint(card,header){
+    var d=gd(),n=M?M.checklist.length:0,x=d.filter(function(i){return i<n;}).length;
+    header.textContent="🧭 Growth Mission · "+x+" of "+n+" today";
+    var old=card.querySelector("[data-gmbody]");if(old)old.remove();
+    var b=document.createElement("div");b.setAttribute("data-gmbody","1");
+    if(!M){b.innerHTML="<p style='margin:6px 0 10px;font-size:13px;color:#94a3b8'>No mission yet. Write what you want to achieve — a note, a goal or a full plan — and daily tasks appear here.</p>";}
+    else{var h="<p style='margin:4px 0 8px;font-size:12px;color:#60a5fa;font-weight:700'>"+M.country+" · "+M.niche+" · "+M.channel+"</p>";
+      M.checklist.forEach(function(c,i){var on=d.indexOf(i)>-1;
+        h+="<div data-i='"+i+"' style='display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-top:1px solid #1e293b;cursor:pointer'><span style='width:18px;height:18px;border-radius:50%;border:2px solid "+(on?"#4ade80":"#334155")+";background:"+(on?"#4ade80":"transparent")+";flex:0 0 auto;margin-top:2px'></span><span style='font-size:13px;color:"+(on?"#64748b":"#e2e8f0")+";text-decoration:"+(on?"line-through":"none")+"'>"+c+"</span></div>";});
+      b.innerHTML=h;
+      b.querySelectorAll("[data-i]").forEach(function(r){r.onclick=function(){var i=+r.getAttribute("data-i"),a=gd(),p=a.indexOf(i);if(p>-1)a.splice(p,1);else a.push(i);sd(a);paint(card,header);};});
+    }
+    var btn=document.createElement("button");btn.textContent="Open Growth Mission →";btn.style.cssText="margin-top:10px;width:100%;background:#2563eb;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:700;font-size:13px";btn.onclick=function(){location.href="/growth.html";};
+    b.appendChild(btn);
+    Array.prototype.forEach.call(card.children,function(ch){if(ch!==header&&!ch.contains(header)&&ch!==b)ch.style.display="none";});
+    card.appendChild(b);
   }
   function scan(){
-    if(cache===null&&!tried){tried=true;var t=gTok();if(!t){cache=false;return;}
-      fetch("/api/growth/today",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}).then(function(j){cache=(j&&j.success&&j.mission)?j.mission:false;}).catch(function(){cache=false;});
-      return;}
-    if(!cache)return;
+    if(!loaded){loaded=true;var t=tok();if(!t)return;fetch("/api/growth/today",{headers:{Authorization:"Bearer "+t}}).then(function(r){return r.json();}).then(function(j){M=(j&&j.success)?j.mission:null;}).catch(function(){M=null;});return;}
     var els=document.querySelectorAll("div,p,span,h2,h3");
     for(var i=0;i<els.length;i++){var e=els[i];var tx=(e.textContent||"").trim();
-      if(tx.indexOf("Target ·")>-1&&tx.length<40){
+      if((tx.indexOf("Target ·")===0||tx.indexOf("🧭 Growth Mission ·")===0)&&tx.length<45){
         var card=e;for(var k=0;k<4&&card;k++){if(card.style&&card.style.border)break;card=card.parentElement;}
-        if(!card||card.dataset.gm)continue;card.dataset.gm="1";card.appendChild(row(cache));return;}}
+        if(!card)continue;
+        var stamp=dk()+":"+gd().join(",");if(card.dataset.gmstamp===stamp&&card.querySelector("[data-gmbody]"))return;
+        card.dataset.gmstamp=stamp;paint(card,e);return;}}
   }
   setInterval(scan,1200);
 })();
