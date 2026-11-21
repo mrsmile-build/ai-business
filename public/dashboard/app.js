@@ -7706,3 +7706,39 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
   }
   setInterval(scan,1200);
 })();
+/* ---- Growth Mission nav entry ---- */
+(function(){
+  function add(){
+    var els=document.querySelectorAll("a,button,div,span");
+    for(var i=0;i<els.length;i++){var e=els[i];var t=(e.textContent||"").trim();
+      if(t.indexOf("Lead Finder")>-1&&t.length<25){
+        var item=e;for(var k=0;k<3&&item;k++){if(item.onclick||item.getAttribute("onclick")||item.tagName==="A"||item.tagName==="BUTTON")break;item=item.parentElement;}
+        if(!item||!item.parentElement||item.dataset.gmnav)continue;
+        if(item.parentElement.querySelector("[data-gmnav]"))return true;
+        var clone=item.cloneNode(true);clone.dataset.gmnav="1";
+        clone.textContent="🧭 Growth Mission";
+        clone.onclick=function(ev){ev.stopPropagation();location.href="/growth.html";};
+        clone.removeAttribute("href");
+        item.parentElement.insertBefore(clone,item.nextSibling);
+        return true;}}
+    return false;}
+  setInterval(add,1500);
+})();
+/* ---- Growth Mission nav entry ---- */
+(function(){
+  function add(){
+    var els=document.querySelectorAll("a,button,div,span");
+    for(var i=0;i<els.length;i++){var e=els[i];var t=(e.textContent||"").trim();
+      if(t.indexOf("Lead Finder")>-1&&t.length<25){
+        var item=e;for(var k=0;k<3&&item;k++){if(item.onclick||item.getAttribute("onclick")||item.tagName==="A"||item.tagName==="BUTTON")break;item=item.parentElement;}
+        if(!item||!item.parentElement||item.dataset.gmnav)continue;
+        if(item.parentElement.querySelector("[data-gmnav]"))return true;
+        var clone=item.cloneNode(true);clone.dataset.gmnav="1";
+        clone.textContent="🧭 Growth Mission";
+        clone.onclick=function(ev){ev.stopPropagation();location.href="/growth.html";};
+        clone.removeAttribute("href");
+        item.parentElement.insertBefore(clone,item.nextSibling);
+        return true;}}
+    return false;}
+  setInterval(add,1500);
+})();
