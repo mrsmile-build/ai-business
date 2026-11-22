@@ -5065,6 +5065,46 @@ app.post("/api/growth/reply", authMiddleware, async (req,res)=>{ try{
  res.json({success:true,reply:out,followup_at:at.toISOString(),thread:th.slice(-12)});
 }catch(e){res.status(500).json({error:e.message});} });
 
+/* ---------------- PUBLIC VISIBILITY CHECK ---------------- */
+const vcHits=new Map();
+function vcAllowed(u){ try{ const x=new URL(u); if(!/^https?:$/.test(x.protocol)) return null;
+ const h=x.hostname.toLowerCase();
+ if(h==="localhost"||h.endsWith(".local")||h.endsWith(".internal")||h.includes(":")) return null;
+ if(/^(\d+\.){3}\d+$/.test(h)){ const p=h.split(".").map(Number);
+  if(p[0]===10||p[0]===127||p[0]===0||(p[0]===172&&p[1]>=16&&p[1]<=31)||(p[0]===192&&p[1]===168)||(p[0]===169&&p[1]===254)) return null; }
+ if(x.port&&!["80","443"].includes(x.port)) return null;
+ return x; }catch(e){ return null; } }
+app.get("/api/visibility-check", async (req,res)=>{ try{
+ const ip=req.ip||"x", now=Date.now(), arr=(vcHits.get(ip)||[]).filter(t=>now-t<60000);
+ if(arr.length>=10) return res.status(429).json({error:"Too many checks. Wait a minute."});
+ arr.push(now); vcHits.set(ip,arr);
+ const u=vcAllowed(String(req.query.url||"")); if(!u) return res.status(400).json({error:"Enter a public http(s) website address."});
+ const t0=Date.now(), ctrl=new AbortController(), to=setTimeout(()=>ctrl.abort(),9000);
+ const r=await fetch(u.toString(),{signal:ctrl.signal,redirect:"follow",headers:{"User-Agent":"AIBusinessVisibility/1.0"}});
+ clearTimeout(to);
+ const raw=(await r.text()).slice(0,300000), ms=Date.now()-t0, f=[]; let score=100;
+ const bad=(w,t,fix)=>{ score-=w; f.push({issue:t,fix:fix}); };
+ const title=(raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||"";
+ if(!title.trim()) bad(12,"No page title","Add a title naming your service and city.");
+ else if(title.trim().length<25) bad(5,"Title too short","Use 30-60 characters: service + city + brand.");
+ if(!/<meta[^>]+name=["']description["']/i.test(raw)) bad(10,"No meta description","Add a 120-160 character description of what you do.");
+ if(!/<h1[\s>]/i.test(raw)) bad(8,"No H1 heading","Add one H1 stating your main service.");
+ if(!/<meta[^>]+name=["']viewport["']/i.test(raw)) bad(10,"Not mobile-friendly","Add the viewport meta tag.");
+ if(!/wa\.me|api\.whatsapp/i.test(raw)) bad(10,"No WhatsApp button","Add a wa.me link so enquiries reach you in one tap.");
+ if(!/application\/ld\+json/i.test(raw)) bad(8,"No structured data","Add LocalBusiness or Service JSON-LD so search and AI can read your facts.");
+ if(!/<link[^>]+rel=["']canonical["']/i.test(raw)) bad(5,"No canonical URL","Add a canonical link.");
+ if(!/property=["']og:image["']/i.test(raw)) bad(5,"No share image","Add og:image so links preview on WhatsApp and LinkedIn.");
+ if(/name=["']robots["'][^>]*noindex/i.test(raw)) bad(15,"Blocked from search","Remove the noindex directive.");
+ if(u.protocol!=="https:") bad(10,"Not HTTPS","Serve the site over HTTPS.");
+ const noalt=(raw.match(/<img\b[^>]*>/gi)||[]).filter(t=>!/alt=/i.test(t)).length;
+ if(noalt>0) bad(Math.min(6,noalt),"Images missing alt text ("+noalt+")","Describe each image in alt text.");
+ if(ms>3000) bad(6,"Slow response ("+ms+"ms)","Compress images and enable caching.");
+ const words=(raw.replace(/<script[\s\S]*?<\/script>/gi,"").replace(/<[^>]+>/g," ").match(/\b\w+\b/g)||[]).length;
+ if(words<250) bad(8,"Thin content ("+words+" words)","Publish 600+ words answering what customers ask.");
+ res.json({success:true,url:u.toString(),score:Math.max(0,score),ms:ms,words:words,findings:f,
+  share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
+}catch(e){ res.status(502).json({error:"Could not read that site: "+(e.name==="AbortError"?"it timed out":e.message)}); } });
+
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });
