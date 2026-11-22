@@ -5027,10 +5027,10 @@ app.get("/api/growth/today", authMiddleware, async (req,res)=>{ try{
  const { data } = await supabase.from("growth_state").select("*").eq("user_id",req.user.id).maybeSingle();
  const st=data||{ playbook:"", history:[], current:null };
  const today=new Date().toISOString().slice(0,10);
- if(st.current && st.current.date===today) return res.json({success:true, mission:st.current, playbook_chars:(st.playbook||"").length, history:(st.history||[]).length});
+ if(st.current && st.current.date===today) return res.json({success:true, mission:st.current, playbook_chars:(st.playbook||"").length, history:(st.history||[]).length, thread:(st.thread||[]).slice(-12), followup_at:st.next_followup_at||null});
  const m=(st.playbook||"").trim()?gMission(st.history||[],today,st.playbook):null;
  await supabase.from("growth_state").upsert({ user_id:req.user.id, playbook:st.playbook||"", history:st.history||[], current:m, updated_at:new Date().toISOString() });
- res.json({success:true, mission:m, playbook_chars:(st.playbook||"").length, history:(st.history||[]).length});
+ res.json({success:true, mission:m, playbook_chars:(st.playbook||"").length, history:(st.history||[]).length, thread:(st.thread||[]).slice(-12), followup_at:st.next_followup_at||null});
 }catch(e){res.status(500).json({error:e.message});} });
 app.post("/api/growth/report", authMiddleware, async (req,res)=>{ try{
  const { data } = await supabase.from("growth_state").select("*").eq("user_id",req.user.id).maybeSingle();
@@ -5039,6 +5039,30 @@ app.post("/api/growth/report", authMiddleware, async (req,res)=>{ try{
  if(c) h.push({ key:c.key, date:c.date, country:c.country, niche:c.niche, counts:(req.body&&req.body.counts)||{}, note:String((req.body&&req.body.note)||"").slice(0,500), done:(req.body&&req.body.done)||[] });
  await supabase.from("growth_state").upsert({ user_id:req.user.id, playbook:st.playbook||"", history:h, current:c?Object.assign({},c,{done:true}):null, updated_at:new Date().toISOString() });
  res.json({success:true, missions_completed:h.length});
+}catch(e){res.status(500).json({error:e.message});} });
+
+/* ---------------- GROWTH COACH ---------------- */
+app.post("/api/growth/reply", authMiddleware, async (req,res)=>{ try{
+ const text=String((req.body&&req.body.text)||"").slice(0,2000);
+ if(!text.trim()) return res.status(400).json({error:"Paste what they said first."});
+ const { data } = await supabase.from("growth_state").select("*").eq("user_id",req.user.id).maybeSingle();
+ const st=data||{playbook:"",history:[],current:null,thread:[]};
+ const th=st.thread||[]; const today=new Date().toISOString().slice(0,10);
+ if(th.filter(m=>m.role==="user"&&String(m.at||"").slice(0,10)===today).length>=20)
+   return res.json({success:false,error:"Daily coach limit reached (20). Try tomorrow."});
+ const key=process.env.GROQ_API_KEY||process.env.GROQ_KEY||"";
+ if(!key) return res.json({success:false,error:"Coach not configured: GROQ_API_KEY missing on the server."});
+ const sys="You are a sales coach for a Nigerian small-business owner using AI Business. They paste what a prospect said. Answer with: (1) the exact next message to send, in their voice, short, no hype, no income promises; (2) one sentence why; (3) 'Follow up in N days' with N between 1 and 14. Under 120 words total. Never invent product facts. AI Business drafts messages; the owner sends them manually on WhatsApp.";
+ const msgs=[{role:"system",content:sys}].concat(th.slice(-6).map(m=>({role:m.role,content:m.content}))).concat([{role:"user",content:text}]);
+ const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+key},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:msgs,max_tokens:300,temperature:0.6})});
+ const j=await r.json();
+ const out=(j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"";
+ if(!out) return res.json({success:false,error:(j&&j.error&&j.error.message)||"Coach unavailable."});
+ const days=Number((out.match(/follow up in\s*(\d{1,2})/i)||[])[1]||3);
+ const at=new Date(); at.setDate(at.getDate()+days); at.setHours(9,0,0,0);
+ th.push({role:"user",content:text,at:new Date().toISOString()},{role:"assistant",content:out,at:new Date().toISOString()});
+ await supabase.from("growth_state").upsert({user_id:req.user.id,playbook:st.playbook||"",history:st.history||[],current:st.current||null,thread:th.slice(-40),next_followup_at:at.toISOString(),updated_at:new Date().toISOString()});
+ res.json({success:true,reply:out,followup_at:at.toISOString(),thread:th.slice(-12)});
 }catch(e){res.status(500).json({error:e.message});} });
 
 app.use((req, res) => {

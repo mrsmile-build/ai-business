@@ -5,7 +5,7 @@
 <h2>What do you want to achieve?</h2><p class="m">Paste a note or playbook, or write it plainly — e.g. "get 5 printing shops in Lagos to test my product". Daily tasks are generated from this and appear in your dashboard card.</p>
 <textarea id="pb" rows="6" placeholder="Write what you want, or paste your plan here..."></textarea>
 <button id="save">Save playbook</button>
-<h2>Report today</h2>
+<h2>Coach — paste what they said</h2><div id="thread"></div><textarea id="say" rows="3" placeholder="Paste the prospect reply, e.g. how much is it?"></textarea><button id="ask">What should I say?</button><pre id="coach" style="display:none"></pre><button id="copycoach" style="display:none">Copy reply</button><h2>Report today</h2>
 <input id="c1" placeholder="contacted"><input id="c2" placeholder="replies"><input id="c3" placeholder="interested"><input id="c4" placeholder="signups"><input id="c5" placeholder="active"><input id="c6" placeholder="paying">
 <textarea id="note" rows="2" placeholder="What happened? What blocked you?"></textarea>
 <button id="rep">Report and close today</button>
@@ -27,5 +27,11 @@ function load(){ if(!T){document.getElementById("st").textContent="Open /dashboa
 document.getElementById("save").onclick=function(){api("/api/growth/playbook","POST",{text:document.getElementById("pb").value}).then(function(j){document.getElementById("st").textContent=j.success?"Saved ("+j.chars+" chars). Generating your mission...":JSON.stringify(j);if(j.success)load();});};
 document.getElementById("rep").onclick=function(){var done=[];document.querySelectorAll(".ck").forEach(function(c){if(c.checked)done.push(+c.dataset.i);});
  api("/api/growth/report","POST",{done:done,note:document.getElementById("note").value,counts:{contacted:+c1.value||0,replies:+c2.value||0,interested:+c3.value||0,signups:+c4.value||0,active:+c5.value||0,paying:+c6.value||0}}).then(function(j){document.getElementById("st").textContent=j.success?"Day closed. Completed: "+j.missions_completed+". Tomorrow brings the next untested market.":JSON.stringify(j);load();});};
+function paintThread(t){var h="";(t||[]).forEach(function(m){h+="<p class='m' style='margin:6px 0'><b>"+(m.role==="user"?"They said":"Coach")+":</b> "+esc(m.content)+"</p>";});document.getElementById("thread").innerHTML=h;}
+document.getElementById("ask").onclick=function(){var v=document.getElementById("say").value.trim();if(!v)return;var c=document.getElementById("coach");c.style.display="block";c.textContent="Thinking...";
+ api("/api/growth/reply","POST",{text:v}).then(function(j){ if(!j.success){c.textContent=j.error||"Failed";return;}
+  c.textContent=j.reply;paintThread(j.thread);document.getElementById("say").value="";
+  var cb=document.getElementById("copycoach");cb.style.display="inline-block";cb.onclick=function(){navigator.clipboard.writeText(j.reply);};});};
+api("/api/growth/today").then(function(j){if(j&&j.success)paintThread(j.thread);});
 load();
 </script></body></html>
