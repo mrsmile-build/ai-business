@@ -7742,3 +7742,69 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
     return false;}
   setInterval(add,1500);
 })();
+/* ---- First-run guided tour (activation-focused) ---- */
+(function(){
+  var KEY="ab_tour_v1";
+  function uid(){try{var t=localStorage.getItem("aib_token")||"";if(!t){for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));t=(j&&j.access_token)||"";}catch(e){}}}}
+    if(!t)return null;var p=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));return p.sub||p.email||null;}catch(e){return null;}}
+  function state(){try{return JSON.parse(localStorage.getItem(KEY)||"{}");}catch(e){return{};}}
+  function save(s){localStorage.setItem(KEY,JSON.stringify(s));}
+  var U=null,S={},i=0,els=null;
+  function mk(){
+    if(els)return els;
+    var ov=document.createElement("div");ov.style.cssText="position:fixed;inset:0;z-index:99998;background:rgba(2,6,23,.72)";
+    var ring=document.createElement("div");ring.style.cssText="position:fixed;z-index:99999;border:2px solid #2563eb;border-radius:12px;box-shadow:0 0 0 9999px rgba(2,6,23,.72);pointer-events:none;transition:all .18s";
+    var tip=document.createElement("div");tip.style.cssText="position:fixed;z-index:100000;max-width:330px;background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:14px;color:#e2e8f0;font-family:system-ui;box-shadow:0 12px 40px rgba(0,0,0,.5)";
+    document.body.appendChild(ov);document.body.appendChild(ring);document.body.appendChild(tip);
+    els={ov:ov,ring:ring,tip:tip};return els;}
+  function hide(){if(!els)return;els.ov.style.display="none";els.ring.style.display="none";els.tip.style.display="none";}
+  function find(txt){var n=document.querySelectorAll("button,a,div,span");
+    for(var k=0;k<n.length;k++){var e=n[k];var t=(e.textContent||"").trim();
+      if(t===txt&&e.offsetParent){var r=e.getBoundingClientRect();if(r.width>10&&r.height>8)return e;}}
+    return null;}
+  var STEPS=[
+   {t:"Welcome to AI Business",b:"Nothing connects to your WhatsApp. AI Business drafts the message — you press send. Your number stays safe.<br><br>Free plan: 10 saved leads, 20 AI uses a month, no card.",anchor:null,page:null,cta:"Show me how"},
+   {t:"1. Find real businesses",b:"Lead Finder searches live listings and returns names, phone numbers and addresses. Run one search for your trade and city.",anchor:"Go to Lead Finder",page:"leadFinder",cta:"Open Lead Finder"},
+   {t:"2. Save one lead",b:"Saving a lead is what makes AI Business remember the customer for you. Save just one to start.",anchor:"Go to Leads",page:"leads",cta:"Open Leads"},
+   {t:"3. See who went quiet",b:"The bell and Follow-Up Assistant flag leads untouched for 3+ days and draft the next message in your voice.",anchor:null,page:"followup",cta:"Open Follow-Ups"},
+   {t:"4. You approve every send",b:"Tap Send on WhatsApp. The message opens in WhatsApp ready to go — you press send yourself. Nothing is automated.",anchor:null,page:"followup",cta:"Got it"},
+   {t:"5. Your page brings enquiries back",b:"My Business Page is a shareable link with your services, photos and a booking form. Every enquiry lands in your leads.",anchor:null,page:"bizpage",cta:"Open my page"},
+   {t:"Your first win",b:"One saved lead + one follow-up sent = AI Business is working for you. That takes about five minutes.",anchor:null,page:"leadFinder",cta:"Start now"}
+  ];
+  function show(){
+    var e=mk(),s=STEPS[i];
+    e.ov.style.display="block";e.tip.style.display="block";e.ov.style.background="rgba(2,6,23,.72)";
+    var a=s.anchor?find(s.anchor):null;
+    if(a){var r=a.getBoundingClientRect();
+      e.ring.style.display="block";e.ring.style.left=(r.left-6)+"px";e.ring.style.top=(r.top-6)+"px";e.ring.style.width=(r.width+12)+"px";e.ring.style.height=(r.height+12)+"px";
+    } else {e.ring.style.display="none";e.ov.style.background="rgba(2,6,23,.82)";}
+    e.tip.innerHTML="<p style='margin:0 0 6px;font-size:15px;font-weight:800'>"+s.t+"</p><p style='margin:0 0 12px;font-size:13px;line-height:1.5;color:#cbd5e1'>"+s.b+"</p><div style='display:flex;gap:8px;align-items:center'><button id='ab_tour_go' style='flex:1;background:#2563eb;color:#fff;border:0;border-radius:9px;padding:10px;font-weight:700;font-size:13px'>"+s.cta+"</button><button id='ab_tour_skip' style='background:transparent;color:#64748b;border:0;padding:10px;font-size:12px'>Skip</button></div><p style='margin:8px 0 0;font-size:11px;color:#475569'>"+(i+1)+" of "+STEPS.length+"</p>";
+    var w=330,vw=window.innerWidth,vh=window.innerHeight;
+    var left=a?Math.min(Math.max(8,a.getBoundingClientRect().left),vw-w-8):(vw-w)/2;
+    var top=a?(a.getBoundingClientRect().bottom+14):(vh/2-120);
+    if(top+230>vh)top=Math.max(8,(a?a.getBoundingClientRect().top:vh/2)-240);
+    e.tip.style.left=left+"px";e.tip.style.top=top+"px";e.tip.style.width=w+"px";
+    document.getElementById("ab_tour_skip").onclick=function(){S[U]={skipped:true,at:Date.now()};save(S);hide();pill();};
+    document.getElementById("ab_tour_go").onclick=function(){
+      if(s.page&&typeof window.loadPage==="function"){try{window.loadPage(s.page);}catch(err){}}
+      i++;if(i>=STEPS.length){S[U]={done:true,at:Date.now()};save(S);hide();}else{setTimeout(show,240);}
+    };
+  }
+  function pill(){
+    if(document.getElementById("ab_tour_pill"))return;
+    var st=S[U]||{};if(st.done)return;
+    var b=document.createElement("button");b.id="ab_tour_pill";
+    b.textContent=st.skipped?"Resume setup":"Finish setup";
+    b.style.cssText="position:fixed;left:12px;bottom:76px;z-index:9000;background:#0f172a;color:#93c5fd;border:1px solid #2563eb;border-radius:999px;padding:9px 14px;font-size:12px;font-weight:700";
+    b.onclick=function(){i=0;show();};
+    document.body.appendChild(b);
+  }
+  function boot(){
+    U=uid();if(!U)return;S=state();
+    var st=S[U];
+    if(!st){i=0;setTimeout(show,900);return;}
+    if(!st.done)pill();
+  }
+  var tries=0;var h=setInterval(function(){tries++;if(uid()||tries>30){clearInterval(h);boot();}},1000);
+  window.abRestartTour=function(){var u=uid();if(!u)return;S=state();delete S[u];save(S);U=u;i=0;show();};
+})();
