@@ -109,7 +109,26 @@ app.get("/a/:ref", async (req, res) => {
   } catch (e) { return res.status(500).type('html').send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Verification error</title></head><body style="font-family:system-ui,sans-serif;padding:40px">Verification is temporarily unavailable. Please try again.</body></html>'); }
 });
 
-app.use(express.static("public", { extensions: ['html'] }));    
+app.use(express.static("public", { extensions: ['html'] }));
+/* ---- "Made with AI Business" footer on shared pages (audit item 2) ---- */
+app.use((req,res,next)=>{
+  if(!/^\/(biz|b|book|booking|demo|agreement|a|p|page)\//.test(req.path)) return next();
+  const send=res.send.bind(res);
+  res.send=function(body){
+    try{
+      const ct=String(res.get("Content-Type")||"");
+      if(typeof body==="string" && ct.indexOf("html")>-1 && body.indexOf("</body>")>-1 && body.indexOf("data-ab-brand")===-1){
+        const slug=encodeURIComponent((req.path.split("/")[2]||"page").slice(0,40));
+        const link="https://www.ai-business.com.ng/?ref=shared-"+slug;
+        const foot='<div data-ab-brand style="padding:18px 14px;text-align:center;font-family:system-ui;font-size:12px;color:#64748b;border-top:1px solid rgba(100,116,139,.25);margin-top:24px">Made with <a href="'+link+'" style="color:#2563eb;font-weight:700;text-decoration:none">AI Business</a> — it remembers every enquiry and drafts the WhatsApp follow-up. <a href="https://www.ai-business.com.ng/auth?ref=shared-'+slug+'" style="color:#2563eb">Get yours free</a></div>';
+        body=body.replace("</body>", foot+"</body>");
+      }
+    }catch(e){}
+    return send(body);
+  };
+  next();
+});
+    
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
