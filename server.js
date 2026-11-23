@@ -5104,15 +5104,16 @@ app.get("/api/visibility-check", async (req,res)=>{ try{
  const r=await fetch(u.toString(),{signal:ctrl.signal,redirect:"follow",headers:{"User-Agent":"AIBusinessVisibility/1.0"}});
  clearTimeout(to);
  const raw=(await r.text()).slice(0,300000), ms=Date.now()-t0, f=[]; let score=100;
- const bad=(w,t,fix)=>{ score-=w; f.push({issue:t,fix:fix}); };
+ const bad=(w,t,fix)=>{ score-=w; f.push({kind:"tech",issue:t,fix:fix}); };
+ const reach=[];
  const title=(raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i)||[])[1]||"";
  if(!title.trim()) bad(12,"No page title","Add a title naming your service and city.");
  else if(title.trim().length<25) bad(5,"Title too short","Use 30-60 characters: service + city + brand.");
  if(!/<meta[^>]+name=["']description["']/i.test(raw)) bad(10,"No meta description","Add a 120-160 character description of what you do.");
  if(!/<h1[\s>]/i.test(raw)) bad(8,"No H1 heading","Add one H1 stating your main service.");
  if(!/<meta[^>]+name=["']viewport["']/i.test(raw)) bad(10,"Not mobile-friendly","Add the viewport meta tag.");
- if(!/wa\.me|api\.whatsapp/i.test(raw)) bad(10,"No WhatsApp path (key for Nigerian buyers)","Add a wa.me link so enquiries reach you in one tap.");
- if(!/href=["']tel:/i.test(raw)) bad(8,"No tap-to-call number","Add a tel: link so phone visitors can call in one tap.");
+ if(!/wa\.me|api\.whatsapp/i.test(raw)) reach.push({kind:"reach",issue:"No WhatsApp path (key for Nigerian buyers)",fix:"Add a wa.me link so enquiries reach you in one tap."});
+ if(!/href=["']tel:/i.test(raw)) reach.push({kind:"reach",issue:"No tap-to-call number",fix:"Add a tel: link so phone visitors can call in one tap."});
  if(!/application\/ld\+json/i.test(raw)) bad(8,"No structured data","Add LocalBusiness or Service JSON-LD so search and AI can read your facts.");
  if(!/<link[^>]+rel=["']canonical["']/i.test(raw)) bad(5,"No canonical URL","Add a canonical link.");
  if(!/property=["']og:image["']/i.test(raw)) bad(5,"No share image","Add og:image so links preview on WhatsApp and LinkedIn.");
@@ -5123,13 +5124,14 @@ app.get("/api/visibility-check", async (req,res)=>{ try{
  if(ms>3000) bad(6,"Slow response ("+ms+"ms)","Compress images and enable caching.");
  const words=(raw.replace(/<script[\s\S]*?<\/script>/gi,"").replace(/<[^>]+>/g," ").match(/\b\w+\b/g)||[]).length;
  if(words<250) bad(8,"Thin content ("+words+" words)","Publish 600+ words answering what customers ask.");
+ const botHtml=(!/<meta[^>]+name=["']viewport["']/i.test(raw) && !/<h1[\s>]/i.test(raw) && words>500);
  const shell=(words<150 && (/<div[^>]+id=["'](root|app|__next)["']/i.test(raw)||/enable javascript|<noscript/i.test(raw)||!/<p[\s>]/i.test(raw)));
  const gated=(r.status===403||r.status===429||/captcha|access denied|cf-browser-verification/i.test(raw.slice(0,4000)));
- const limited=shell||gated;
+ const limited=shell||gated||botHtml;
  const out=limited?f.filter(x=>!/Thin content|Blocked from search|No H1|No meta description|Title too short/i.test(x.issue)):f;
  res.json({success:true,url:u.toString(),score:limited?null:Math.max(0,score),mode:limited?"limited":"full",
-  note:limited?"This site renders with JavaScript or blocks automated readers, so only server-visible signals were checked. This is not a full audit.":"",
-  ms:ms,words:words,findings:out,share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
+  note:limited?"This site serves JavaScript-rendered or reader-specific HTML, so we cannot score it fairly. Reach checks below are advisory only.":"",
+  ms:ms,words:words,findings:out,reach:reach,reader:"We read the HTML your server returns. Content added by JavaScript in the browser may differ.",share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
 }catch(e){ res.status(502).json({error:"Could not read that site: "+(e.name==="AbortError"?"it timed out":e.message)}); } });
 
 app.use((req, res) => {

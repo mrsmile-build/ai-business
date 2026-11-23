@@ -18,6 +18,9 @@ document.getElementById("go").onclick=function(){
   var c=lim?"#94a3b8":j.score>=80?"#4ade80":j.score>=50?"#facc15":"#f87171";
   var h="<p class='s' style='color:"+c+"'>"+(lim?"Not scorable":j.score+"/100")+"</p>"+(lim?"<p class='m'>"+esc(j.note||"")+"</p>":"")+"<p class='m'>"+esc(j.url)+" · "+j.ms+"ms · "+j.words+" words</p><ul>";
   j.findings.forEach(function(f){h+="<li><b>"+esc(f.issue)+"</b><br><span class='m'>"+esc(f.fix)+"</span></li>";});
+  h+="</ul>";
+  if(j.reach&&j.reach.length){h+="<p class='m' style='margin:10px 0 4px'><b>Reach path (advisory, matters for Nigerian buyers):</b></p><ul>";j.reach.forEach(function(f){h+="<li><b>"+esc(f.issue)+"</b><br><span class='m'>"+esc(f.fix)+"</span></li>";});});}
+  h+="<p class='m' style='margin-top:10px'>"+esc(j.reader||"")+"</p><ul style='display:none'>";
   h+="</ul><button id='cp'>Copy shareable result</button> <a href='https://www.ai-business.com.ng/auth?ref=visibility-check'><button>Fix these with AI Business</button></a>";
   o.innerHTML=h;
   document.getElementById("cp").onclick=function(){navigator.clipboard.writeText(j.share);};
