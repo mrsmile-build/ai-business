@@ -7808,3 +7808,22 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
   var tries=0;var h=setInterval(function(){tries++;if(uid()||tries>30){clearInterval(h);boot();}},1000);
   window.abRestartTour=function(){var u=uid();if(!u)return;S=state();delete S[u];save(S);U=u;i=0;opened=false;show();};
 })();
+/* ---- One visibility engine: pain name + embedded public check ---- */
+(function(){
+  function tick(){
+    var n=document.querySelectorAll("a,button,div,span,li,h1,h2");
+    for(var i=0;i<n.length;i++){var e=n[i];var t=(e.textContent||"").trim();
+      if(t==="Website Health Check"||t==="🩺 Website Health Check"){e.textContent="🩺 Can They Find You?";}
+      if(t==="Check Website"&&!document.getElementById("ab_vc_frame")){
+        var card=e;for(var k=0;k<5&&card;k++){if(card.style&&card.style.border)break;card=card.parentElement;}
+        if(card){
+          var f=document.createElement("iframe");f.id="ab_vc_frame";f.src="/check.html?embed=1";
+          f.style.cssText="width:100%;height:660px;border:0;border-radius:12px;background:#0b1220";
+          Array.prototype.forEach.call(card.children,function(ch){if(ch!==e&&!ch.contains(e))ch.style.display="none";});
+          e.style.display="none";card.appendChild(f);
+        }
+      }
+    }
+  }
+  setInterval(tick,1200);
+})();
