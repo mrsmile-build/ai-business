@@ -1507,6 +1507,7 @@ app.post("/api/lead-finder", authMiddleware, async (req, res) => {
       })
       .slice(0, 15);
 
+    allLeads.sort((a, b) => leadQuality(b) - leadQuality(a));
     // Generate AI messages for all leads at once
     const userOffer = context || service;
     const senderProfile = req.body.sender_profile || "";
@@ -1531,7 +1532,6 @@ ${allLeads.map((l,i) => `${i+1}. ${l.name}${l.type ? " ("+l.type+")" : ""}${l.sn
 
 Return ONLY a JSON array of strings in the same order. No markdown, no explanation.`;
 
-    allLeads.sort((a, b) => leadQuality(b) - leadQuality(a));
     const compactPrompt = `You write personalized WhatsApp outreach messages for Nigerian businesses.
 
 The sender's offer is:
