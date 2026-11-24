@@ -5129,9 +5129,20 @@ app.get("/api/visibility-check", async (req,res)=>{ try{
  const gated=(r.status===403||r.status===429||/captcha|access denied|cf-browser-verification/i.test(raw.slice(0,4000)));
  const limited=shell||gated||botHtml;
  const out=limited?f.filter(x=>!/Thin content|Blocked from search|No H1|No meta description|Title too short/i.test(x.issue)):f;
+ const probe=async(pp)=>{ try{ const c=new AbortController(); const t=setTimeout(()=>c.abort(),5000); const rr=await fetch(u.origin+pp,{signal:c.signal}); clearTimeout(t); return rr.ok; }catch(e){ return false; } };
+ const llms=await probe("/llms.txt"), sitemap=await probe("/sitemap.xml");
+ const ai=[];
+ if(!llms) ai.push({issue:"No llms.txt",fix:"Add /llms.txt summarising your pages so AI assistants can read your site."});
+ if(!sitemap) ai.push({issue:"No sitemap.xml at root",fix:"Publish /sitemap.xml and reference it in robots.txt."});
+ if(!/FAQPage/i.test(raw)) ai.push({issue:"No FAQ schema",fix:"Mark up your real customer questions with FAQPage JSON-LD - answer engines quote these."});
+ const qh=(raw.match(/<h[23][^>]*>[^<]*\?/gi)||[]).length;
+ if(qh<2) ai.push({issue:"Few question headings ("+qh+")",fix:"Use the questions customers actually ask as H2/H3 headings."});
+ if(!/"@type"\s*:\s*"(Article|BlogPosting)"/i.test(raw)) ai.push({issue:"No Article schema here",fix:"On blog posts add Article/BlogPosting JSON-LD with author and datePublished."});
+ if(!/(datePublished|dateModified|Last updated|Updated on)/i.test(raw)) ai.push({issue:"No freshness date",fix:"Show a last-updated date; answer engines favour current sources."});
+ if(!/(author|byline|Written by)/i.test(raw)) ai.push({issue:"No author signal",fix:"Name the author and their experience - expertise signals matter for AI citations."});
  res.json({success:true,url:u.toString(),score:limited?null:Math.max(0,score),mode:limited?"limited":"full",
   note:limited?"This site serves JavaScript-rendered or reader-specific HTML, so we cannot score it fairly. Reach checks below are advisory only.":"",
-  ms:ms,words:words,findings:out,reach:reach,reader:"We read the HTML your server returns. Content added by JavaScript in the browser may differ.",share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
+  ms:ms,words:words,findings:out,reach:reach,ai:ai,reader:"We read the HTML your server returns. Content added by JavaScript in the browser may differ.",share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
 }catch(e){ res.status(502).json({error:"Could not read that site: "+(e.name==="AbortError"?"it timed out":e.message)}); } });
 
 app.use((req, res) => {

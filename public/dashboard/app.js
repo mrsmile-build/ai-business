@@ -7813,7 +7813,7 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
   function tick(){
     var n=document.querySelectorAll("a,button,div,span,li,h1,h2");
     for(var i=0;i<n.length;i++){var e=n[i];var t=(e.textContent||"").trim();
-      if(t==="Website Health Check"||t==="🩺 Website Health Check"){e.textContent="🩺 Can They Find You?";}
+      if(t==="Website Health Check"||t==="🩺 Website Health Check"){e.textContent="🩺 Business Visibility Check";}
       if(t==="Check Website"&&!document.getElementById("ab_vc_frame")){
         var card=e;for(var k=0;k<5&&card;k++){if(card.style&&card.style.border)break;card=card.parentElement;}
         if(card){
