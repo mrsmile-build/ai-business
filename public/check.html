@@ -1,31 +1,40 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Free Visibility Check — AI Business</title>
-<meta name="description" content="Check whether customers and AI search can find your business: title, description, mobile, structured data, WhatsApp path and content depth. Free, no signup.">
-<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui;margin:0;padding:20px;max-width:720px}h1{font-size:22px}input{width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:15px}button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:700;margin-top:8px}li{margin:8px 0;font-size:13px;line-height:1.5}.m{color:#94a3b8;font-size:13px}.s{font-size:40px;font-weight:800}</style></head>
-<body><h1>Can customers find you — and reach you in one tap?</h1>
-<p class="m">Free check of your public website. No signup. Every finding comes with the fix.</p>
-<input id="u" placeholder="yourbusiness.com"><button id="go">Run free check</button>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Can customers find you? — Free check by AI Business</title>
+<meta name="description" content="Free check: can customers find you and reach you in one tap? Title, description, mobile, structured data, WhatsApp and call path. No signup.">
+<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui;margin:0;padding:20px;max-width:720px}h1{font-size:22px;line-height:1.25}input{width:100%;box-sizing:border-box;background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:15px}button{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:700;margin:8px 8px 0 0;font-size:14px}li{margin:8px 0;font-size:13px;line-height:1.5}.m{color:#94a3b8;font-size:13px}.s{font-size:38px;font-weight:800;margin:14px 0 4px}</style></head>
+<body>
+<h1 id="hd">Can customers find you — and reach you in one tap?</h1>
+<p class="m" id="sub">Free check of your public website. No signup. Every finding comes with the fix.</p>
+<input id="u" placeholder="yourbusiness.com">
+<button id="go">Run free check</button>
 <div id="out"></div>
-<p class="m" style="margin-top:22px">Built by <a href="https://www.ai-business.com.ng/?ref=visibility-check" style="color:#60a5fa">AI Business</a> — it remembers every enquiry, flags who went quiet, and drafts the WhatsApp follow-up. You send it.</p>
+<p class="m" id="brand" style="margin-top:22px">Built by <a href="https://www.ai-business.com.ng/?ref=visibility-check" style="color:#60a5fa">AI Business</a> — it remembers every enquiry, flags who went quiet, and drafts the WhatsApp follow-up. You send it.</p>
 <script>
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
-var q=new URLSearchParams(location.search).get("url"); if(q){document.getElementById("u").value=q;}
-document.getElementById("go").onclick=function(){
- var v=document.getElementById("u").value.trim(); if(!v)return; if(!/^https?:\/\//i.test(v))v="https://"+v;
- var o=document.getElementById("out"); o.innerHTML="<p class='m'>Checking...</p>";
- fetch("/api/visibility-check?url="+encodeURIComponent(v)).then(function(r){return r.json();}).then(function(j){
-  if(!j.success){o.innerHTML="<p class='m'>"+esc(j.error||"Failed")+"</p>";return;}
-  var lim=j.mode==="limited";
-  var c=lim?"#94a3b8":j.score>=80?"#4ade80":j.score>=50?"#facc15":"#f87171";
-  var h="<p class='s' style='color:"+c+"'>"+(lim?"Not scorable":j.score+"/100")+"</p>"+(lim?"<p class='m'>"+esc(j.note||"")+"</p>":"")+"<p class='m'>"+esc(j.url)+" · "+j.ms+"ms · "+j.words+" words</p><ul>";
-  j.findings.forEach(function(f){h+="<li><b>"+esc(f.issue)+"</b><br><span class='m'>"+esc(f.fix)+"</span></li>";});
-  h+="</ul>";
-  if(j.reach&&j.reach.length){h+="<p class='m' style='margin:10px 0 4px'><b>Reach path (advisory, matters for Nigerian buyers):</b></p><ul>";j.reach.forEach(function(f){h+="<li><b>"+esc(f.issue)+"</b><br><span class='m'>"+esc(f.fix)+"</span></li>";});});}
-  h+="<p class='m' style='margin-top:10px'>"+esc(j.reader||"")+"</p><ul style='display:none'>";
-  h+="</ul><button id='cp'>Copy shareable result</button> <a href='https://www.ai-business.com.ng/auth?ref=visibility-check'><button>Fix these with AI Business</button></a>";
-  o.innerHTML=h;
-  document.getElementById("cp").onclick=function(){navigator.clipboard.writeText(j.share);};
- }).catch(function(){o.innerHTML="<p class='m'>Check failed. Try again in a moment.</p>";});
-};
-if(new URLSearchParams(location.search).get("embed")){var hh=document.querySelector("h1");if(hh)hh.style.display="none";var ps=document.querySelectorAll("body>p.m");if(ps[0])ps[0].style.display="none";if(ps.length)ps[ps.length-1].style.display="none";document.body.style.padding="8px";}
-if(q)document.getElementById("go").click();
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");}
+function li(f){return "<li><b>"+esc(f.issue)+"</b><br><span class='m'>"+esc(f.fix)+"</span></li>";}
+var qs=new URLSearchParams(location.search);
+if(qs.get("embed")){document.getElementById("hd").style.display="none";document.getElementById("sub").style.display="none";document.getElementById("brand").style.display="none";document.body.style.padding="8px";}
+var q=qs.get("url"); if(q){document.getElementById("u").value=q;}
+function run(){
+  var v=document.getElementById("u").value.trim(); if(!v)return;
+  if(!/^https?:\/\//i.test(v))v="https://"+v;
+  var o=document.getElementById("out"); o.innerHTML="<p class='m'>Checking...</p>";
+  fetch("/api/visibility-check?url="+encodeURIComponent(v)).then(function(r){return r.json();}).then(function(j){
+    if(!j.success){o.innerHTML="<p class='m'>"+esc(j.error||"Check failed.")+"</p>";return;}
+    var lim=j.mode==="limited";
+    var c=lim?"#94a3b8":(j.score>=80?"#4ade80":(j.score>=50?"#facc15":"#f87171"));
+    var h="<p class='s' style='color:"+c+"'>"+(lim?"Not scorable":j.score+"/100")+"</p>";
+    if(lim&&j.note)h+="<p class='m'>"+esc(j.note)+"</p>";
+    h+="<p class='m'>"+esc(j.url)+" · "+j.ms+"ms · "+j.words+" words</p>";
+    if(j.findings&&j.findings.length){h+="<ul>";j.findings.forEach(function(f){h+=li(f);});h+="</ul>";}
+    else if(!lim){h+="<p class='m'>No technical gaps found in the HTML we read.</p>";}
+    if(j.reach&&j.reach.length){h+="<p class='m' style='margin:12px 0 4px'><b>Reach path (advisory — matters for Nigerian buyers):</b></p><ul>";j.reach.forEach(function(f){h+=li(f);});h+="</ul>";}
+    h+="<p class='m' style='margin-top:10px'>"+esc(j.reader||"")+"</p>";
+    h+="<button id='cp'>Copy shareable result</button><a href='https://www.ai-business.com.ng/auth?ref=visibility-check'><button>Fix these with AI Business</button></a>";
+    o.innerHTML=h;
+    document.getElementById("cp").onclick=function(){navigator.clipboard.writeText(j.share);};
+  }).catch(function(){o.innerHTML="<p class='m'>Check failed. Try again in a moment.</p>";});
+}
+document.getElementById("go").onclick=run;
+document.getElementById("u").addEventListener("keydown",function(e){if(e.key==="Enter")run();});
+if(q)run();
 </script></body></html>
