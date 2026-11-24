@@ -110,6 +110,22 @@ app.get("/a/:ref", async (req, res) => {
 });
 
 app.use(express.static("public", { extensions: ['html'] }));
+/* ---- Strip angle brackets from anonymous public form posts (audit #4) ---- */
+app.use((req,res,next)=>{
+  try{
+    if(req.method==="POST" && req.path.indexOf("/api/")===0 && !req.headers.authorization && req.body){
+      const clean=(v)=>{
+        if(typeof v==="string") return v.replace(/[<>]/g,"").slice(0,2000);
+        if(Array.isArray(v)) return v.map(clean);
+        if(v && typeof v==="object"){ const o={}; for(const k in v){ o[k]=clean(v[k]); } return o; }
+        return v;
+      };
+      req.body=clean(req.body);
+    }
+  }catch(e){}
+  next();
+});
+
 /* ---- "Made with AI Business" footer on shared pages (audit item 2) ---- */
 app.use((req,res,next)=>{
   if(!/^\/(biz|b|book|booking|demo|agreement|a|p|page)\//.test(req.path)) return next();
