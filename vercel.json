@@ -13,8 +13,20 @@
       "destination": "/auth"
     },
     {
+      "source": "/api/:path*",
+      "destination": "https://ai-business-90n6.onrender.com/api/:path*"
+    },
+    {
+      "source": "/a/:path*",
+      "destination": "https://ai-business-90n6.onrender.com/a/:path*"
+    },
+    {
+      "source": "/demo/:path*",
+      "destination": "https://ai-business-90n6.onrender.com/demo/:path*"
+    },
+    {
       "source": "/biz/:slug",
-      "destination": "https://ai-business-1-ok3x.onrender.com/biz/:slug"
+      "destination": "https://ai-business-90n6.onrender.com/biz/:slug"
     }
   ]
 }
