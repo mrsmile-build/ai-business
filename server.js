@@ -5087,7 +5087,7 @@ app.post("/api/growth/reply", authMiddleware, async (req,res)=>{ try{
    return res.json({success:false,error:"Daily coach limit reached (20). Try tomorrow."});
  const key=process.env.GROQ_API_KEY||process.env.GROQ_KEY||"";
  if(!key) return res.json({success:false,error:"Coach not configured: GROQ_API_KEY missing on the server."});
- const sys="You are a sales coach for a Nigerian small-business owner using AI Business. They paste what a prospect said. Answer with: (1) the exact next message to send, in their voice, short, no hype, no income promises; (2) one sentence why; (3) 'Follow up in N days' with N between 1 and 14. Under 120 words total. Never invent product facts. AI Business drafts messages; the owner sends them manually on WhatsApp.";
+ const sys="You are a sales coach for a small-business owner or freelancer using AI Business, in any country. They paste what a prospect said. Answer with: (1) the exact next message to send, in their voice, short, no hype, no income promises; (2) one sentence why; (3) 'Follow up in N days' with N between 1 and 14. Under 120 words total. Never invent product facts. AI Business drafts messages; the owner sends them manually on whichever channel their customer uses - WhatsApp, email, LinkedIn, Instagram or phone.";
  const msgs=[{role:"system",content:sys}].concat(th.slice(-6).map(m=>({role:m.role,content:m.content}))).concat([{role:"user",content:text}]);
  const r=await fetch("https://api.groq.com/openai/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+key},body:JSON.stringify({model:"llama-3.3-70b-versatile",messages:msgs,max_tokens:300,temperature:0.6})});
  const j=await r.json();

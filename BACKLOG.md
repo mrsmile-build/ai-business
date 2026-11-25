@@ -14,7 +14,7 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 8. Renewing billing: one monthly Paystack plan per tier; webhook updates subscriptions; day-25 reminder email; handle invoice.payment_failed. [audit add 1]
 9. Daily digest email: "N customers went quiet, M follow-ups due, tap to send" from /api/attention (:283) + fixed sender. [audit add 3]
 10. followup_sent event on every wa.me tap (15 links in dashboard); define activated = 1 saved lead + 1 sent follow-up within 7 days. [audit add 4]
-11. Welcome/auth screen line: "Nothing connects to your WhatsApp. It drafts, you send." (tour step 1 has it; auth screen does not). [audit 5-min]
+11. Welcome/auth screen line: "Nothing connects to your accounts. It drafts, you send - on any channel." (tour step 1 has it; auth screen does not). [audit 5-min]
 12. Landing page: pain headline; remove placeholder hero stats; make Start Free the loud button; fix 60-sec tour pill overlap; testimonials loading state. [audit landing]
 13. Search Console + Bing Webmaster verification; submit sitemap; see which queries bring strangers before writing new guides. [visibility]
 14. Lead Finder: name-guard at message assignment (message must start with its own lead's name, else safe template); accurate product description when sender is AI Business. [session]

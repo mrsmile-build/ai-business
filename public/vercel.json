@@ -19,6 +19,14 @@
     {
       "source": "/api/:path*",
       "destination": "https://ai-business-90n6.onrender.com/api/:path*"
+    },
+    {
+      "source": "/a/:path*",
+      "destination": "https://ai-business-90n6.onrender.com/a/:path*"
+    },
+    {
+      "source": "/demo/:path*",
+      "destination": "https://ai-business-90n6.onrender.com/demo/:path*"
     }
   ],
   "headers": [

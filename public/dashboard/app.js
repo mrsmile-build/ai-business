@@ -7764,11 +7764,11 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
       if(t===txt&&e.offsetParent){var r=e.getBoundingClientRect();if(r.width>10&&r.height>8)return e;}}
     return null;}
   var STEPS=[
-   {t:"Welcome to AI Business",b:"Nothing connects to your WhatsApp. AI Business drafts the message — you press send. Your number stays safe.<br><br>Free plan: 10 saved leads, 20 AI uses a month, no card.",anchor:null,page:null,cta:""},
+   {t:"Welcome to AI Business",b:"Nothing connects to your accounts. AI Business drafts the message — you send it on WhatsApp, email, LinkedIn, Instagram or a call. Your logins stay yours.<br><br>Free plan: 10 saved leads, 20 AI uses a month, no card.",anchor:null,page:null,cta:""},
    {t:"1. Find real businesses",b:"Lead Finder searches live listings and returns names, phone numbers and addresses. Open it, look around, then press Next.",anchor:"Go to Lead Finder",page:"leadFinder",cta:"Open Lead Finder"},
    {t:"2. Save one lead",b:"Saving a lead is what makes AI Business remember the customer for you. Save just one to start.",anchor:"Go to Leads",page:"leads",cta:"Open Leads"},
    {t:"3. See who went quiet",b:"The bell and Follow-Up Assistant flag leads untouched for 3+ days and draft the next message in your voice.",anchor:null,page:"followup",cta:"Open Follow-Ups"},
-   {t:"4. You approve every send",b:"Tap Send on WhatsApp. The message opens in WhatsApp ready to go — you press send yourself. Nothing is automated.",anchor:null,page:"followup",cta:"Open Follow-Ups again"},
+   {t:"4. You approve every send",b:"Tap Send. The message opens in the channel you choose — WhatsApp, email, LinkedIn or your dialer — ready to go. You press send yourself. Nothing is automated.",anchor:null,page:"followup",cta:"Open Follow-Ups again"},
    {t:"5. Your page brings enquiries back",b:"My Business Page is a shareable link with your services, photos and a booking form. Every enquiry lands in your leads.",anchor:null,page:"bizpage",cta:"Open my page"},
    {t:"Your first win",b:"One saved lead + one follow-up sent = AI Business is working for you. That takes about five minutes.",anchor:null,page:"leadFinder",cta:"Start now"}
   ];
