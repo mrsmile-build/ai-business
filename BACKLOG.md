@@ -38,3 +38,12 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 28. Run the five Supabase queries monthly; your numbers replace all guesses by day 14 of any campaign.
 29. Daily ~90 min: 10 useful comments where customers ask for clients (no link), 5 DMs to engagers offering a live search, 1 real screen recording (30-45s), message every new signup within a day and every silent signup on day 3.
 30. Log outreach counts in the Growth Mission report nightly; tomorrow's mission comes from evidence, not mood.
+
+## FROM THE NINE VIDEOS (24 Nov 2026)
+31. Double-sided product-value referral, separate from cash affiliate: referrer AND friend each get +10 leads / +20 AI uses or a free Starter month. Customers won't take cash to recommend to a friend. [Wardell]
+32. Commission guardrails: 12-month duration cap, negative commission on refund, documented 60-day cookie window. Test tracking against our own checkout before recruiting. [Vlasyev]
+33. Output-quality log: score every AI draft next to the prompt and inputs that produced it; fix the prompt weekly. Started manually in a spreadsheet. [Henry]
+34. Public changelog + "you asked, we built it" messages to everyone who requested a fix (Precious, Samuel, Daniel). [Burr]
+35. Replace feature-pitch outreach with pain diagnosis: what is it costing you, what happens if unfixed for 6 months, what have you tried. Show at most three packages. Track new quality connections weekly. [Leese]
+36. Content collaboration, zero cash: two guest appearances or lead-magnet swaps per month with audiences of freelancers and agencies. [Wardell]
+37. GATED: hand-off button in the app that passes a job to a listed provider, with the platform taking a slice - all four partnership models in one. Needs payments + commission first. [Wardell's SEO-tool story]
