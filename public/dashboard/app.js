@@ -7846,3 +7846,18 @@ function lfSafeUrl(u){ u=String(u||""); if(!/^https?:\/\//i.test(u)) return ""; 
     return false;}
   setInterval(add,1500);
 })();
+/* ---- log a real send whenever the owner taps WhatsApp, email or call ---- */
+(function(){
+  document.addEventListener("click",function(ev){
+    var a=ev.target&&ev.target.closest?ev.target.closest("a"):null; if(!a)return;
+    var h=a.getAttribute("href")||"";
+    if(!/^(https:\/\/wa\.me|https:\/\/api\.whatsapp|mailto:|tel:)/i.test(h))return;
+    try{
+      var t=localStorage.getItem("aib_token")||"";
+      if(!t){for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));t=(j&&j.access_token)||"";}catch(e){}}}}
+      if(!t)return;
+      var ch=h.indexOf("wa.me")>-1||h.indexOf("api.whatsapp")>-1?"whatsapp":(h.indexOf("mailto")===0?"email":"phone");
+      fetch("/api/track/followup-sent",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+t},body:JSON.stringify({channel:ch}),keepalive:true}).catch(function(){});
+    }catch(e){}
+  },true);
+})();

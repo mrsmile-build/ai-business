@@ -5161,6 +5161,13 @@ app.get("/api/visibility-check", async (req,res)=>{ try{
   ms:ms,words:words,findings:out,reach:reach,ai:ai,reader:"We read the HTML your server returns. Content added by JavaScript in the browser may differ.",share:"https://www.ai-business.com.ng/check.html?url="+encodeURIComponent(u.toString())});
 }catch(e){ res.status(502).json({error:"Could not read that site: "+(e.name==="AbortError"?"it timed out":e.message)}); } });
 
+/* ---- followup_sent: the activation event (audit add 4) ---- */
+app.post("/api/track/followup-sent", authMiddleware, async (req,res)=>{ try{
+  const ch=String((req.body&&req.body.channel)||"whatsapp").slice(0,20);
+  await supabase.from("activity").insert({ user_id:req.user.id, action:"followup_sent" });
+  res.json({success:true,channel:ch});
+}catch(e){ res.json({success:false}); } });
+
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
 });
