@@ -64,3 +64,10 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 48. No payments table exists; money truth = subscriptions + activity.checkout_initiated. Retire audit query 3b.
 49. Two parallel partner systems (affiliates vs partners/partner_withdrawals/partner_public). Pick one before renewals; retire the other.
 50. Convert the 3 trials by hand this week (script 3); message silent signups daily (script 4). They are cheaper than any new channel.
+
+## CLOSED 26 NOV 2026 (verified, not assumed)
+- Audit #2 email: domain verified in Resend (DKIM/rsend/send all Verified), EMAIL_FROM live, sends reach strangers. Digest run: sent 7, failed 0.
+- Audit add #3 daily digest: live, built on the real quiet-lead query; cron file shipped (GitHub secret pending).
+- Audit add #4 followup_sent: logged on every real send tap.
+- Audit #9 hosting: single backend 90n6 for /api, /a, /demo, /biz.
+- Audit #5 partial: welcome-email guarded to known users and reports real send result.
