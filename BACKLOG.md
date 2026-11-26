@@ -47,3 +47,14 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 35. Replace feature-pitch outreach with pain diagnosis: what is it costing you, what happens if unfixed for 6 months, what have you tried. Show at most three packages. Track new quality connections weekly. [Leese]
 36. Content collaboration, zero cash: two guest appearances or lead-magnet swaps per month with audiences of freelancers and agencies. [Wardell]
 37. GATED: hand-off button in the app that passes a job to a listed provider, with the platform taking a slice - all four partnership models in one. Needs payments + commission first. [Wardell's SEO-tool story]
+
+## AFFILIATE PROGRAM SPECIFICS (26 Nov 2026)
+38. Affiliate page as a sales page: headline "Earn N22,500 per Business sale (50% of first payment)" - lead with the highest tier, not the cheapest. Add commission table, cookie window, payout date, and the kit download. [Martell, Shopify]
+39. Document and enforce a 90-day cookie window and pick first-touch or last-touch attribution. Currently undocumented. [Martell, Rewardful]
+40. Earnings-per-click proof: once 3 conversions exist, publish real EPC and partner earnings screenshots. Until then show the honest offer, not invented numbers. [Martell]
+41. Tiered commission: base rate, bump after 5 paying referrals, bump after 20. Rewards partners who keep going. [Shopify]
+42. Post-checkout recruit prompt: after a successful payment, offer "earn 50% by referring a colleague" with their code pre-filled. Cheapest recruiting placement we own. [Shopify]
+43. Fraud: lock /api/affiliate/track-signup to the token (audit #5), one trial per user, block self-referral, flag repeated codes from one IP. [Rewardful]
+44. Partner onboarding sequence: 3 messages (day 0 kit + link, day 3 first-post template, day 7 check-in) plus a monthly note sharing what top partners did. Sales kit endpoint already exists. [Martell]
+45. Growth stacking rule: once a channel produces signups, keep it running weekly before adding a new one. Never swap channels. [Martell]
+46. Two or three free launch directories in week 3, only after renewals ship. Not now. [launch-platforms short]
