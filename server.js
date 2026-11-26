@@ -4007,7 +4007,16 @@ app.post("/api/welcome-email", async (req, res) => {
   try {
     const { email, name } = req.body;
     if(!email) return res.json({ success: false });
-    const { data: known } = await supabase.from("profiles").select("user_id").ilike("email", String(email).trim()).maybeSingle();
+    const em = String(email).trim().toLowerCase();
+    let known = null;
+    try { const r = await supabase.from("profiles").select("user_id").ilike("email", em).maybeSingle(); known = r.data; } catch(e){}
+    if(!known){
+      try{
+        const wc2 = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+        const lu = await wc2.auth.admin.listUsers({ page:1, perPage:200 });
+        known = ((lu.data && lu.data.users) || []).find(function(u){ return String(u.email||"").toLowerCase() === em; }) || null;
+      }catch(e){}
+    }
     if(!known) return res.json({ success: false });
     await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://www.ai-business.com.ng") + "/dashboard'>Open your dashboard</a></p></div>");
     res.json({ success: true });
@@ -5193,6 +5202,7 @@ app.get("/api/digest/run", async (req,res)=>{ try{
       let to = u.email;
       if(!to){ try{ const au = await wc.auth.admin.getUserById(u.user_id); to = au && au.data && au.data.user && au.data.user.email; }catch(e){} }
       if(!to){ skipped++; continue; }
+      if(!u.email){ try{ await wc.from("profiles").update({email:to}).eq("user_id",u.user_id); }catch(e){} }
       const d = await digestFor(u.user_id);
       if(!d.quiet.length && !d.bookings){ skipped++; continue; }
       const names = d.quiet.slice(0,3).map(l=>"<li style='margin:6px 0'>"+String(l.name||"A customer").replace(/[<>]/g,"")+"</li>").join("");
