@@ -511,6 +511,15 @@ async function getSubscription(user) {
   if(error && error.code !== 'PGRST116') console.error("getSubscription select error:", error.message);
 
   if(data){
+    const nowMs = Date.now();
+    let expired = false;
+    if(data.status === "trial" && data.trial_ends_at && new Date(data.trial_ends_at).getTime() < nowMs) expired = true;
+    if(data.status === "active" && data.last_payment_date && (nowMs - new Date(data.last_payment_date).getTime()) > 31*864e5) expired = true;
+    if(expired){
+      await localSubClient.from("subscriptions").update({ plan: "free", status: "free" }).eq("user_id", user.id);
+      data = Object.assign({}, data, { plan: "free", status: "free" });
+      console.log("Subscription expired -> free:", user.id);
+    }
     const thisMonth = new Date().toISOString().slice(0, 7);
     if(data.usage_date !== thisMonth){
       const { error: updErr } = await localSubClient.from("subscriptions")
@@ -5187,7 +5196,8 @@ async function digestFor(uid){
   const cutoff = new Date(Date.now() - 3*864e5).toISOString();
   const { data: quiet } = await wc.from("leads").select("name,status,updated_at").eq("user_id", uid).not("status","in",'("won","lost")').lt("updated_at", cutoff).order("updated_at",{ascending:true}).limit(5);
   const { count: bc } = await wc.from("bookings").select("*",{count:"exact",head:true}).eq("user_id", uid).eq("status","pending");
-  return { quiet: quiet||[], bookings: bc||0 };
+  const { count: qc } = await wc.from("leads").select("*",{count:"exact",head:true}).eq("user_id", uid).not("status","in",'("won","lost")').lt("updated_at", cutoff);
+  return { quiet: quiet||[], total: qc||0, bookings: bc||0 };
 }
 app.get("/api/digest/preview", authMiddleware, async (req,res)=>{ try{
   const d = await digestFor(req.user.id); res.json({success:true, quiet:d.quiet, bookings:d.bookings});
@@ -5214,7 +5224,8 @@ app.get("/api/digest/run", async (req,res)=>{ try{
       const d = await digestFor(u.user_id);
       if(!d.quiet.length && !d.bookings){ skipped++; continue; }
       const names = d.quiet.slice(0,3).map(l=>"<li style='margin:6px 0'>"+String(l.name||"A customer").replace(/[<>]/g,"")+"</li>").join("");
-      const head = d.quiet.length ? d.quiet.length+" customer"+(d.quiet.length>1?"s":"")+" went quiet" : d.bookings+" booking"+(d.bookings>1?"s":"")+" waiting for you";
+      const nq = d.total || d.quiet.length;
+      const head = nq ? nq+" customer"+(nq>1?"s":"")+" went quiet" : d.bookings+" booking"+(d.bookings>1?"s":"")+" waiting for you";
       const html = "<div style='font-family:system-ui,Arial,sans-serif;max-width:520px;padding:20px;background:#0f172a;color:#f1f5f9;border-radius:12px'>"
         + "<h2 style='color:#60a5fa;margin:0 0 10px'>"+head+"</h2>"
         + (names?"<ul style='padding-left:18px;color:#cbd5e1'>"+names+"</ul>":"")
