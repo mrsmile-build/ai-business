@@ -4018,8 +4018,8 @@ app.post("/api/welcome-email", async (req, res) => {
       }catch(e){}
     }
     if(!known) return res.json({ success: false });
-    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://www.ai-business.com.ng") + "/dashboard'>Open your dashboard</a></p></div>");
-    res.json({ success: true });
+    const __ok = await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://www.ai-business.com.ng") + "/dashboard'>Open your dashboard</a></p></div>");
+    res.json({ success: !!__ok });
   } catch(err){ res.json({ success: false }); }
 });
 
