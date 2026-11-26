@@ -1,0 +1,12 @@
+name: daily-digest
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake backend and send the morning digest
+        run: |
+          curl -sS --max-time 180 "https://www.ai-business.com.ng/api/digest/run?key=${{ secrets.DIGEST_KEY }}" | head -c 300

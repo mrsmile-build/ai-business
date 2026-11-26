@@ -3993,19 +3993,23 @@ async function pushNotification(userId, type, message){
 async function sendEmail(to, subject, html){
   if(!process.env.RESEND_API_KEY){ console.log("Resend key missing, skipping email"); return; }
   try {
-    await fetch("https://api.resend.com/emails", {
+    const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": "Bearer " + process.env.RESEND_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "AI Business <onboarding@resend.dev>", to: [to], subject: subject, html: html })
+      body: JSON.stringify({ from: process.env.EMAIL_FROM || "AI Business <onboarding@resend.dev>", to: [to], subject: subject, html: html })
     });
-  } catch(e){ console.log("Email send error:", e.message); }
+    if(!r.ok){ console.log("Email send failed", r.status, (await r.text()).slice(0,200)); return false; }
+    return true;
+  } catch(e){ console.log("Email send error:", e.message); return false; }
 }
 
 app.post("/api/welcome-email", async (req, res) => {
   try {
     const { email, name } = req.body;
     if(!email) return res.json({ success: false });
-    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://ai-business-production.up.railway.app") + "/dashboard'>Open your dashboard</a></p></div>");
+    const { data: known } = await supabase.from("profiles").select("user_id").ilike("email", String(email).trim()).maybeSingle();
+    if(!known) return res.json({ success: false });
+    await sendEmail(email, "Welcome to AI Business", "<div style='font-family:Arial,sans-serif;max-width:500px'><h2>Welcome" + (name ? ", " + name : "") + "!</h2><p>You are in. AI Business helps you find customers, track every lead, and never forget a follow-up.</p><p>Start here: <a href='" + (process.env.BASE_URL || "https://www.ai-business.com.ng") + "/dashboard'>Open your dashboard</a></p></div>");
     res.json({ success: true });
   } catch(err){ res.json({ success: false }); }
 });
@@ -5167,6 +5171,41 @@ app.post("/api/track/followup-sent", authMiddleware, async (req,res)=>{ try{
   await supabase.from("activity").insert({ user_id:req.user.id, action:"followup_sent" });
   res.json({success:true,channel:ch});
 }catch(e){ res.json({success:false}); } });
+
+/* ---------------- DAILY DIGEST (audit add 3) ---------------- */
+async function digestFor(uid){
+  const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  const cutoff = new Date(Date.now() - 3*864e5).toISOString();
+  const { data: quiet } = await wc.from("leads").select("name,status,updated_at").eq("user_id", uid).not("status","in",'("won","lost")').lt("updated_at", cutoff).order("updated_at",{ascending:true}).limit(5);
+  const { count: bc } = await wc.from("bookings").select("*",{count:"exact",head:true}).eq("user_id", uid).eq("status","pending");
+  return { quiet: quiet||[], bookings: bc||0 };
+}
+app.get("/api/digest/preview", authMiddleware, async (req,res)=>{ try{
+  const d = await digestFor(req.user.id); res.json({success:true, quiet:d.quiet, bookings:d.bookings});
+}catch(e){ res.status(500).json({error:e.message}); } });
+app.get("/api/digest/run", async (req,res)=>{ try{
+  if(!process.env.DIGEST_KEY || String(req.query.key||"")!==process.env.DIGEST_KEY) return res.status(403).json({error:"bad key"});
+  const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  const { data: users } = await wc.from("profiles").select("user_id,email,display_name").not("email","is",null).limit(500);
+  let sent=0, skipped=0;
+  for(const u of (users||[])){
+    try{
+      const d = await digestFor(u.user_id);
+      if(!d.quiet.length && !d.bookings){ skipped++; continue; }
+      const names = d.quiet.slice(0,3).map(l=>"<li style='margin:6px 0'>"+String(l.name||"A customer").replace(/[<>]/g,"")+"</li>").join("");
+      const head = d.quiet.length ? d.quiet.length+" customer"+(d.quiet.length>1?"s":"")+" went quiet" : d.bookings+" booking"+(d.bookings>1?"s":"")+" waiting for you";
+      const html = "<div style='font-family:system-ui,Arial,sans-serif;max-width:520px;padding:20px;background:#0f172a;color:#f1f5f9;border-radius:12px'>"
+        + "<h2 style='color:#60a5fa;margin:0 0 10px'>"+head+"</h2>"
+        + (names?"<ul style='padding-left:18px;color:#cbd5e1'>"+names+"</ul>":"")
+        + "<p style='color:#94a3b8;line-height:1.6'>Open AI Business, tap a name, and the follow-up is already drafted in your voice. You press send.</p>"
+        + "<p style='margin:18px 0 0'><a href='https://www.ai-business.com.ng/dashboard' style='display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700'>Tap to send</a></p>"
+        + "<p style='color:#64748b;font-size:12px;margin-top:16px'>Nothing connects to your accounts. It drafts, you send.</p></div>";
+      const ok = await sendEmail(u.email, head+" — tap to send", html);
+      if(ok) sent++; else skipped++;
+    }catch(e){ skipped++; }
+  }
+  res.json({success:true, users:(users||[]).length, sent:sent, skipped:skipped});
+}catch(e){ res.status(500).json({error:e.message}); } });
 
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
