@@ -905,7 +905,7 @@ app.post("/api/paystack/init", authMiddleware, async (req, res) => {
       headers: { Authorization: "Bearer " + process.env.PAYSTACK_SECRET_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
         email, amount: planData.price * 100,
-        metadata: { plan },
+        metadata: { plan, user_id: req.user.id },
         callback_url: process.env.BASE_URL + "/api/paystack/verify"
       })
     });
