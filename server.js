@@ -5186,10 +5186,13 @@ app.get("/api/digest/preview", authMiddleware, async (req,res)=>{ try{
 app.get("/api/digest/run", async (req,res)=>{ try{
   if(!process.env.DIGEST_KEY || String(req.query.key||"")!==process.env.DIGEST_KEY) return res.status(403).json({error:"bad key"});
   const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-  const { data: users } = await wc.from("profiles").select("user_id,email,display_name").not("email","is",null).limit(500);
+  const { data: users } = await wc.from("profiles").select("user_id,email,display_name").limit(500);
   let sent=0, skipped=0;
   for(const u of (users||[])){
     try{
+      let to = u.email;
+      if(!to){ try{ const au = await wc.auth.admin.getUserById(u.user_id); to = au && au.data && au.data.user && au.data.user.email; }catch(e){} }
+      if(!to){ skipped++; continue; }
       const d = await digestFor(u.user_id);
       if(!d.quiet.length && !d.bookings){ skipped++; continue; }
       const names = d.quiet.slice(0,3).map(l=>"<li style='margin:6px 0'>"+String(l.name||"A customer").replace(/[<>]/g,"")+"</li>").join("");
@@ -5200,7 +5203,7 @@ app.get("/api/digest/run", async (req,res)=>{ try{
         + "<p style='color:#94a3b8;line-height:1.6'>Open AI Business, tap a name, and the follow-up is already drafted in your voice. You press send.</p>"
         + "<p style='margin:18px 0 0'><a href='https://www.ai-business.com.ng/dashboard' style='display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700'>Tap to send</a></p>"
         + "<p style='color:#64748b;font-size:12px;margin-top:16px'>Nothing connects to your accounts. It drafts, you send.</p></div>";
-      const ok = await sendEmail(u.email, head+" — tap to send", html);
+      const ok = await sendEmail(to, head+" — tap to send", html);
       if(ok) sent++; else skipped++;
     }catch(e){ skipped++; }
   }
