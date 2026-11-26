@@ -58,3 +58,9 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 44. Partner onboarding sequence: 3 messages (day 0 kit + link, day 3 first-post template, day 7 check-in) plus a monthly note sharing what top partners did. Sales kit endpoint already exists. [Martell]
 45. Growth stacking rule: once a channel produces signups, keep it running weekly before adding a new one. Never swap channels. [Martell]
 46. Two or three free launch directories in week 3, only after renewals ship. Not now. [launch-platforms short]
+
+## REAL NUMBERS, 26 NOV 2026 (from Supabase)
+47. Funnel: 44 signups, 15 reachable emails, 11 activated (25%), 2 checkout attempts, 3 trials, 0 paying, MRR N0. Signups ~1/week since late Oct. Activation under one-third: onboarding before traffic.
+48. No payments table exists; money truth = subscriptions + activity.checkout_initiated. Retire audit query 3b.
+49. Two parallel partner systems (affiliates vs partners/partner_withdrawals/partner_public). Pick one before renewals; retire the other.
+50. Convert the 3 trials by hand this week (script 3); message silent signups daily (script 4). They are cheaper than any new channel.
