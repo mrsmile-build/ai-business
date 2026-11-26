@@ -21,7 +21,7 @@ function cleanAIOutput(text) {
 }
 app.use(cors());
 app.use('/api/biz-photo', express.json({ limit: '12mb' }));
-app.use(express.json());
+app.use(express.json({ verify: function(req,res,buf){ req.rawBody = buf; } }));
 
     // === EXPLICIT STATIC ROUTES (TOP PRIORITY) ===
     const path = require('path');
@@ -941,17 +941,21 @@ app.get("/api/paystack/verify", rateLimit(20, 60000), async (req, res) => {
         return res.redirect("/dashboard?payment=failed");
       }
       const plan = expectedPlan;
-      const { data: userRecord } = await supabase.from("profiles").select("id").eq("email", email).single();
-      const user = userRecord ? { id: userRecord.id } : null;
+      let uid = (data.data.metadata && data.data.metadata.user_id) || null;
+      if(!uid){
+        const { data: userRecord } = await supabase.from("profiles").select("user_id").ilike("email", email).maybeSingle();
+        uid = userRecord ? userRecord.user_id : null;
+      }
+      const user = uid ? { id: uid } : null;
       if (user) {
         try { if (typeof creditAffiliate === "function") { await creditAffiliate(user.id, plan, amount); } } catch(e) {}
         try { await supabase.from("referrals").update({ referred_plan: plan }).eq("referred_email", email).is("referred_plan", null); } catch(e) {}
         // Store payment record
-        await supabase.from("payments").insert({
+        await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("payments").insert({
           user_id: user.id, email, plan, amount, reference, status: "success"
         });
         
-        await supabase.from("subscriptions").upsert({
+        await createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY).from("subscriptions").upsert({
           user_id: user.id, email, plan, status: "active",
           ai_usage: 0, amount_paid: amount, last_payment_date: new Date()
         });
@@ -3549,7 +3553,7 @@ app.get("/api/affiliate/resources", authMiddleware, async (req, res) => {
         .single();
 
       const affCode = affiliate?.affiliate_code || "YOUR_CODE";
-      const baseUrl = (process.env.APP_URL || "https://ai-business-two-psi.vercel.app") + "/auth?aff=" + affCode;
+      const baseUrl = (process.env.APP_URL || "https://www.ai-business.com.ng") + "/auth?aff=" + affCode;
 
     if (typeof trackEvent === 'function') {
       trackEvent(req.user.id, 'affiliate_resources_viewed');
@@ -5269,6 +5273,33 @@ app.post("/api/working-hours",authMiddleware,async(req,res)=>{try{
   if(error) return res.status(500).json({error:error.message});
   res.json({success:true,timezone:tz,work_hours:wh,digest_hour:dh});
 }catch(e){res.status(500).json({error:e.message});}});
+
+
+/* ---------------- PAYSTACK WEBHOOK (audit #3) ---------------- */
+app.post("/api/paystack/webhook", async (req,res)=>{
+  try{
+    const sig=req.headers["x-paystack-signature"], secret=process.env.PAYSTACK_SECRET_KEY;
+    if(!secret||!sig||!req.rawBody) return res.sendStatus(400);
+    const h=require("crypto").createHmac("sha512",secret).update(req.rawBody).digest("hex");
+    if(h!==sig) return res.sendStatus(401);
+    const ev=req.body||{};
+    if(ev.event==="charge.success"){
+      const d=ev.data||{}, md=d.metadata||{}, uid=md.user_id, plan=md.plan, amount=(d.amount||0)/100, ref=d.reference;
+      const pd=PLANS[plan];
+      if(uid&&pd&&amount>=pd.price){
+        const wc=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY);
+        const { data: dup } = await wc.from("payments").select("id").eq("reference",ref).maybeSingle();
+        if(!dup){
+          await wc.from("payments").insert({user_id:uid,email:(d.customer||{}).email,plan:plan,amount:amount,reference:ref,status:"success"});
+          await wc.from("subscriptions").upsert({user_id:uid,plan:plan,status:"active",ai_usage:0,amount_paid:amount,last_payment_date:new Date()},{onConflict:"user_id"});
+          try{ if(typeof creditAffiliate==="function") await creditAffiliate(uid,plan,amount); }catch(e){}
+          console.log("Webhook upgraded", uid, plan);
+        }
+      }
+    }
+    res.sendStatus(200);
+  }catch(e){ console.log("webhook error:", e.message); res.sendStatus(200); }
+});
 
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);
