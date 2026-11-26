@@ -3991,7 +3991,7 @@ async function pushNotification(userId, type, message){
 
 /* ---------------- EMAIL (Resend) ---------------- */
 async function sendEmail(to, subject, html){
-  if(!process.env.RESEND_API_KEY){ console.log("Resend key missing, skipping email"); return; }
+  if(!process.env.RESEND_API_KEY){ console.log("Resend key missing, skipping email"); return false; }
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -5196,7 +5196,7 @@ app.get("/api/digest/run", async (req,res)=>{ try{
   if(!process.env.DIGEST_KEY || String(req.query.key||"")!==process.env.DIGEST_KEY) return res.status(403).json({error:"bad key"});
   const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   const { data: users } = await wc.from("profiles").select("user_id,email,display_name").limit(500);
-  let sent=0, skipped=0;
+  let sent=0, skipped=0, failed=0; const failWhy=[];
   for(const u of (users||[])){
     try{
       let to = u.email;
@@ -5214,10 +5214,11 @@ app.get("/api/digest/run", async (req,res)=>{ try{
         + "<p style='margin:18px 0 0'><a href='https://www.ai-business.com.ng/dashboard' style='display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700'>Tap to send</a></p>"
         + "<p style='color:#64748b;font-size:12px;margin-top:16px'>Nothing connects to your accounts. It drafts, you send.</p></div>";
       const ok = await sendEmail(to, head+" — tap to send", html);
-      if(ok) sent++; else skipped++;
-    }catch(e){ skipped++; }
+      if(ok === true){ sent++; }
+      else { failed++; if(failWhy.length<5) failWhy.push(String(to)+" : resend-refused"); }
+    }catch(e){ failed++; if(failWhy.length<5) failWhy.push(String(u.email||u.user_id)+" : "+e.message); }
   }
-  res.json({success:true, users:(users||[]).length, sent:sent, skipped:skipped});
+  res.json({success:true, users:(users||[]).length, sent:sent, skipped:skipped, failed:failed, failWhy:failWhy});
 }catch(e){ res.status(500).json({error:e.message}); } });
 
 app.use((req, res) => {
