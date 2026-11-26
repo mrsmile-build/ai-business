@@ -5194,6 +5194,7 @@ app.get("/api/digest/preview", authMiddleware, async (req,res)=>{ try{
 }catch(e){ res.status(500).json({error:e.message}); } });
 app.get("/api/digest/run", async (req,res)=>{ try{
   if(!process.env.DIGEST_KEY || String(req.query.key||"")!==process.env.DIGEST_KEY) return res.status(403).json({error:"bad key"});
+  const force = String(req.query.force||"")==="1";
   const wc = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
   const { data: users } = await wc.from("profiles").select("user_id,email,display_name").limit(500);
   let sent=0, skipped=0, failed=0; const failWhy=[];
@@ -5203,6 +5204,13 @@ app.get("/api/digest/run", async (req,res)=>{ try{
       if(!to){ try{ const au = await wc.auth.admin.getUserById(u.user_id); to = au && au.data && au.data.user && au.data.user.email; }catch(e){} }
       if(!to){ skipped++; continue; }
       if(!u.email){ try{ await wc.from("profiles").update({email:to}).eq("user_id",u.user_id); }catch(e){} }
+      const whs = await whGet(u.user_id);
+      const n = whNow(whs.timezone);
+      if(!force){
+        if(!whs.digest_enabled){ skipped++; continue; }
+        const win = whs.work_hours[n.wd];
+        if(!win || n.hr !== whs.digest_hour || whs.last_digest_date === n.date){ skipped++; continue; }
+      }
       const d = await digestFor(u.user_id);
       if(!d.quiet.length && !d.bookings){ skipped++; continue; }
       const names = d.quiet.slice(0,3).map(l=>"<li style='margin:6px 0'>"+String(l.name||"A customer").replace(/[<>]/g,"")+"</li>").join("");
@@ -5214,12 +5222,42 @@ app.get("/api/digest/run", async (req,res)=>{ try{
         + "<p style='margin:18px 0 0'><a href='https://www.ai-business.com.ng/dashboard' style='display:inline-block;background:#2563eb;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700'>Tap to send</a></p>"
         + "<p style='color:#64748b;font-size:12px;margin-top:16px'>Nothing connects to your accounts. It drafts, you send.</p></div>";
       const ok = await sendEmail(to, head+" — tap to send", html);
-      if(ok === true){ sent++; }
+      if(ok === true){ sent++; try{ await wc.from("automation_settings").upsert({user_id:u.user_id,last_digest_date:n.date},{onConflict:"user_id"}); }catch(e){} }
       else { failed++; if(failWhy.length<5) failWhy.push(String(to)+" : resend-refused"); }
     }catch(e){ failed++; if(failWhy.length<5) failWhy.push(String(u.email||u.user_id)+" : "+e.message); }
   }
   res.json({success:true, users:(users||[]).length, sent:sent, skipped:skipped, failed:failed, failWhy:failWhy});
 }catch(e){ res.status(500).json({error:e.message}); } });
+
+/* ---------------- WORKING HOURS (assistant schedule) ---------------- */
+const WH_DEFAULT={mon:[8,18],tue:[8,18],wed:[8,18],thu:[8,18],fri:[9,17],sat:null,sun:null};
+async function whGet(uid){
+  const wc=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY);
+  const {data}=await wc.from("automation_settings").select("timezone,work_hours,digest_hour,digest_enabled,last_digest_date").eq("user_id",uid).maybeSingle();
+  return {timezone:(data&&data.timezone)||"Africa/Lagos",work_hours:(data&&data.work_hours)||WH_DEFAULT,digest_hour:(data&&data.digest_hour!=null)?data.digest_hour:8,digest_enabled:(data&&data.digest_enabled)!==false,last_digest_date:(data&&data.last_digest_date)||null};
+}
+function whNow(tz){
+  const p=new Intl.DateTimeFormat("en-GB",{timeZone:tz,weekday:"short",hour:"numeric",hour12:false,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const g=t=>(p.find(x=>x.type===t)||{}).value;
+  return {wd:String(g("weekday")).toLowerCase().slice(0,3),hr:parseInt(g("hour"),10)%24,date:g("year")+"-"+g("month")+"-"+g("day")};
+}
+app.get("/api/working-hours",authMiddleware,async(req,res)=>{try{const w=await whGet(req.user.id);res.json({success:true,timezone:w.timezone,work_hours:w.work_hours,digest_hour:w.digest_hour,digest_enabled:w.digest_enabled});}catch(e){res.status(500).json({error:e.message});}});
+app.post("/api/working-hours",authMiddleware,async(req,res)=>{try{
+  const b=req.body||{}, tz=String(b.timezone||"Africa/Lagos").slice(0,60);
+  try{ new Intl.DateTimeFormat("en-GB",{timeZone:tz}); }catch(e){ return res.status(400).json({error:"Unknown timezone"}); }
+  const wh={};
+  ["mon","tue","wed","thu","fri","sat","sun"].forEach(function(d){
+    const v=(b.work_hours||{})[d];
+    if(!v){ wh[d]=null; return; }
+    const s=Math.max(0,Math.min(23,parseInt(v[0],10)||0)), e2=Math.max(1,Math.min(24,parseInt(v[1],10)||17));
+    wh[d]= e2>s?[s,e2]:null;
+  });
+  const dh=Math.max(0,Math.min(23,parseInt(b.digest_hour,10)||8));
+  const wc=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_KEY);
+  const {error}=await wc.from("automation_settings").upsert({user_id:req.user.id,timezone:tz,work_hours:wh,digest_hour:dh,digest_enabled:b.digest_enabled!==false},{onConflict:"user_id"});
+  if(error) return res.status(500).json({error:error.message});
+  res.json({success:true,timezone:tz,work_hours:wh,digest_hour:dh});
+}catch(e){res.status(500).json({error:e.message});}});
 
 app.use((req, res) => {
   res.status(404).send(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found - AI Business</title></head><body style="margin:0;background:#080c14;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px"><div><div style="font-size:52px">🧭</div><h1 style="font-size:24px;margin:12px 0 8px">This page doesn't exist - yet.</h1><p style="color:#94a3b8;font-size:14px;margin:0 0 20px">The link may be old or mistyped. Your business tools are one tap away.</p><a href="https://www.ai-business.com.ng/" style="display:inline-block;padding:12px 26px;background:#3b82f6;color:#fff;border-radius:10px;text-decoration:none;font-weight:600">Go to AI Business</a></div></body></html>`);

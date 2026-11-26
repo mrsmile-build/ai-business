@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Working Hours — AI Business</title>
+<style>body{background:#0b1220;color:#e2e8f0;font-family:system-ui;margin:0;padding:18px;max-width:640px}h1{font-size:21px;margin:0 0 6px}.m{color:#94a3b8;font-size:13px}
+input,select{background:#0f172a;color:#e2e8f0;border:1px solid #1e293b;border-radius:8px;padding:8px;font-size:14px}
+button{background:#2563eb;color:#fff;border:0;border-radius:9px;padding:11px 16px;font-weight:700;margin-top:12px}
+.row{display:flex;align-items:center;gap:8px;margin:8px 0}.row b{width:42px;font-size:13px}</style></head><body>
+<h1>Working hours</h1>
+<p class="m">When the assistant may nudge you, in your own time zone. It never sends messages to customers — you always press send.</p>
+<p class="m">Time zone</p><select id="tz"></select>
+<div id="days" style="margin-top:12px"></div>
+<p class="m" style="margin-top:14px">Morning brief at (hour, your time)</p><input id="dh" type="number" min="0" max="23" style="width:80px">
+<label class="row" style="margin-top:10px"><input type="checkbox" id="en"><span class="m">Send me the morning brief</span></label>
+<button id="save">Save</button> <span id="msg" class="m"></span>
+<p class="m" style="margin-top:16px"><a href="/dashboard" style="color:#60a5fa">← Dashboard</a></p>
+<script>
+var DAYS=[["mon","Mon"],["tue","Tue"],["wed","Wed"],["thu","Thu"],["fri","Fri"],["sat","Sat"],["sun","Sun"]];
+var ZONES=["Africa/Lagos","Africa/Accra","Africa/Nairobi","Africa/Johannesburg","Europe/London","Europe/Berlin","America/New_York","America/Chicago","America/Los_Angeles","America/Toronto","Asia/Dubai","Asia/Karachi","Asia/Kolkata","Asia/Singapore","Asia/Tokyo","Australia/Sydney","UTC"];
+function tok(){var t=localStorage.getItem("aib_token");if(t)return t;for(var k in localStorage){if(/auth-token$/.test(k)){try{var j=JSON.parse(localStorage.getItem(k));if(j&&j.access_token)return j.access_token;}catch(e){}}}return "";}
+function api(p,m,b){return fetch(p,{method:m||"GET",headers:{"Content-Type":"application/json","Authorization":"Bearer "+tok()},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json();});}
+var tzSel=document.getElementById("tz");
+ZONES.forEach(function(z){var o=document.createElement("option");o.value=z;o.textContent=z;tzSel.appendChild(o);});
+var dh=document.getElementById("days");
+DAYS.forEach(function(d){
+  var r=document.createElement("div");r.className="row";
+  r.innerHTML="<b>"+d[1]+"</b><input type='checkbox' id='on_"+d[0]+"'><input type='number' id='s_"+d[0]+"' min='0' max='23' style='width:64px'><span class='m'>to</span><input type='number' id='e_"+d[0]+"' min='1' max='24' style='width:64px'><span class='m'>off</span>";
+  dh.appendChild(r);
+});
+api("/api/working-hours").then(function(j){
+  if(!j.success){document.getElementById("msg").textContent="Log in first.";return;}
+  tzSel.value=j.timezone; document.getElementById("dh").value=j.digest_hour; document.getElementById("en").checked=j.digest_enabled;
+  DAYS.forEach(function(d){var v=j.work_hours[d[0]];document.getElementById("on_"+d[0]).checked=!!v;document.getElementById("s_"+d[0]).value=v?v[0]:8;document.getElementById("e_"+d[0]).value=v?v[1]:17;});
+});
+document.getElementById("save").onclick=function(){
+  var wh={};DAYS.forEach(function(d){wh[d[0]]=document.getElementById("on_"+d[0]).checked?[parseInt(document.getElementById("s_"+d[0]).value,10),parseInt(document.getElementById("e_"+d[0]).value,10)]:null;});
+  var m=document.getElementById("msg");m.textContent="Saving...";
+  api("/api/working-hours","POST",{timezone:tzSel.value,work_hours:wh,digest_hour:parseInt(document.getElementById("dh").value,10),digest_enabled:document.getElementById("en").checked}).then(function(j){m.textContent=j.success?"Saved. The assistant keeps your hours.":(j.error||"Failed");});
+};
+</script></body></html>
