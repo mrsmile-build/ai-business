@@ -3664,7 +3664,7 @@ app.post("/api/affiliate/track-click", rateLimit(30, 60000), async (req, res) =>
   } catch(err) { res.json({ success: false }); }
 });
 
-app.post("/api/affiliate/track-signup", async (req, res) => {
+app.post("/api/affiliate/track-signup", rateLimit(30, 60000), async (req, res) => {
   try {
     const { affiliate_code, user_id } = req.body;
     if(!affiliate_code || !user_id) return res.json({ success: false });
@@ -3678,6 +3678,11 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
     const { data: existingSub } = await affClient3.from("subscriptions").select("user_id").eq("user_id", user_id).limit(1);
     if(existingSub && existingSub.length > 0) return res.json({ success: false, error: "Trial already used" });
 
+    if(aff && aff.user_id === user_id) return res.json({ success:false, reason:"self-referral" });
+    const { data: realUser } = await affClient3.auth.admin.getUserById(user_id);
+    if(!realUser || !realUser.user) return res.json({ success:false, reason:"unknown user" });
+    const { data: prof } = await affClient3.from("profiles").select("referred_by_affiliate").eq("user_id", user_id).maybeSingle();
+    if(prof && prof.referred_by_affiliate) return res.json({ success:true, already:true });
     await affClient3.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
     const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     /* trial grant removed: an anonymous endpoint must not gift paid plans (audit #5). Referral attribution only. */
