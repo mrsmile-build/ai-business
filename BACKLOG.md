@@ -80,3 +80,8 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 55. Fourteen-day plan, one number: 2 messages today (Precious, Boubacary) -> 10 practitioner conversations -> 3 paying by day 14.
 56. Three-year strategy gets written the week we reach 10 paying customers, not before.
 57. Never auto-send. "AI execution" = drafts + human approval. Trust line stays on every surface.
+
+## FROM THE FIRST REAL CHURN FEEDBACK (Boubacary, 28 Nov)
+58. Outcome visibility, not activity counts: let the owner mark a lead "replied" / "won", and show "3 conversations started this week" instead of "16 actions". GATED until 3+ interviews confirm the same gap.
+59. Lead-to-offer fit: Lead Finder returns local phone-first businesses; practitioners hunt global B2B on email/LinkedIn. Test in interviews whether the leads are the wrong kind or unreachable in their channel. Do not rebuild for n=1.
+60. Against an 18-tool stack we are the 19th tool. Win by replacing three steps with one outcome, or by plugging into their stack. Decide after the ten interviews.
