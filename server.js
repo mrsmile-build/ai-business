@@ -3680,7 +3680,7 @@ app.post("/api/affiliate/track-signup", async (req, res) => {
 
     await affClient3.from("profiles").upsert({ user_id, referred_by_affiliate: affiliate_code });
     const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    await affClient3.from("subscriptions").upsert({ user_id, plan: "starter", status: "trial", is_trial: true, trial_ends_at: trialEnds, ai_usage: 0 });
+    /* trial grant removed: an anonymous endpoint must not gift paid plans (audit #5). Referral attribution only. */
     res.json({ success: true, trial: true, message: "30-day free trial activated!" });
   } catch(err) { res.json({ success: false }); }
 });
