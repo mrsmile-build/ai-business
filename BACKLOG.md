@@ -49,7 +49,7 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 37. GATED: hand-off button in the app that passes a job to a listed provider, with the platform taking a slice - all four partnership models in one. Needs payments + commission first. [Wardell's SEO-tool story]
 
 ## AFFILIATE PROGRAM SPECIFICS (26 Nov 2026)
-38. Affiliate page as a sales page: headline "Earn N22,500 per Business sale (50% of first payment)" - lead with the highest tier, not the cheapest. Add commission table, cookie window, payout date, and the kit download. [Martell, Shopify]
+38. Affiliate page as a sales page: headline "Earn N33,750 per Business sale (50% of first payment)" - lead with the highest tier, not the cheapest. Add commission table, cookie window, payout date, and the kit download. [Martell, Shopify]
 39. Document and enforce a 90-day cookie window and pick first-touch or last-touch attribution. Currently undocumented. [Martell, Rewardful]
 40. Earnings-per-click proof: once 3 conversions exist, publish real EPC and partner earnings screenshots. Until then show the honest offer, not invented numbers. [Martell]
 41. Tiered commission: base rate, bump after 5 paying referrals, bump after 20. Rewards partners who keep going. [Shopify]

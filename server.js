@@ -287,9 +287,9 @@ async function enrichContacts(leads){
 
 const PLANS = {
   free:     { leads: 10,       ai_per_month: 20,      files: 3,  label: "Free",     price: 0 },
-  starter:  { leads: 50,       ai_per_month: 40,      files: 3,  label: "Starter",  price: 6000 },
-  pro:      { leads: 500,      ai_per_month: 80,      files: 8,  label: "Pro",      price: 15000 },
-  business: { leads: Infinity, ai_per_month: 200,     files: 15, label: "Business", price: 45000 }
+  starter:  { leads: 50,       ai_per_month: 40,      files: 3,  label: "Starter",  price: 9000 },
+  pro:      { leads: 500,      ai_per_month: 80,      files: 8,  label: "Pro",      price: 22500 },
+  business: { leads: Infinity, ai_per_month: 200,     files: 15, label: "Business", price: 67500 }
 };
 
 
