@@ -71,3 +71,12 @@ Rule: nothing in NEXT or GATED gets built while NOW is open or paying customers 
 - Audit add #4 followup_sent: logged on every real send tap.
 - Audit #9 hosting: single backend 90n6 for /api, /a, /demo, /biz.
 - Audit #5 partial: welcome-email guarded to known users and reports real send result.
+
+## STRATEGY DECISIONS (28 Nov 2026)
+51. Category claim is LIVE, not aspirational: remembers enquiries, flags quiet customers, drafts the follow-up, owner approves and sends. Verified: digest sent 7, cron success x5, working-hours delivery.
+52. No feature-for-feature war with HubSpot/Zoho/Salesforce. Study only three: GoHighLevel (agency/reseller recurring), Intercom/Fin (assistant resolves, not answers), Apollo (prospect data quality).
+53. Reputation work (Product Hunt, G2, Capterra, GetApp, TAAFT, founder visibility push) GATED behind 5 paying customers + 3 documented stories. Directories pour strangers into a product that must retain them first.
+54. Original research GATED behind 100+ active businesses. With 15 accounts any published statistic would be manufactured.
+55. Fourteen-day plan, one number: 2 messages today (Precious, Boubacary) -> 10 practitioner conversations -> 3 paying by day 14.
+56. Three-year strategy gets written the week we reach 10 paying customers, not before.
+57. Never auto-send. "AI execution" = drafts + human approval. Trust line stays on every surface.
